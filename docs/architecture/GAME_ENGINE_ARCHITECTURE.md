@@ -72,6 +72,8 @@ Các mốc runtime cần hỗ trợ:
 
 **Coding Planning TBD:** tên enum, Loading/Ready, full transition table, command policy ngoài collect/claim đã bị cấm trong Pause.
 
+**Confirmed:** khi terminal state đã được resolve, không chuyển sang terminal state khác trong cùng trận.
+
 **Confirmed — 03/11/2026:** Defender attack và Enemy movement được tính đồng thời mỗi simulation tick, sau đó xử lý Event Queue theo insertion sequence với sequence number tăng dần. Khi Victory và Defeat cùng phát sinh trong một tick, terminal event được resolve trước quyết định kết quả; không có ưu tiên cố định cho Victory hoặc Defeat. Thứ tự sinh event chi tiết và edge cases là Coding Planning TBD.
 
 **Confirmed:** Save & Resume trận đang chơi sau browser reload/close; persistent unlock progression giữa các trận là dữ liệu riêng. Cơ chế lưu, schema snapshot, thời điểm ghi và implementation cụ thể vẫn TBD.

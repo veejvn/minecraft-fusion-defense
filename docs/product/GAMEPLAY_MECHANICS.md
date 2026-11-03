@@ -829,8 +829,8 @@ Không kiểm tra, trừ hoặc hoàn tài nguyên. Không được tạo output
 
 Fusion thất bại khi:
 
-- Không có Recipe phù hợp đang bật.
-- Source hoặc Target không hợp lệ, đã chết, bị Lock hoặc Tier không tương thích Recipe được phê duyệt.
+- Không có Recipe phù hợp đã được phê duyệt, đang bật và đã unlock.
+- Source hoặc Target không hợp lệ, đã chết, bị Lock hoặc Input IDs/Tiers không khớp Recipe được phê duyệt. Tier-1 là yêu cầu của sáu Recipe ban đầu, không phải hard engine ceiling; higher-tier inputs chỉ hợp lệ khi có Recipe tương ứng được phê duyệt trong tương lai.
 - Source và Target là cùng một instance.
 - Grid Occupancy không còn hợp lệ.
 - Trận đấu không ở trạng thái Playing.

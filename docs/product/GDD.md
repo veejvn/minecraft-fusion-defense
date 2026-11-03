@@ -546,6 +546,8 @@ Môi trường Grassland dự kiến gồm:
 
 Nếu chủ dự án phê duyệt audio sau này, SFX/music/ambience và policy theo `AUDIO_GUIDELINES.md`; không là điều kiện hoàn thành Functional MVP.
 
+**Proposed — giai đoạn sau:** Background Music, Defender Attack, Enemy Attack, Enemy Death, Fusion, Power Crystal Activation, Wave Start, Victory và Defeat. Danh sách này không tạo yêu cầu audio cho MVP.
+
 ## 14. MVP Scope
 
 ### 14.1. In Scope
