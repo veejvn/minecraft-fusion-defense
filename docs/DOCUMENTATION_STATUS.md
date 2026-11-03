@@ -8,8 +8,8 @@
 | --- | --- | --- |
 | Documentation Content Sync | Completed | Local đã phản ánh Product Design Confirmed Baseline; 7 Recipe pairs, 7 Fusion outputs, unlock/replay/optional được kiểm tra lại bên dưới. Không có nghĩa raw Notion text đã sạch hoặc mọi TBD được duyệt |
 | Notion Source Consistency | Resolved on Source — Verified (3 tracked pages) | Testing Strategy, AI Agent Guidelines và Roadmap đã cleanup, đọc lại xác minh; không là cam kết audit toàn workspace |
-| GitHub Publication | Product Design published; cleanup checkpoint uncommitted | Product Design + R1 tại b5856a4 đã xác minh trước; HEAD Local lúc bắt đầu cleanup 37940ff3723b07faecf49127178cc06989ee4fd5. Không commit/push trong cleanup task |
-| Notion Documentation Status | Status Sync Completed | Checkpoint Local/Notion cùng SHA và timestamp sau đọc lại; lịch sử R1 không ghi Notion được giữ như lịch sử |
+| GitHub Publication | Cleanup checkpoint published — Verified | Product Design + R1 tại b5856a4; cleanup checkpoint đã có trong bfebcc3df7bb7866a54652c5189871adc34e85ee, Local HEAD và GitHub main khớp khi preflight. Bản đính chính nhãn trạng thái này chưa commit tại lúc kiểm tra |
+| Notion Documentation Status | Cleanup checkpoint verified; publication-label correction Local only | Nội dung cleanup 22:25:02 khớp Notion. Task publication này không được sửa Notion; nhãn publication Local được đính chính theo GitHub thực tế |
 
 **Revision 1 scope — historical:** chỉ sửa `docs/DOCUMENTATION_STATUS.md`. 17 Markdown modifications đã tồn tại trước R1, không có staged changes. R1 không sửa 16 tài liệu còn lại, source/config/dependencies, index, file patch cũ hoặc bất kỳ trang Notion nào. Cumulative patch vẫn có 17 modified files; không có added/deleted project files.
 
@@ -43,7 +43,7 @@
 
 **TBD preserved:** combat balance, Wave Config, Ability parameters/cost/cooldown/spend/commit/rollback, Steel Guardian Entity/Recipe/Ability IDs/name/effects/stats, Save implementation, event-generation ordering, testing coverage/harness/browser/CI vẫn chưa được tự chốt. Không thay resource rewards, runtime code hoặc balance data.
 
-**Verification:** targeted replacements đọc lại đều có nội dung mới; không còn ba phát biểu cũ trong các section đang hoạt động. Không sửa đoạn nguồn khác ngoài các replacement được liệt kê. Git index không đổi; chỉ Local Documentation Status modified; không stage/commit/push/PR. Checkpoint cleanup mới chưa xuất bản GitHub.
+**Verification — historical cleanup operation:** targeted replacements đọc lại đều có nội dung mới; không còn ba phát biểu cũ trong các section đang hoạt động. Không sửa đoạn nguồn khác ngoài các replacement được liệt kê. Git index không đổi; chỉ Local Documentation Status modified; không stage/commit/push/PR. Checkpoint cleanup chưa xuất bản tại thời điểm cleanup 22:25:02; nay đã xác minh nằm trong bfebcc3. Preflight publication 2026-11-03T22:33:31+07:00: 5/5 Notion pages PASS, Local HEAD = fetched origin/main = GitHub main = bfebcc3df7bb7866a54652c5189871adc34e85ee. Chỉ đính chính nhãn publication trong Local; không sửa Notion, không thêm gameplay decision. SHA của commit đính chính và kết quả push sẽ ghi trong Final Report, không tạo checkpoint sau commit.
 
 ### Historical Snapshot — Superseded: Notion Source Cleanup Pending — Non-blocking Documentation Debt
 
@@ -134,7 +134,7 @@ Không còn Markdown trống trong danh mục hiện tại. Synced là trạng t
 | `docs/development/DEPLOYMENT.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81ad88b2cfed46fbfd03?pvs=204) | Synced | 4575 | No Change Required sau audit Product Design. |
 | `docs/development/DEVELOPMENT_WORKFLOW.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81ccb23dea79a85f7123?pvs=204) | Synced | 4045 | No Change Required sau audit Product Design. |
 | `docs/development/TESTING_STRATEGY.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81dea9f1ffc88723a885?pvs=204) | Synced | 7499 | Product Design Synced — Updated; xem 5.10. |
-| `docs/DOCUMENTATION_STATUS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d) | Synced | 59879 | Publication checkpoint Local/Notion; bản ghi mới chưa commit. |
+| `docs/DOCUMENTATION_STATUS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d) | Synced | 60492 | Publication checkpoint Local/Notion; bản ghi mới chưa commit. |
 | `docs/game-design/ABILITY_CATALOG.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81968c6cecad6e88290c?pvs=204) | Synced | 20997 | Product Design Synced — Updated; xem 5.10. |
 | `docs/game-design/ENTITY_CATALOG.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951?pvs=204) | Synced | 8984 | Product Design Synced — Updated; xem 5.10. |
 | `docs/game-design/FUSION_RECIPES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41?pvs=204) | Synced | 11897 | Product Design Synced — Updated; xem 5.10. |
