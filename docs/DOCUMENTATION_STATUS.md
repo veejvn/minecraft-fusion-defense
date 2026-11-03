@@ -1,19 +1,51 @@
 # Tình trạng tài liệu — Minecraft Fusion Defense
 
-## Current Documentation Status — Revision 1
+## Current Documentation Status — Notion Source Cleanup
 
-**Revision timestamp:** 2026-11-03T21:50:56+07:00. Đây là phần trạng thái hiện hành duy nhất; các mục 5.x và khối Product Design Update nhúng đều là lịch sử superseded.
+**Revision timestamp:** 2026-11-03T21:50:56+07:00. R1 là snapshot validation đã được Approve; checkpoint xuất bản bên dưới cập nhật trạng thái hiện hành. Đây là phần trạng thái hiện hành duy nhất; các mục 5.x và khối Product Design Update nhúng đều là lịch sử superseded.
 
 | Loại trạng thái | Kết quả hiện hành | Phạm vi / bằng chứng |
 | --- | --- | --- |
 | Documentation Content Sync | Completed | Local đã phản ánh Product Design Confirmed Baseline; 7 Recipe pairs, 7 Fusion outputs, unlock/replay/optional được kiểm tra lại bên dưới. Không có nghĩa raw Notion text đã sạch hoặc mọi TBD được duyệt |
-| Notion Source Consistency | Cleanup Pending | Ba nguồn được đọc lại, vẫn còn đoạn cũ; xem cleanup debt bên dưới |
-| GitHub Publication | Pending Owner Approval | Product Design Sync + R1 vẫn chưa commit/push; HEAD Local 1bd5c4fdef031e416b86cb4acb4ba9686c34fc6f. Không xác minh live GitHub publication trong R1 |
-| Notion Documentation Status | Not Updated in Revision 1 | Chỉ đọc; bản Notion vẫn là báo cáo 21:36:01+07:00. Không tuyên bố Local/Notion report cùng phiên bản R1 |
+| Notion Source Consistency | Resolved on Source — Verified (3 tracked pages) | Testing Strategy, AI Agent Guidelines và Roadmap đã cleanup, đọc lại xác minh; không là cam kết audit toàn workspace |
+| GitHub Publication | Product Design published; cleanup checkpoint uncommitted | Product Design + R1 tại b5856a4 đã xác minh trước; HEAD Local lúc bắt đầu cleanup 37940ff3723b07faecf49127178cc06989ee4fd5. Không commit/push trong cleanup task |
+| Notion Documentation Status | Status Sync Completed | Checkpoint Local/Notion cùng SHA và timestamp sau đọc lại; lịch sử R1 không ghi Notion được giữ như lịch sử |
 
-**Revision scope:** chỉ sửa `docs/DOCUMENTATION_STATUS.md`. 17 Markdown modifications đã tồn tại trước R1, không có staged changes. R1 không sửa 16 tài liệu còn lại, source/config/dependencies, index, file patch cũ hoặc bất kỳ trang Notion nào. Cumulative patch vẫn có 17 modified files; không có added/deleted project files.
+**Revision 1 scope — historical:** chỉ sửa `docs/DOCUMENTATION_STATUS.md`. 17 Markdown modifications đã tồn tại trước R1, không có staged changes. R1 không sửa 16 tài liệu còn lại, source/config/dependencies, index, file patch cũ hoặc bất kỳ trang Notion nào. Cumulative patch vẫn có 17 modified files; không có added/deleted project files.
 
-### Notion Source Cleanup Pending — Non-blocking Documentation Debt
+### GitHub Publication — Product Design Documentation Sync (historical checkpoint)
+
+- **GitHub Publication:** Published — Verified cho commit Product Design + R1.
+- **Verified SHA:** [b5856a4f25b802c3da8b694a0d175a7f911ab35c](https://github.com/veejvn/minecraft-fusion-defense/commit/b5856a4f25b802c3da8b694a0d175a7f911ab35c).
+- **Branch / remote:** main / origin, https://github.com/veejvn/minecraft-fusion-defense.
+- **Parent:** 1bd5c4fdef031e416b86cb4acb4ba9686c34fc6f.
+- **Commit timestamp:** 2026-11-03T21:59:25+07:00 (không phải timestamp push).
+- **Push/remote verification timestamp:** 2026-11-03T22:00:48+07:00 (Asia/Bangkok). Push exit 0; GitHub API main và commit endpoint xác nhận SHA/parent/timestamp/file list/stats; không suy từ local tracking ref.
+- **Commit message:** docs: sync confirmed product design and fusion progression.
+- **Published scope:** 17 Markdown, +290/-126 dòng. Staged diff khớp byte với approved R1 patch (SHA-256 68cd0436407ed3e1571f2660967417198b550d2b44e6fe4e13a7d541ceb51cb7).
+- **Published files:** `README.md`, `docs/DOCUMENTATION_STATUS.md`, `docs/architecture/DATA_ARCHITECTURE.md`, `docs/architecture/GAME_ENGINE_ARCHITECTURE.md`, `docs/assets/ASSET_GUIDELINES.md`, `docs/assets/SPRITE_GUIDELINES.md`, `docs/development/AI_AGENT_GUIDELINES.md`, `docs/development/TESTING_STRATEGY.md`, `docs/game-design/ABILITY_CATALOG.md`, `docs/game-design/ENTITY_CATALOG.md`, `docs/game-design/FUSION_RECIPES.md`, `docs/game-design/GAME_BALANCING.md`, `docs/game-design/LEVEL_DESIGN.md`, `docs/product/GAMEPLAY_MECHANICS.md`, `docs/product/GDD.md`, `docs/product/MVP_SCOPE.md`, `docs/product/ROADMAP.md`.
+- **Preflight evidence:** final rerun 12 validation checks PASS; 22 Markdown, 7 unique Recipes (4 same/3 cross), 5 Base/7 Fusion/4 Enemies, 12 required Abilities, 2 starter Base/2 starter Recipes; unlock/replay/Fusion optional đúng baseline. Steel Guardian IDs/Ability/stats giữ TBD. Git diff/cached checks đạt trước commit. Không đổi source/runtime config/balance/Waves hoặc TBD.
+- **Documentation Content Sync:** Completed theo Confirmed Baseline; **Notion Source Consistency:** Cleanup Pending (Testing Strategy, AI Agent Guidelines, Roadmap). Không sửa các trang source/baseline trong task.
+- **Checkpoint state:** Local updated; Notion report updated và đọc lại đối chiếu SHA/timestamp/status. Checkpoint này tạo thay đổi mới chỉ ở `docs/DOCUMENTATION_STATUS.md`, chưa staged/commit/push; không thuộc commit b5856a4. Không tạo commit thứ hai.
+- **Remaining TBD:** Steel Guardian Entity/Recipe/Ability IDs/name/effects/stats, combat balance, Wave Config, Ability cost/cooldown/transactions, Save schema/triggers và detailed event generation vẫn chưa được tự phê duyệt.
+
+### Notion Source Cleanup — Resolved on Source / Verified
+
+**Cleanup timestamp:** 2026-11-03T22:25:02+07:00. Owner authorization: “cho phép task Notion Source Cleanup”. Đã đọc mới ba trang, Decision Baseline và báo cáo trước sửa; chỉ thay đoạn cũ có quyết định Confirmed rõ ràng. Không sửa Decision Baseline hoặc thêm quyết định gameplay.
+
+| Source | Section / thay đổi đã xác minh sau ghi | Status |
+| --- | --- | --- |
+| [Testing Strategy](https://app.notion.com/p/40c62d2ce36e81dea9f1ffc88723a885) | Confirmed MVP test acceptance: replay Victories cộng tiến độ, Defeat không cộng, persistent/idempotent unlocks; mapping 2 starter Base/2 starter Recipes và 5 auto Recipes; Fusion optional. Bảng 2 Manual playthrough Required — Confirmed, implementation/benchmark TBD | Resolved on Source — Verified |
+| [AI Agent Guidelines](https://app.notion.com/p/40c62d2ce36e8178b14edef36999a832) | Confirmed AI Coding Agent handoff: 7 Recipes gồm Steel Guardian, initial unlocks và Achievement mapping Confirmed, replay Victory hợp lệ; 12 Ability definitions với 11 existing draft IDs và Steel Guardian Ability/technical IDs TBD | Resolved on Source — Verified |
+| [Roadmap](https://app.notion.com/p/40c62d2ce36e814498a8e4bbc24d246d) | Confirmed MVP roadmap scope: mapping đã Confirmed, chỉ balance/UI/tracking/Steel Guardian details TBD. Workstream Level & Abilities: 12 required definitions thay 11 | Resolved on Source — Verified |
+
+**Current scope:** ba nguồn cleanup đã xác minh, không suy rộng rằng mọi đoạn của mọi trang Notion đều đã audit. Local specialist Markdown đã phản ánh các quyết định này từ Product Design Sync, nên giữ nguyên. Chỉ báo cáo Local thay đổi, báo cáo Notion cập nhật cùng lượt và được đọc lại đối chiếu. Các trạng thái Cleanup Pending bên dưới thuộc snapshot lịch sử tại thời điểm cũ.
+
+**TBD preserved:** combat balance, Wave Config, Ability parameters/cost/cooldown/spend/commit/rollback, Steel Guardian Entity/Recipe/Ability IDs/name/effects/stats, Save implementation, event-generation ordering, testing coverage/harness/browser/CI vẫn chưa được tự chốt. Không thay resource rewards, runtime code hoặc balance data.
+
+**Verification:** targeted replacements đọc lại đều có nội dung mới; không còn ba phát biểu cũ trong các section đang hoạt động. Không sửa đoạn nguồn khác ngoài các replacement được liệt kê. Git index không đổi; chỉ Local Documentation Status modified; không stage/commit/push/PR. Checkpoint cleanup mới chưa xuất bản GitHub.
+
+### Historical Snapshot — Superseded: Notion Source Cleanup Pending — Non-blocking Documentation Debt
 
 Decision Baseline Confirmed ưu tiên các đoạn nguồn cũ: [Decision Baseline](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773), đọc trực tiếp lại trong R1. Đây là nợ tài liệu nguồn, không tạo gameplay decision mới.
 
@@ -49,7 +81,7 @@ Script và kết quả độc lập lưu ngoài repository, thư mục `revision
 
 **Remaining TBD:** Steel Guardian Entity/Recipe IDs, Ability ID/name/effect/cost/cooldown và combat identity/stats/targeting; Wave composition/timing/rewards; Ability transactions; Save schema/triggers; detailed Event Queue generation/fixed timestep. Không có TBD mới được tự phê duyệt. Initial unlock mapping/replay progression/Fusion optional đã Confirmed, không phải TBD.
 
-**Next Action:** reviewer xem cumulative `product-design-documentation-review-r1.patch` và evidence bên ngoài repository. Một task riêng cần cho phép cleanup ba Notion sources và cập nhật Notion report; chỉ commit/push sau phê duyệt rõ ràng. R1 không thực hiện các bước đó.
+**Next Action — R1 historical:** reviewer xem cumulative `product-design-documentation-review-r1.patch` và evidence bên ngoài repository. Một task riêng cần cho phép cleanup ba Notion sources và cập nhật Notion report; chỉ commit/push sau phê duyệt rõ ràng. R1 không thực hiện các bước đó.
 
 ---
 
@@ -80,8 +112,8 @@ Script và kết quả độc lập lưu ngoài repository, thư mục `revision
 
 | Sync Status | Số file | Giải thích |
 | --- | --- | --- |
-| Synced | 21 | Nội dung chuyên môn Local theo Confirmed Baseline; không đồng nghĩa raw Notion sources nhất quán |
-| Partially Synced | 1 | Báo cáo Local Revision 1 khác bản Notion; không cập nhật Notion theo giới hạn Revision 1 |
+| Synced | 22 | Nội dung chuyên môn Local theo Confirmed Baseline + báo cáo Local/Notion; raw source cleanup vẫn Pending |
+| Partially Synced | 0 | Báo cáo R1 và checkpoint đã được đồng bộ trong publication task được cho phép |
 | Blocked | 0 | Không có blocker truy cập hoặc quyết định Confirmed không xác định được |
 | Not Updated | 0 | Tất cả file đã được kiểm tra |
 
@@ -102,7 +134,7 @@ Không còn Markdown trống trong danh mục hiện tại. Synced là trạng t
 | `docs/development/DEPLOYMENT.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81ad88b2cfed46fbfd03?pvs=204) | Synced | 4575 | No Change Required sau audit Product Design. |
 | `docs/development/DEVELOPMENT_WORKFLOW.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81ccb23dea79a85f7123?pvs=204) | Synced | 4045 | No Change Required sau audit Product Design. |
 | `docs/development/TESTING_STRATEGY.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81dea9f1ffc88723a885?pvs=204) | Synced | 7499 | Product Design Synced — Updated; xem 5.10. |
-| `docs/DOCUMENTATION_STATUS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d) | Partially Synced | 53828 | Local Revision 1 corrected; Notion report intentionally not updated. |
+| `docs/DOCUMENTATION_STATUS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d) | Synced | 59879 | Publication checkpoint Local/Notion; bản ghi mới chưa commit. |
 | `docs/game-design/ABILITY_CATALOG.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81968c6cecad6e88290c?pvs=204) | Synced | 20997 | Product Design Synced — Updated; xem 5.10. |
 | `docs/game-design/ENTITY_CATALOG.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951?pvs=204) | Synced | 8984 | Product Design Synced — Updated; xem 5.10. |
 | `docs/game-design/FUSION_RECIPES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41?pvs=204) | Synced | 11897 | Product Design Synced — Updated; xem 5.10. |
@@ -384,6 +416,9 @@ Không cần chủ dự án quyết định lại các nội dung đã Confirmed
 
 
 ## 6. Công việc tiếp theo cần xác nhận
+
+Chủ dự án có thể review và phê duyệt xuất bản riêng checkpoint cleanup mới. Ba nguồn tracked đã cleanup; chỉ mở task cleanup khác khi có phát hiện cụ thể mới.
+
 
 1. Chọn lát cắt coding và chỉ hỏi các Product Design/Coding Planning TBD thực sự chặn lát cắt đó.
 2. Không mở lại các quyết định resource, Fusion output, Save/progression scope hoặc event resolution đã Confirmed.
