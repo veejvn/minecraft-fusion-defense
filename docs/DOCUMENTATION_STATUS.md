@@ -2,6 +2,7 @@
 
 ## 1. Thông tin kiểm tra
 
+- **Dấu mốc xuất bản GitHub hiện hành:** Final Sync đã xuất bản tại `0812d3a`; kiểm chứng 2026-11-03T20:50:35+07:00. Bản ghi dấu mốc mới chưa commit/push; xem 5.9.
 - **Thời điểm kiểm tra:** 2026-11-03T20:25:26+07:00 (Asia/Bangkok).
 - **Repository:** `D:\Code\game\minecraft-fusion-defense`.
 - **Nguồn Notion:** [Minecraft Fusion Defense — Tài liệu dự án](https://app.notion.com/p/40c62d2ce36e81df88f3df6e4c398381).
@@ -48,7 +49,7 @@ Không còn Markdown trống trong danh mục hiện tại. Synced là trạng t
 | `docs/development/DEPLOYMENT.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81ad88b2cfed46fbfd03?pvs=204) | Synced | 4575 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
 | `docs/development/DEVELOPMENT_WORKFLOW.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81ccb23dea79a85f7123?pvs=204) | Synced | 4045 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
 | `docs/development/TESTING_STRATEGY.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81dea9f1ffc88723a885?pvs=204) | Synced | 6850 | Sửa tối thiểu theo cleanup; xem 5.7. |
-| `docs/DOCUMENTATION_STATUS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d) | Synced | 35278 | Báo cáo hai nguồn, cùng timestamp, lịch sử được bảo toàn. |
+| `docs/DOCUMENTATION_STATUS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d) | Synced | 37287 | Báo cáo hai nguồn, cùng timestamp, lịch sử được bảo toàn. |
 | `docs/game-design/ABILITY_CATALOG.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81968c6cecad6e88290c?pvs=204) | Synced | 20504 | Nguồn cleanup đã đối chiếu; nội dung hiện hành tương đương, giữ nguyên. |
 | `docs/game-design/ENTITY_CATALOG.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951?pvs=204) | Synced | 8568 | Nguồn cleanup đã đối chiếu; nội dung hiện hành tương đương, giữ nguyên. |
 | `docs/game-design/FUSION_RECIPES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41?pvs=204) | Synced | 10114 | Sửa tối thiểu theo cleanup; xem 5.7. |
@@ -254,6 +255,17 @@ Không cần chủ dự án quyết định lại các nội dung đã Confirmed
 **Audit/validation:** toàn bộ 22 Markdown có nội dung; headings/tables/fences, internal links/relative paths đạt; 3 JSON examples parse, code blocks và nguồn Notion được giữ. Không thêm section trùng vào tài liệu chuyên môn. Không thấy active rule trái Confirmed trong các nhóm Tier/audio/Save/progression/Event Queue/resource caps/Enemy rewards/Fusion output. `git diff --check` đạt. Repository không có Markdown lint chuyên biệt; không cài dependency, không chạy gameplay suite/build vì không sửa source code. Đọc lại báo cáo Local và Notion cùng timestamp, 22 Synced/0 Partially Synced/0 Blocked/0 Not Updated; kích thước đo lại filesystem. Git index SHA-256 không đổi.
 
 **Git Diff để review:** 3 tài liệu chuyên môn có 6 dòng thêm/2 dòng xóa trước cập nhật báo cáo. Báo cáo là file thứ 4. Toàn bộ thay đổi giữ ở working tree, xem `git diff -- docs/product/GDD.md docs/product/GAMEPLAY_MECHANICS.md docs/architecture/GAME_ENGINE_ARCHITECTURE.md docs/DOCUMENTATION_STATUS.md`.
+
+### 5.9. Dấu mốc xuất bản GitHub — 2026-11-03T20:50:35+07:00
+
+- **GitHub Published — Final Documentation Sync:** Completed, xác minh trực tiếp GitHub API: nhánh `main` trỏ tới [0812d3a08127e21d0fc03a57fa52b392f266eb2b](https://github.com/veejvn/minecraft-fusion-defense/commit/0812d3a08127e21d0fc03a57fa52b392f266eb2b).
+- **Commit:** `feat: update documentation for final sync and gameplay mechanics adjustments`; commit timestamp 2026-11-03T20:45:43+07:00. Đây là thời điểm commit, không phải thời điểm push (chưa có bằng chứng thời điểm push chính xác).
+- **Phạm vi đã xuất bản:** GDD, Gameplay Mechanics, Game Engine Architecture và Documentation Status; commit có 4 file thay đổi, +40/-11 dòng, parent `acb7bc0b84e8ffdd67689e772209251b4a3f208f`.
+- **Bằng chứng:** [GitHub main](https://github.com/veejvn/minecraft-fusion-defense/tree/main), GitHub API `GET /repos/veejvn/minecraft-fusion-defense/branches/main`; HEAD Local và GitHub main cùng SHA khi kiểm tra. Working tree sạch trước lần cập nhật dấu mốc này.
+- **Documentation Content Sync:** Completed theo lần đồng bộ đã xác minh ở 5.8; dấu mốc này được đồng bộ Local/Notion, không thay đổi thiết kế hoặc phê duyệt TBD.
+- **Git Working Tree sau cập nhật dấu mốc:** Uncommitted Changes — chỉ `docs/DOCUMENTATION_STATUS.md`.
+- **Xuất bản chính bản ghi dấu mốc này:** Pending Owner Approval; bản ghi mới chưa nằm trong commit 0812d3a. Không thực hiện git add/commit/push/PR hoặc thay đổi index trong tác vụ này.
+- Trạng thái Pending Owner Approval tại 5.7/5.8 là snapshot lịch sử trước xuất bản, được dấu mốc 5.9 này cập nhật; giữ nguyên lịch sử.
 
 ## 6. Công việc tiếp theo cần xác nhận
 
