@@ -101,9 +101,9 @@ Chi tiết cooldown/validation và rollback: theo Gameplay Mechanics, phần ch�
 ### 7.2. Fusion Defender
 
 1. Người chơi kéo **Source** lên **Target**.
-2. Kiểm tra hai Defender tồn tại, hợp lệ, Tier/IDs khớp approved Recipe; không hardcode Tier ceiling. Initial content chỉ sáu Tier-1 + Tier-1 → Tier-2 Recipes; input order-independent.
+2. Kiểm tra hai Defender tồn tại, hợp lệ, Tier/IDs khớp Recipe được phê duyệt, enabled và đã unlock; không hardcode Tier ceiling. Initial content chỉ sáu Tier-1 + Tier-1 → Tier-2 Recipes; input order-independent. Danh sách Recipe mở sẵn vẫn Product Design TBD.
 3. **Không** kiểm tra hoặc trừ Energy/Power Crystal; **không** giới hạn khoảng cách hoặc Lane.
-4. Khi thành công, tiêu thụ Source và Target, tạo Tier-2 Output tại **Target Cell**, Source Cell thành trống.
+4. Khi thành công, tiêu thụ Source và Target, tạo Output Tier theo Recipe tại **Target Cell**, Source Cell thành trống. Sáu Recipe ban đầu cho Tier-2 outputs.
 5. Cập nhật Grid, Entities và UI; nếu không hợp lệ, không tiêu thụ hai Defender.
 
 **Confirmed:** Fusion Output bắt đầu ở 100% Max HP của chính nó, không kế thừa status effects tích cực hoặc tiêu cực từ input, có thể tấn công ngay khi có target hợp lệ. Không cộng chỉ số hai input.

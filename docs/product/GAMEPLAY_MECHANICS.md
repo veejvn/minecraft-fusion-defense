@@ -350,11 +350,11 @@ Quy trình kích hoạt:
 3. Hệ thống kiểm tra Defender còn tồn tại.
 4. Hệ thống kiểm tra Ability có khả dụng hay không.
 5. Hệ thống kiểm tra Power Crystal hiện tại.
-6. Nếu hợp lệ, trừ tài nguyên.
-7. Thực thi Ability Effect.
-8. Phát Animation và VFX tương ứng.
+6. Nếu hợp lệ, yêu cầu kích hoạt Ability theo transaction contract (Power Crystal spend/commit timing và rollback vẫn TBD, chưa được phê duyệt).
+7. Áp dụng Ability Effect khi transaction hợp lệ theo contract đã được duyệt.
+8. Phát Animation và VFX tương ứng; không tự suy diễn thời điểm trừ tài nguyên.
 
-**Điểm cần đối chiếu:** mục 5.3 giữ nguyên thứ tự kiểm tra, trừ tài nguyên và tạo hiệu ứng của Gameplay Mechanics. Ability Catalog mục 6/checklist mô tả chỉ tiêu Power Crystal sau Effect Commit thành công nhưng phần UX vẫn ghi thời điểm tiêu là chưa xác nhận. Chưa chọn chính sách Commit/Rollback hoặc thời điểm tiêu tài nguyên.
+**Coding Planning TBD:** Power Crystal spend timing, Effect Commit và rollback/refund chưa được phê duyệt. Sơ đồ kích hoạt ở trên chỉ là thứ tự conceptual, không quy định kỹ thuật trừ tài nguyên hay commit. Ability Catalog mục 6/checklist vẫn giữ mô tả giao dịch Draft; không dùng mô tả đó để tự chốt contract.
 
 ### 5.4. Ability Validation
 

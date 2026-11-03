@@ -30,7 +30,7 @@ Test files, fixtures, browser versions và commands cụ thể phải đối chi
 | Grid/Placement | 5×9 cells, đặt Defender hợp lệ, occupancy và Energy Summon |
 | Fusion | 6 recipes; đảo thứ tự input vẫn khớp; Tier-1 + Tier-1 → Tier-2 |
 | Fusion transaction | 0 cost, mọi Lane/distance, Target Cell/Source trống; Output 100% own Max HP/no inherited statuses/attack-ready; no fixed engine Tier ceiling, chỉ sáu approved initial Recipes |
-| Resources | Initial/passive Energy, Unlimited Energy, Crystal cap 5, Enemy direct/item rewards, 10s Game Time lifetimes, Pending Wave Reward và random Crystal/collect priority theo Confirmed definitions |
+| Resources | Initial Energy 0, +50 tại t=0 rồi +50 mỗi 3s Game Time, Unlimited cap; Crystal initial 0/cap 5; Item lifetime 10s Game Time; Enemy Energy direct/Crystal Item rewards; Pending Wave Reward và random attempt 30–60s/collect priority theo Confirmed definitions |
 | Pause | Đóng băng movement, combat, spawning, resource generation, cooldown và gameplay timers; Resume tiếp tục |
 | Combat/Enemies | 4 Enemy Types, di chuyển từ phải sang trái; hành vi chi tiết theo definitions đã duyệt |
 | Waves/End State | Một Grassland Level, 5 Waves; Defeat khi base breach; Victory sau tất cả Waves và hết Enemy |

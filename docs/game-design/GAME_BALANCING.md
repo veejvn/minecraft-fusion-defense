@@ -127,7 +127,7 @@ Cần đánh giá qua Playtest: sức mạnh Output so với hai Inputs; khả n
 
 ## 6. Enemy Balancing
 
-| Enemy | HP | Damage | Attack Speed | Attack Range | Move Speed | Energy Reward | Crystal Reward | Behavior |
+| Enemy | HP | Damage | Attack Speed | Attack Range | Move Speed | Energy Reward (direct) | Crystal Reward (Item) | Behavior |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Zombie | TBD | TBD | TBD | TBD | TBD | 50 | 0 | TBD |
 | Husk | TBD | TBD | TBD | TBD | TBD | 100 | 0 | TBD |

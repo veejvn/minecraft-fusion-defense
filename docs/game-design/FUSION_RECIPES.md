@@ -7,7 +7,7 @@
 
 **Source:** [Fusion Recipes — Notion](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41)  
 **Confirmed decisions:** 02/11/2026  
-**Status key:** Confirmed = approved core mechanics and six recipes; Proposed = draft combat/ability concepts and output-state proposal; TBD = pending details. Schema, event names and failure codes describe the draft implementation contract, not additional gameplay approvals.
+**Status key:** Confirmed = approved core mechanics, six recipes and Fusion output HP/status/readiness; Proposed = draft combat/ability concepts; TBD = pending animation/cooldown/UI and unapproved future recipes. Schema, event names and failure codes describe the draft implementation contract, not additional gameplay approvals.
 
 **Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
 
@@ -22,7 +22,7 @@ Fusion combines two valid living Defender instances by dragging Source onto Targ
 - **Fusion costs 0 Energy** and **0 Power Crystal**. No Energy availability check, deduction or refund. Summoning the two inputs still costs Energy normally.
 - **No distance limit or lane restriction.** Source and Target may occupy any two distinct valid cells in the 5 × 9 battlefield, including opposite corners and different lanes.
 - **Order-independent matching:** A + B yields the same output as B + A. The output's position depends on which instance is Target.
-- Source and Target must be distinct, alive, unlocked Defender instances matching an approved/enabled Recipe's input IDs and Tiers; game state must be `PLAYING`. Initial six recipes use Tier-1 inputs; this is not an engine-wide Tier ceiling.
+- Source and Target must be distinct, alive, unlocked Defender instances matching an approved, enabled and unlocked Recipe's input IDs and Tiers; game state must be `PLAYING`. Initial six recipes use Tier-1 inputs; this is not an engine-wide Tier ceiling. Exact initial Recipe availability remains Product Design TBD.
 - **Confirmed:** Fusion Output bắt đầu ở 100% Max HP của chính nó, không kế thừa status effects tích cực hoặc tiêu cực từ input, có thể tấn công ngay khi có target hợp lệ. Không cộng chỉ số hai input.
 - Fusion executes atomically; failed attempts do not delete units or change resources or grid occupancy.
 

@@ -2,18 +2,18 @@
 
 ## 1. Thông tin kiểm tra
 
-- **Thời điểm kiểm tra:** 2026-11-03T03:02:56+07:00 (Asia/Bangkok).
+- **Thời điểm kiểm tra:** 2026-11-03T19:57:55+07:00 (Asia/Bangkok).
 - **Repository:** `D:\Code\game\minecraft-fusion-defense`.
 - **Nguồn Notion:** [Minecraft Fusion Defense — Tài liệu dự án](https://app.notion.com/p/40c62d2ce36e81df88f3df6e4c398381).
 - **Báo cáo Notion:** [Tình trạng tài liệu](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d).
 - **Phạm vi:** `docs/**/*.md` và `README.md`, tính cả báo cáo này; bỏ qua `.agents/`, `.gitkeep` và metadata Git.
-- **Cơ sở cập nhật lần này:** đồng bộ/chuẩn hóa toàn bộ tài liệu theo các trang Notion chuyên môn hiện tại, [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773) và yêu cầu trực tiếp trong task. Baseline chỉ thay thế những quyết định được liệt kê; các giá trị khác không tự được phê duyệt.
+- **Cơ sở cập nhật lần này:** truy xuất mới 11 trang vừa cleanup, Decision Baseline và 10 trang chuyên môn còn lại; so sánh section/bảng/checklist/metadata, chỉ nhập khác biệt hợp lệ.
 - **Nguồn baseline:** Notion, không tạo file Local riêng vì chưa có Local Path được chỉ định. Baseline là tài liệu quyết định tham chiếu, không thay thế tài liệu chuyên môn và không được tính thành file thứ 23.
 - **Chiều đồng bộ:** Notion sources + baseline → Local đã chuẩn hóa; cập nhật báo cáo Local → trang báo cáo Notion hiện có. Không sửa các trang thiết kế nguồn hoặc baseline, không tạo trang trạng thái mới.
-- **Synced:** quyết định hiện hành và nội dung liên quan đã được đưa vào đúng section Local, kiểm tra theo bộ nguồn Notion + baseline. Với 19 tài liệu được chuẩn hóa, đây không phải cam kết text Local giống nguyên văn trang Notion chuyên môn còn đoạn cũ. Lần sync sau phải áp dụng baseline trước, không khôi phục các câu đã superseded.
+- **Synced:** nội dung hiện hành Local đã đối chiếu nguồn chuyên môn và baseline; giữ metadata/Local hợp lệ/Draft/TBD. Không phải text mirror các đoạn nguồn bị baseline thay thế; xem 5.7.
 - **Approval:** Synced không đồng nghĩa Approved cho toàn tài liệu. Giữ Draft/Proposed/Prototype/TBD cho những phần chưa được chủ dự án xác nhận.
-- **Bảo vệ Local:** mọi tài liệu đang staged (A), chưa có HEAD; đã đọc và xác nhận không có nội dung Local mới khác lần sync đã kiểm chứng trước. Dùng patch có ngữ cảnh, bảo toàn metadata/lịch sử và các phần không liên quan, không thay Git index hoặc xóa thay đổi ngoài phạm vi.
-- **Phạm vi thực tế:** 21 tài liệu dự án + báo cáo trong `docs/**/*.md` và `README.md`; bỏ qua `.agents/`, `.gitkeep`, metadata Git. 19 tài liệu nội dung và báo cáo được sửa; Coding Standards/Development Workflow đã phù hợp, giữ nguyên.
+- **Bảo vệ Local:** bắt đầu ở main, HEAD 224deb3, working tree sạch. Patch theo ngữ cảnh; Git index không đổi, không commit/push/PR.
+- **Phạm vi thực tế:** đối chiếu 11 tài liệu yêu cầu; audit 22 Markdown. Sửa 5 tài liệu + báo cáo, giữ 6/11 đã tương đương; không cần sửa tài liệu ngoài danh sách.
 - **Thời điểm và tính chất:** đây là ảnh chụp trạng thái của lần sync hiện tại, không phải cơ chế tự động; các trang Notion và baseline đã được truy xuất mới, kiểm tra không đổi trong quá trình xử lý.
 
 ## 2. Thống kê sau hợp nhất
@@ -26,7 +26,7 @@
 
 | Sync Status | Số file | Giải thích |
 | --- | --- | --- |
-| Synced | 22 | 19 tài liệu đã chuẩn hóa theo nguồn + baseline; 2 tài liệu giữ nguyên đã đối chiếu; 1 báo cáo Local/Notion |
+| Synced | 22 | 11 tài liệu so sánh mới (5 sửa, 6 giữ); 10 tài liệu khác audit; 1 báo cáo hai nguồn |
 | Partially Synced | 0 | Không có phần sync bị bỏ dở |
 | Blocked | 0 | Không có blocker truy cập hoặc quyết định Confirmed không xác định được |
 | Not Updated | 0 | Tất cả file đã được kiểm tra |
@@ -37,28 +37,28 @@ Không còn Markdown trống trong danh mục hiện tại. Synced là trạng t
 
 | File | Local Status | Notion Status | Sync Status | Size (byte) | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `docs/architecture/CODING_STANDARDS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81bfa8a9fbeaea7e38b6?pvs=204) | Synced | 4233 | Đã đọc lại và đối chiếu; giữ nguyên nội dung. |
-| `docs/architecture/DATA_ARCHITECTURE.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81619d14d2fa505e163b?pvs=204) | Synced | 8544 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/architecture/GAME_ENGINE_ARCHITECTURE.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81368230c8786623a06b?pvs=204) | Synced | 14444 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/architecture/TECHNICAL_ARCHITECTURE.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81b6893ac6d59454f8be?pvs=204) | Synced | 9978 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/assets/ASSET_GUIDELINES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e8138bbfeeb4825fd4018?pvs=204) | Synced | 3246 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/assets/AUDIO_GUIDELINES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81debb6cd2600b4e3ade?pvs=204) | Synced | 2980 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/assets/SPRITE_GUIDELINES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81f88288e05a9a15b0bb?pvs=204) | Synced | 3104 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/development/AI_AGENT_GUIDELINES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e8178b14edef36999a832?pvs=204) | Synced | 9748 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/development/DEPLOYMENT.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81ad88b2cfed46fbfd03?pvs=204) | Synced | 4575 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/development/DEVELOPMENT_WORKFLOW.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81ccb23dea79a85f7123?pvs=204) | Synced | 4045 | Đã đọc lại và đối chiếu; giữ nguyên nội dung. |
-| `docs/development/TESTING_STRATEGY.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81dea9f1ffc88723a885?pvs=204) | Synced | 6777 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/DOCUMENTATION_STATUS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d) | Synced | 24989 | Báo cáo hai nguồn được đọc lại và đối chiếu cùng lần sync. |
-| `docs/game-design/ABILITY_CATALOG.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81968c6cecad6e88290c?pvs=204) | Synced | 20504 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/game-design/ENTITY_CATALOG.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951?pvs=204) | Synced | 8568 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/game-design/FUSION_RECIPES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41?pvs=204) | Synced | 9985 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/game-design/GAME_BALANCING.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81f6b406c7a1b62087d0?pvs=204) | Synced | 22215 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/game-design/LEVEL_DESIGN.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81079f43ecfa6388d6ca?pvs=204) | Synced | 21794 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/product/GAMEPLAY_MECHANICS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81eeaf62f611c5342660?pvs=204) | Synced | 50168 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/product/GDD.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81e4af03d52a246e9a7a?pvs=204) | Synced | 32675 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/product/MVP_SCOPE.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb?pvs=204) | Synced | 10811 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `docs/product/ROADMAP.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e814498a8e4bbc24d246d?pvs=204) | Synced | 5714 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
-| `README.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81b1935fd31fef35ed41?pvs=204) | Synced | 5593 | Chuẩn hóa section/bảng/checklist theo Notion + baseline 03/11; không copy nguyên văn các đoạn superseded. |
+| `docs/architecture/CODING_STANDARDS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81bfa8a9fbeaea7e38b6?pvs=204) | Synced | 4233 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
+| `docs/architecture/DATA_ARCHITECTURE.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81619d14d2fa505e163b?pvs=204) | Synced | 8544 | Nguồn cleanup đã đối chiếu; nội dung hiện hành tương đương, giữ nguyên. |
+| `docs/architecture/GAME_ENGINE_ARCHITECTURE.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81368230c8786623a06b?pvs=204) | Synced | 14590 | Sửa tối thiểu theo cleanup; xem 5.7. |
+| `docs/architecture/TECHNICAL_ARCHITECTURE.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81b6893ac6d59454f8be?pvs=204) | Synced | 9978 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
+| `docs/assets/ASSET_GUIDELINES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e8138bbfeeb4825fd4018?pvs=204) | Synced | 3246 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
+| `docs/assets/AUDIO_GUIDELINES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81debb6cd2600b4e3ade?pvs=204) | Synced | 2980 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
+| `docs/assets/SPRITE_GUIDELINES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81f88288e05a9a15b0bb?pvs=204) | Synced | 3104 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
+| `docs/development/AI_AGENT_GUIDELINES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e8178b14edef36999a832?pvs=204) | Synced | 9748 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
+| `docs/development/DEPLOYMENT.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81ad88b2cfed46fbfd03?pvs=204) | Synced | 4575 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
+| `docs/development/DEVELOPMENT_WORKFLOW.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81ccb23dea79a85f7123?pvs=204) | Synced | 4045 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
+| `docs/development/TESTING_STRATEGY.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81dea9f1ffc88723a885?pvs=204) | Synced | 6850 | Sửa tối thiểu theo cleanup; xem 5.7. |
+| `docs/DOCUMENTATION_STATUS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d) | Synced | 31652 | Báo cáo hai nguồn, cùng timestamp, lịch sử được bảo toàn. |
+| `docs/game-design/ABILITY_CATALOG.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81968c6cecad6e88290c?pvs=204) | Synced | 20504 | Nguồn cleanup đã đối chiếu; nội dung hiện hành tương đương, giữ nguyên. |
+| `docs/game-design/ENTITY_CATALOG.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951?pvs=204) | Synced | 8568 | Nguồn cleanup đã đối chiếu; nội dung hiện hành tương đương, giữ nguyên. |
+| `docs/game-design/FUSION_RECIPES.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41?pvs=204) | Synced | 10114 | Sửa tối thiểu theo cleanup; xem 5.7. |
+| `docs/game-design/GAME_BALANCING.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81f6b406c7a1b62087d0?pvs=204) | Synced | 22231 | Sửa tối thiểu theo cleanup; xem 5.7. |
+| `docs/game-design/LEVEL_DESIGN.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81079f43ecfa6388d6ca?pvs=204) | Synced | 21794 | Nguồn cleanup đã đối chiếu; nội dung hiện hành tương đương, giữ nguyên. |
+| `docs/product/GAMEPLAY_MECHANICS.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81eeaf62f611c5342660?pvs=204) | Synced | 50386 | Sửa tối thiểu theo cleanup; xem 5.7. |
+| `docs/product/GDD.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81e4af03d52a246e9a7a?pvs=204) | Synced | 32675 | Nguồn cleanup đã đối chiếu; nội dung hiện hành tương đương, giữ nguyên. |
+| `docs/product/MVP_SCOPE.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb?pvs=204) | Synced | 10811 | Nguồn cleanup đã đối chiếu; nội dung hiện hành tương đương, giữ nguyên. |
+| `docs/product/ROADMAP.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e814498a8e4bbc24d246d?pvs=204) | Synced | 5714 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
+| `README.md` | Có nội dung | [Có trang](https://app.notion.com/p/40c62d2ce36e81b1935fd31fef35ed41?pvs=204) | Synced | 5593 | Truy xuất lại nguồn và audit Local; giữ nguyên. |
 
 ## 4. Tài liệu còn thiếu
 
@@ -112,7 +112,7 @@ Các câu hỏi từng được ghi nhận ở các lần sync trước được
 
 Không cần hỏi lại toàn bộ TBD. Chỉ hỏi chủ dự án khi coding planning gặp material blocker. Không có quyết định mới nào được AI tự phê duyệt.
 
-### 5.3. Kết quả xác minh và phê duyệt
+### 5.3. Kết quả xác minh và phê duyệt — lịch sử lần trước
 
 - Đã đọc toàn bộ 21 file Local, 21 trang chuyên môn Notion, baseline, hướng dẫn AI/Development Workflow và hai bản báo cáo. Notion được truy xuất trực tiếp, không dùng cache cũ làm bằng chứng.
 - Đã so sánh section/bảng/checklist, xác định phần Confirmed mới, giữ phần chưa chốt và lịch sử metadata. Không có nội dung Local mới ngoài lần sync trước bị ghi đè.
@@ -150,7 +150,7 @@ Không cần hỏi lại toàn bộ TBD. Chỉ hỏi chủ dự án khi coding p
 
 Không chỉnh sửa 9 trang nguồn; không tự đưa lệnh setup vào README, cấu hình lint/CI/deploy hoặc giá trị assets/gameplay khi nguồn còn TBD.
 
-### 5.6. Functional MVP baseline — đồng bộ lần hiện tại
+### 5.6. Functional MVP baseline — lịch sử lần đồng bộ 03:02:56+07:00
 
 **Nguồn quyết định:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773), các trang chuyên môn mới nhất và checklist chủ dự án trong task.
 
@@ -167,6 +167,68 @@ Không chỉnh sửa 9 trang nguồn; không tự đưa lệnh setup vào README
 **Đã sửa 19 tài liệu:** `docs/development/TESTING_STRATEGY.md`, `docs/development/DEPLOYMENT.md`, `docs/assets/ASSET_GUIDELINES.md`, `docs/assets/SPRITE_GUIDELINES.md`, `docs/assets/AUDIO_GUIDELINES.md`, `docs/product/ROADMAP.md`, `README.md`, `docs/product/MVP_SCOPE.md`, `docs/architecture/TECHNICAL_ARCHITECTURE.md`, `docs/architecture/GAME_ENGINE_ARCHITECTURE.md`, `docs/architecture/DATA_ARCHITECTURE.md`, `docs/development/AI_AGENT_GUIDELINES.md`, `docs/product/GDD.md`, `docs/product/GAMEPLAY_MECHANICS.md`, `docs/game-design/ENTITY_CATALOG.md`, `docs/game-design/FUSION_RECIPES.md`, `docs/game-design/ABILITY_CATALOG.md`, `docs/game-design/LEVEL_DESIGN.md`, `docs/game-design/GAME_BALANCING.md`. Coding Standards và Development Workflow đã phù hợp nên giữ nguyên. Báo cáo là file thay đổi thứ 20.
 
 **Raw-source caveat:** một số trang Notion chuyên môn còn giữ các đoạn Draft/superseded. Local đã xử lý theo baseline có thẩm quyền, không mirror những mâu thuẫn đó. Không sửa trang thiết kế nguồn vì nhiệm vụ là Notion → Local; trang trạng thái này lưu cách chuẩn hóa để agent sau không khôi phục nội dung cũ.
+
+### 5.7. Đồng bộ sau Notion cleanup — 2026-11-03T19:57:55+07:00
+
+**Overall Status:** Completed. Đọc trực tiếp mới 11/11 trang, baseline, trang báo cáo và 10 trang chuyên môn khác; đọc Local và so sánh theo section/bảng/checklist/metadata. Nguồn chuyên môn cung cấp nội dung; baseline dùng phân biệt Confirmed và đoạn cũ. Không dùng cache lần trước.
+
+| File | Khác biệt / xử lý | Sync Status |
+| --- | --- | --- |
+| `docs/product/GDD.md` | Giữ — rewards/resources/output/Event Queue/scope đã hiện hành. | Synced |
+| `docs/product/GAMEPLAY_MECHANICS.md` | Sửa 5.3 — nhập conceptual Ability flow mới, spend/commit/rollback TBD. | Synced |
+| `docs/product/MVP_SCOPE.md` | Giữ — scope, Save/progression/resources đã đúng section. | Synced |
+| `docs/game-design/GAME_BALANCING.md` | Sửa bảng 6 — Energy Reward (direct), Crystal Reward (Item); không đổi trị số. | Synced |
+| `docs/game-design/LEVEL_DESIGN.md` | Giữ — resources/Event Queue đã đúng; giữ initialEnergy=0 thay vì null cũ. | Synced |
+| `docs/game-design/ABILITY_CATALOG.md` | Giữ — caps/lifetimes/Event Queue Confirmed; effects/transaction Draft/TBD. | Synced |
+| `docs/game-design/FUSION_RECIPES.md` | Sửa Status key: output HP/status/readiness Confirmed; mục 2 nêu Recipe approved/enabled/unlocked như mục 5. | Synced |
+| `docs/game-design/ENTITY_CATALOG.md` | Giữ — roster/rewards/output đã đúng; không thay Prototype stats. | Synced |
+| `docs/architecture/GAME_ENGINE_ARCHITECTURE.md` | Sửa 7.2 — approved/enabled/unlocked Recipe; Output Tier theo Recipe, initial sáu Recipe vẫn Tier-2. | Synced |
+| `docs/architecture/DATA_ARCHITECTURE.md` | Giữ — engine Tier/resource/output/event semantics đúng; schema/contracts Proposed/TBD. | Synced |
+| `docs/development/TESTING_STRATEGY.md` | Sửa bảng 3 — expected resource values cụ thể; không chốt coverage/harness. | Synced |
+
+**Thực tế sửa:** năm file ghi Sửa trong bảng và `docs/DOCUMENTATION_STATUS.md` (6 file). Không sửa trang Notion thiết kế hoặc baseline; chỉ cập nhật trang báo cáo có sẵn. Không tạo tài liệu mới, không sửa code/config/package/Git index, không commit/push/PR. Không có chỉnh sửa Local chưa commit lúc bắt đầu.
+
+**Resolved:** bỏ metadata output-state proposal lỗi thời; Game Engine Output Tier theo Recipe thay vì cố định Tier-2; luồng Gameplay Ability không áp đặt thời điểm trừ tài nguyên chưa duyệt. Giữ Fusion miễn phí/mọi Lane-distance/Target Cell, full own Max HP/no statuses/attack-ready, 5 Base Defenders/6 Recipes, rewards 50/0, 100/0, 150/1, 200/1.
+
+**Đoạn Notion còn cũ, không nhập lại (baseline đã phân giải):**
+
+- GDD 6.2 bước 4 còn Tier-1 gate; 13.3 audio bắt buộc, 14.1 save “nếu cần”; block Confirmed cuối trang/baseline thay thế. Giữ Local no Tier ceiling, no required audio, Save & Resume bắt buộc.
+- Gameplay 8.4/8.5 còn Tier-1-only validation; clarification cuối trang đã supersede. Giữ validation theo approved Recipe.
+- Ability Catalog 13 còn Crystal cap/tần suất Item TBD; section 2/baseline chốt cap 5/random 30–60s. Không mở lại quyết định này.
+- Fusion Recipes 5/7 và Data Architecture 5 còn Tier-1 input; chỉ áp dụng initial content, không là engine ceiling.
+- Game Engine 5 còn same-tick priority TBD; mục 10/baseline chốt insertion sequence, chỉ generation details TBD.
+- Testing Strategy 2 còn Manual/Visual Proposed; acceptance cuối trang/baseline yêu cầu manual playthrough. Giữ Local manual required.
+- Checklist nguồn được tick do cập nhật văn bản không chứng minh gameplay đã chạy; giữ checklist gameplay Local chưa tick.
+
+Không cần chủ dự án quyết định lại các nội dung đã Confirmed. Không có Conflict Local mới hoặc blocker đồng bộ. Ability Catalog mục 6/checklist/UX giữ mô tả Draft giao dịch và cảnh báo; không tự chốt spend/commit/refund. Product TBD: starter Defenders/Recipes, Achievement criteria/rewards/unlock mapping, Fusion có bắt buộc để thắng. Coding TBD: combat stats/costs, Wave composition/timing/rewards, Energy Item amount/rate, Ability effects/area/cost/cooldown/transaction, exact event generation/tick, Save storage/schema/triggers, UI/assets/test cases/coverage/harness. Chi tiết giữ ở 5.2.
+
+**Validation:** 22 Markdown có nội dung; headings/tables/fences đạt, 3 JSON blocks parse, 125 liên kết được kiểm tra trước cập nhật báo cáo (0 relative Markdown link), 5 Base và 6 Recipe input pair không trùng; rewards/resource values khớp baseline. Audit toàn docs/ và README không thấy active rule trái các Confirmed decisions trong phạm vi. `git diff --check` exit 0; cảnh báo LF→CRLF không phải lỗi. Không chạy gameplay tests/build vì chỉ sửa tài liệu. Kích thước từng file đo lại filesystem; index SHA-256 không đổi.
+
+**Đối chiếu:** đọc lại Local và Notion sau ghi, cùng timestamp mục 1 và bảng 22 Synced / 0 Partially Synced / 0 Blocked / 0 Not Updated. Synced là tương đương nội dung hiện hành có chuẩn hóa, không phải nguyên văn hay Approved toàn tài liệu. Không tuyên bố GitHub được cập nhật.
+
+**Lịch sử Notion cleanup:** snapshot dưới đây là trước lần sync này; Partially Synced/bước tiếp theo đã được giải quyết, không phải trạng thái hiện hành.
+
+#### Snapshot lịch sử — Notion source cleanup (03/11/2026)
+
+**Loại thao tác:** Dọn dẹp trực tiếp 11 trang tài liệu chuyên môn trên Notion theo các quyết định đã Confirmed ngày 03/11/2026. Không tạo trang thay thế; giữ nguyên các Product Design và Coding Planning TBD chưa được phê duyệt.
+
+**Trạng thái đồng bộ mới nhất:** **Partially Synced — Local/GitHub cần đồng bộ lại.** Báo cáo 22/22 Synced trong các mục bên dưới là **snapshot lịch sử của lần đồng bộ trước**, không phải xác nhận bản Markdown Local/GitHub đã nhận các chỉnh sửa Notion mới nhất. Không có thao tác nào trên filesystem Local hoặc GitHub trong lần dọn dẹp này.
+
+| Trạng thái tính theo snapshot mới nhất | Số file | Ghi chú |
+| --- | --- | --- |
+| Synced từ lần kiểm tra trước, không sửa nguồn Notion lần này | 10 | Chưa cần resync do đợt cleanup |
+| Partially Synced / Needs Resync | 12 | 11 file chuyên môn đã thay đổi Notion và chính `docs/DOCUMENTATION_STATUS.md` do báo cáo Notion thay đổi |
+| Blocked | 0 | Không có blocker cho việc làm sạch Notion |
+| Tổng | 22 | Dựa trên danh mục Markdown của lần sync trước |
+
+**11 trang nguồn Notion đã chỉnh sửa:** GDD, Gameplay Mechanics, Game Balancing, Level Design, Ability Catalog, Fusion Recipes, Entity Catalog, MVP Scope, Game Engine Architecture, Data Architecture, Testing Strategy.
+
+**Những mâu thuẫn đã sửa tại section chính:** Enemy death rewards; Energy Unlimited / Crystal cap 5 / Item lifetime 10s; passive Energy +50 tại t=0 và mỗi 3s; Pending Wave Reward; Fusion output 100% own Max HP/no inherited statuses/attack-ready; Fusion engine không hard Tier ceiling; Victory/Defeat cùng tick theo Event Queue insertion sequence thay vì Defeat priority mặc định; các bảng open decisions không còn coi những mục này là TBD.
+
+**Vẫn TBD:** initial unlocked Defenders/Recipes, Achievement criteria/rewards, Fusion có bắt buộc để thắng hay không; combat stats, Wave composition/timing/rewards, Ability effects/costs/spend/commit/rollback, Energy Item amount/spawn rate, event-generation details, Save & Resume implementation specifics.
+
+**Bước tiếp theo:** AI Coding Agent đồng bộ lại 11 trang chuyên môn vào file Markdown tương ứng, kiểm tra consistency và git diff; cập nhật `docs/DOCUMENTATION_STATUS.md`; đối chiếu và cập nhật lại trạng thái Synced tại trang Notion này. **Chỉ khi hoàn tất ở Local mới được đánh dấu 22/22 Synced trở lại.**
+
 
 ## 6. Công việc tiếp theo cần xác nhận
 
