@@ -1,13 +1,13 @@
 **Đường dẫn trong repository:** `docs/game-design/ABILITY_CATALOG.md`  
 **Dự án:** Minecraft Fusion Defense  
 **Trạng thái:** Draft v1.0 — Bản tiếng Việt  
-**Phạm vi:** MVP Desktop Web; chiến trường 5 × 9; 5 Base Defenders; 6 Fusion Defenders; 4 Enemy; 5 Waves tại Grassland.
+**Phạm vi:** MVP Desktop Web; chiến trường 5 × 9; 5 Base Defenders; 7 Fusion Defenders; 4 Enemy; 5 Waves tại Grassland.
 
 **Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
 
 ## 1. Mục đích
 
-Tài liệu định nghĩa danh mục 11 **Special Abilities**, quy tắc kích hoạt, hiệu ứng, cấu trúc dữ liệu, tình huống đặc biệt và tiêu chí nghiệm thu cho MVP. Cần đọc cùng `GDD.md`, `GAMEPLAY_MECHANICS.md`, `ENTITY_CATALOG.md` và `FUSION_RECIPES.md`.
+Tài liệu định nghĩa danh mục 12 **required Special Abilities** (11 existing draft IDs + Steel Guardian Ability TBD), quy tắc kích hoạt, hiệu ứng, cấu trúc dữ liệu, tình huống đặc biệt và tiêu chí nghiệm thu cho MVP. Cần đọc cùng `GDD.md`, `GAMEPLAY_MECHANICS.md`, `ENTITY_CATALOG.md` và `FUSION_RECIPES.md`.
 
 **Nhãn quyết định:** **Confirmed** = đã xác nhận; **Draft** = đề xuất thiết kế; **TBD** = chưa quyết định. Không được xem cơ chế hoặc thông số Draft là đã chốt.
 
@@ -20,13 +20,14 @@ Tài liệu định nghĩa danh mục 11 **Special Abilities**, quy tắc kích 
 5. Ability có thể có Cooldown cấu hình riêng; việc từng Ability có Cooldown hay không và thời lượng cụ thể vẫn là TBD. Cooldown và Power Crystal Cost là hai cơ chế độc lập.
 6. Ability có thể dùng Targeting Strategy khác với đòn đánh thường. Hiệu ứng xuyên Lane hoặc toàn chiến trường phải được khai báo rõ, không mặc định áp dụng cho mọi đòn đánh.
 7. Pause dừng gameplay timers/Cooldown. Defender attack và Enemy movement tính đồng thời; Event Queue resolve theo insertion sequence với sequence number tăng dần. Victory/Defeat cùng tick theo terminal event resolve trước, không blanket Defeat priority.
-8. Fusion tốn 0 Energy/Crystal, mọi Lane/khoảng cách, Output tại Target Cell; 100% own Max HP, không inherited statuses, attack-ready với valid target. Engine không có Tier ceiling; initial sáu approved Recipes. Fusion không tự kích hoạt Special Ability.
+8. Fusion tốn 0 Energy/Crystal, mọi Lane/khoảng cách, Output tại Target Cell; 100% own Max HP, không inherited statuses, attack-ready với valid target. Engine không có Tier ceiling; initial bảy approved Recipes. Fusion không tự kích hoạt Special Ability.
 
 ## 3. Danh mục Special Abilities trong MVP
 
 | Ability ID | Tên Ability | Defender sở hữu | Vai trò | Trạng thái |
 | --- | --- | --- | --- | --- |
 | `blizzard` | Blizzard | `snow_golem` | Khống chế diện rộng | Draft |
+| `TBD` | TBD | Steel Guardian (Entity ID TBD) | TBD | TBD — chưa phê duyệt Ability ID/name/effect |
 | `earthquake` | Earthquake | `iron_golem` | Sát thương tuyến trước / gián đoạn | Draft |
 | `arrow_storm` | Arrow Storm | `skeleton` | Sát thương tầm xa diện rộng | Draft |
 | `pack_frenzy` | Pack Frenzy | `wolf` | Bùng nổ cận chiến / Buff | Draft |
@@ -133,6 +134,10 @@ Tên kỹ năng và ý tưởng hiệu ứng trong bảng vẫn ở trạng thá
 - **Thông số:** `radiusCells`, `attackSpeedMultiplier`, `damageMultiplier`, `durationMs` — TBD.
 - **Lưu ý:** Quy tắc cộng dồn Buff và việc áp dụng lên Fusion Defender vẫn TBD.
 
+### 5.7. Steel Guardian — Ability TBD
+
+**Confirmed:** Steel Guardian cần Ability riêng trong tổng 12 definitions. **TBD:** Entity ID, Ability ID/name/effects, combat role, Power Crystal cost/cooldown; không tự tạo tên hoặc cơ chế. 11 Ability IDs cũ giữ Draft.
+
 ## 6. Quy trình kích hoạt Ability
 
 1. Người chơi chọn một Defender hoặc Fusion Defender còn sống.
@@ -237,7 +242,7 @@ Ví dụ JSON **chỉ minh họa cấu trúc**, không phải thông số đã c
 
 ## 12. Acceptance Criteria của MVP
 
-- [ ] Có đúng 11 Ability ID tham chiếu tới 11 Defender trong MVP.
+- [ ] Có đúng 12 Ability definitions tham chiếu tới 12 Defender (Steel Guardian Ability ID TBD) trong MVP.
 - [ ] Mỗi Defender có đúng một Special Ability được định nghĩa.
 - [ ] Power Crystal độc lập với Energy.
 - [ ] Kích hoạt Ability yêu cầu đủ Power Crystal.

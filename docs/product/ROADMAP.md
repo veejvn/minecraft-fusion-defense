@@ -12,7 +12,7 @@ Lập các nhóm công việc để đi từ tài liệu thiết kế đến MVP
 
 - 2D Pixel Art, side-view, single-player Desktop Web.
 - Một Grassland Level, Battlefield 5 Rows × 9 Columns, 5 Waves.
-- 5 Base Defenders, 4 Enemies, 6 Fusion Recipes, 6 Fusion Defenders, 11 Special Abilities.
+- 5 Base Defenders, 4 Enemies, 7 Fusion Recipes, 7 Fusion Defenders, 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD).
 - Energy dùng Summon; Power Crystal dùng Special Abilities.
 - Fusion miễn phí, không giới hạn Lane/khoảng cách; Tier-1 + Tier-1 → Tier-2; Output tại Target Cell.
 - Pause, Victory và Defeat theo Gameplay Mechanics.
@@ -23,7 +23,7 @@ Lập các nhóm công việc để đi từ tài liệu thiết kế đến MVP
 
 **Confirmed:** Save & Resume trận đang chơi sau browser reload/close; persistent unlock progression giữa các trận là dữ liệu riêng. Cơ chế lưu, schema snapshot, thời điểm ghi và implementation cụ thể vẫn TBD.
 
-**Confirmed:** cả Base Defenders và Fusion Recipes có unlock qua Achievements/Challenges; bộ Defender ban đầu nhỏ, phần lớn Recipe bị khóa. Chỉ ghi nhận Achievement khi Victory; Defeat không tạo unlock mới và giữ unlock đã có. Grassland được replay nhưng sau lần hoàn thành đầu, replay không tạo thêm permanent unlock progress. Starter roster, Recipe mở sẵn, điều kiện/phần thưởng Achievement và Fusion có bắt buộc để thắng hay không vẫn TBD.
+**Confirmed — Product Design 03/11/2026:** Iron Golem và Skeleton mở từ đầu; Snow Golem mở sau First Grassland Victory; Wolf sau 50 Enemy kills tích lũy qua các trận Victory; Blaze sau 5 Grassland Victories tích lũy. Replay Victory được cộng tiến độ, Defeat không cộng; unlock vĩnh viễn, không cấp reward trùng. Recipe mở từ đầu: Skeleton Sniper và Steel Guardian. Ice Golem mở khi Snow Golem unlock; Frost Guardian khi Iron Golem và Snow Golem unlock; Alpha Wolf khi Wolf unlock; Inferno Archer khi Blaze và Skeleton unlock; Flame Fang khi Blaze và Wolf unlock. Fusion optional cho Grassland Victory: có thể thắng bằng Base Defenders, không thêm Fusion count vào điều kiện thắng. UI/tracking implementation vẫn TBD.
 
 **Confirmed:** basic Minecraft-style Pixel Art cho Base Defender, Enemy, Fusion Defender và battlefield Grassland; simple animations được chấp nhận. Placeholder-only không đáp ứng tiêu chí hình ảnh cuối Functional MVP. Sprite dimensions/frame counts và pipeline cụ thể vẫn TBD.
 
@@ -39,10 +39,10 @@ Lập các nhóm công việc để đi từ tài liệu thiết kế đến MVP
 | Data Foundation | Definitions, IDs và validation | Schemas, balance values TBD |
 | Game Runtime | Grid, Entities, simulation, lifecycle | Tick/order/bridge TBD |
 | Core Gameplay | Summon, Resources, Combat, Fusion | Gameplay rules Confirmed; thông số còn TBD |
-| Level & Abilities | Grassland, 5 Waves, 11 Abilities | Wave/Ability config cần duyệt |
+| Level & Abilities | Grassland, 5 Waves, 12 required Abilities | Wave/Ability config cần duyệt |
 | UI & Assets | HUD, controls, sprites, audio | Asset specifications TBD |
 | QA & Local acceptance | Manual playthrough + core automated tests, measured performance, Local-only internal testing | Test details TBD; không có online deployment requirement |
-| Persistence & progression | Save/Resume, persistent Victory-based unlocks, Achievements/Collection | Storage/schema/initial unlocks/challenge mapping TBD |
+| Persistence & progression | Save/Resume, persistent Victory-based unlocks, Achievements/Collection | Storage/schema/tracking TBD; unlock mapping Confirmed |
 
 Các workstreams có thể thực hiện song song hoặc chia nhỏ sau khi chủ dự án xác nhận kế hoạch; không tự gán ngày, mức ưu tiên hoặc người phụ trách.
 

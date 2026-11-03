@@ -39,19 +39,21 @@ Giúp AI Agent triển khai MVP nhất quán với tài liệu đã phê duyệt
 ## 5. Gameplay Rules không được làm sai
 
 - Battlefield 5 Rows × 9 Columns; Enemy di chuyển từ phải sang trái theo Lane.
-- MVP gồm 5 Base Defenders, 4 Enemies, 6 Fusion Recipes, 6 Fusion Defenders, 11 Special Abilities, một Grassland Level và 5 Waves.
-- Fusion: kéo Source lên Target, order-independent, 0 cost, mọi Lane/distance, Target Cell/Source trống. Output 100% own Max HP, không inherited statuses, attack-ready; engine không fixed Tier ceiling, chỉ sáu approved initial Recipes.
+- MVP gồm 5 Base Defenders, 4 Enemies, 7 Fusion Recipes, 7 Fusion Defenders, 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD), một Grassland Level và 5 Waves.
+- Fusion: kéo Source lên Target, order-independent, 0 cost, mọi Lane/distance, Target Cell/Source trống. Output 100% own Max HP, không inherited statuses, attack-ready; engine không fixed Tier ceiling, chỉ bảy approved initial Recipes.
 - Energy dùng Summon; Power Crystal dùng Special Abilities.
 - Pause đóng băng simulation và gameplay timers.
 - Enemy breach tạo Defeat; Victory khi hoàn tất 5 Waves và hết Enemy. Terminal result cùng tick theo Event Queue insertion sequence; không blanket Defeat priority.
 - **Confirmed — 03/11/2026:** Functional MVP cho internal testing trên Desktop Web (PC/laptop), chạy Local only; single-player Campaign Grassland duy nhất, 5 Waves, Grid 5 × 9, beginner-friendly và English-only UI/instructions/messages. Không yêu cầu Mobile/Tablet, Endless, Survival, Sandbox/Test mode hoặc online Preview/Staging/Production.
 - **Confirmed:** Main Menu, Level Selection, Settings, Achievements và Defender Collection; basic in-game instructions, không cần interactive tutorial.
 - **Confirmed:** Save & Resume trận đang chơi sau browser reload/close; persistent unlock progression giữa các trận là dữ liệu riêng. Cơ chế lưu, schema snapshot, thời điểm ghi và implementation cụ thể vẫn TBD.
-- **Confirmed:** cả Base Defenders và Fusion Recipes có unlock qua Achievements/Challenges; bộ Defender ban đầu nhỏ, phần lớn Recipe bị khóa. Chỉ ghi nhận Achievement khi Victory; Defeat không tạo unlock mới và giữ unlock đã có. Grassland được replay nhưng sau lần hoàn thành đầu, replay không tạo thêm permanent unlock progress. Starter roster, Recipe mở sẵn, điều kiện/phần thưởng Achievement và Fusion có bắt buộc để thắng hay không vẫn TBD.
+- **Confirmed — Product Design 03/11/2026:** Iron Golem và Skeleton mở từ đầu; Snow Golem mở sau First Grassland Victory; Wolf sau 50 Enemy kills tích lũy qua các trận Victory; Blaze sau 5 Grassland Victories tích lũy. Replay Victory được cộng tiến độ, Defeat không cộng; unlock vĩnh viễn, không cấp reward trùng. Recipe mở từ đầu: Skeleton Sniper và Steel Guardian. Ice Golem mở khi Snow Golem unlock; Frost Guardian khi Iron Golem và Snow Golem unlock; Alpha Wolf khi Wolf unlock; Inferno Archer khi Blaze và Skeleton unlock; Flame Fang khi Blaze và Wolf unlock. Fusion optional cho Grassland Victory: có thể thắng bằng Base Defenders, không thêm Fusion count vào điều kiện thắng. UI/tracking implementation vẫn TBD.
 - **Confirmed:** basic Minecraft-style Pixel Art cho Base Defender, Enemy, Fusion Defender và battlefield Grassland; simple animations được chấp nhận. Placeholder-only không đáp ứng tiêu chí hình ảnh cuối Functional MVP. Sprite dimensions/frame counts và pipeline cụ thể vẫn TBD.
 - **Confirmed:** Functional MVP không bắt buộc SFX hoặc BGM; audio không phải acceptance blocker.
 - **Confirmed:** manual playthrough toàn bộ Grassland 5 Waves và automated tests cho core gameplay (Fusion, resources, combat, Victory/Defeat, Save & Resume). Coverage, cases/harness/fixtures, browser/OS matrix và CI gates vẫn Coding Planning TBD.
 - Không tự thêm Base HP/Lives, Fusion Energy Cost hoặc Recipe ngoài danh mục.
+
+- Steel Guardian: Iron Golem + Iron Golem, Tier 2, Recipe mở đầu — Confirmed. Entity/Recipe technical IDs, combat identity/stats và Ability ID/name/effects/cost/cooldown vẫn TBD; không tự đặt identifier hay nâng draft Ability concepts thành Confirmed.
 
 ## 6. Quy tắc kiến trúc
 

@@ -13,7 +13,7 @@
 ## 2. Sprite Scope
 
 - 5 Base Defenders: Snow Golem, Iron Golem, Skeleton, Wolf, Blaze.
-- 6 Fusion Defenders: Skeleton Sniper, Ice Golem, Frost Guardian, Flame Fang, Inferno Archer, Alpha Wolf.
+- 7 Fusion Defenders: Steel Guardian, Skeleton Sniper, Ice Golem, Frost Guardian, Flame Fang, Inferno Archer, Alpha Wolf.
 - 4 Enemies: Zombie, Husk, Spider, Pillager.
 - Grassland battlefield, 5×9 Grid và visual effects cần thiết cho combat/Fusion/Abilities.
 

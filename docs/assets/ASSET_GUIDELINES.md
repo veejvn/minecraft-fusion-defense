@@ -16,10 +16,10 @@ Pixel dimensions, atlas layout, source licensing/attribution policy và pipeline
 
 | Nhóm | Phạm vi MVP |
 | --- | --- |
-| Defender sprites | 5 Base + 6 Fusion Defenders |
+| Defender sprites | 5 Base + 7 Fusion Defenders |
 | Enemy sprites | Zombie, Husk, Spider, Pillager |
 | Battlefield | Grassland, 5×9 Grid, background/tiles |
-| Effects | Combat, Fusion, 11 Special Abilities |
+| Effects | Combat, Fusion, 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD) |
 | UI assets | HUD, Energy, Power Crystal, controls |
 | Audio | Optional/deferred; không bắt buộc SFX/BGM cho MVP |
 

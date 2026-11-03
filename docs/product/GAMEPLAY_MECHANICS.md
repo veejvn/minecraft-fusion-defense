@@ -198,7 +198,7 @@ Nếu không hợp lệ:
 
 Một yêu cầu triệu hồi chỉ thành công khi:
 
-`IsDefenderAvailable` bao gồm trạng thái unlock/availability. Initial unlocked Base Defenders còn Product Design TBD; không mặc định mở toàn bộ năm loại.
+`IsDefenderAvailable` bao gồm trạng thái unlock/availability. Initial Base Defenders: Iron Golem/Skeleton; initial Recipes: Skeleton Sniper/Steel Guardian — Confirmed.
 
 ```txt
 HasEnoughEnergy
@@ -728,7 +728,7 @@ Không nhất thiết phải tìm lại mục tiêu ở mọi frame. Hệ thốn
 
 Fusion kết hợp hai Defender còn sống theo Recipe được phê duyệt. MVP ban đầu có đúng 5 Base Defenders và 6 công thức Tier-1 + Tier-1 → Tier-2 trong `ENTITY_CATALOG.md` / `FUSION_RECIPES.md`.
 
-**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 6 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
+**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 7 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
 
 Fusion miễn phí: **0 Energy, 0 Power Crystal**. Không kiểm tra, trừ hoặc hoàn tài nguyên. Triệu hồi hai Defender đầu vào vẫn tốn Energy bình thường.
 
@@ -790,8 +790,8 @@ Hệ thống kiểm tra:
 
 - Game State là Playing.
 - Source Defender và Target Defender tồn tại, còn sống và là hai instance riêng biệt.
-- Cả hai có Tier/IDs tương thích Recipe được phê duyệt, không bị Lock và đang ở trạng thái cho phép Fusion. Nội dung hiện tại chỉ có sáu Recipe Tier-1 + Tier-1 → Tier-2; engine không có Tier ceiling.
-- Có Recipe được phê duyệt, đang bật và đã unlock; nội dung initial là sáu Recipe MVP. Danh sách Recipe unlock sẵn vẫn Product Design TBD.
+- Cả hai có Tier/IDs tương thích Recipe được phê duyệt, không bị Lock và đang ở trạng thái cho phép Fusion. Nội dung hiện tại chỉ có bảy Recipe Tier-1 + Tier-1 → Tier-2; engine không có Tier ceiling.
+- Có Recipe được phê duyệt, đang bật và đã unlock; nội dung initial là bảy Recipe MVP. Initial Base Defenders: Iron Golem/Skeleton; initial Recipes: Skeleton Sniper/Steel Guardian — Confirmed.
 - Source và Target vẫn chiếm đúng ô Grid hợp lệ.
 
 Không kiểm tra Energy, Power Crystal, khoảng cách, kề nhau hoặc cùng Lane.
@@ -830,7 +830,7 @@ Không kiểm tra, trừ hoặc hoàn tài nguyên. Không được tạo output
 Fusion thất bại khi:
 
 - Không có Recipe phù hợp đã được phê duyệt, đang bật và đã unlock.
-- Source hoặc Target không hợp lệ, đã chết, bị Lock hoặc Input IDs/Tiers không khớp Recipe được phê duyệt. Tier-1 là yêu cầu của sáu Recipe ban đầu, không phải hard engine ceiling; higher-tier inputs chỉ hợp lệ khi có Recipe tương ứng được phê duyệt trong tương lai.
+- Source hoặc Target không hợp lệ, đã chết, bị Lock hoặc Input IDs/Tiers không khớp Recipe được phê duyệt. Tier-1 là yêu cầu của bảy Recipe ban đầu, không phải hard engine ceiling; higher-tier inputs chỉ hợp lệ khi có Recipe tương ứng được phê duyệt trong tương lai.
 - Source và Target là cùng một instance.
 - Grid Occupancy không còn hợp lệ.
 - Trận đấu không ở trạng thái Playing.
@@ -858,7 +858,7 @@ Không cộng trực tiếp toàn bộ chỉ số của hai Defender đầu vào
 
 ### 8.9. Fusion Tier
 
-**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 6 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
+**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 7 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
 
 Tier và Recipe matching dùng data definitions; không hardcode điều kiện `inputTier === 1` ở engine cho mọi Recipe. Tier cao hơn không có Recipe được duyệt hiện tại phải bị từ chối vì thiếu approved Recipe, không vì hard Tier ceiling.
 
@@ -1209,7 +1209,7 @@ Gameplay Mechanics được xem là triển khai đúng khi đáp ứng các đi
 - [ ] Fusion Defender xuất hiện tại ô Target Defender.
 - [ ] Fusion không kiểm tra hoặc tiêu hao Energy/Power Crystal, kể cả khi Energy bằng 0.
 - [ ] Fusion hoạt động xuyên Lane và giữa hai góc đối diện.
-- [ ] Đúng sáu approved Recipe dùng năm Base Defenders; engine không có Tier ceiling, không tự thêm higher-tier content.
+- [ ] Đúng bảy approved Recipe dùng năm Base Defenders; engine không có Tier ceiling, không tự thêm higher-tier content.
 - [ ] Output 100% own Max HP, không inherited status effects và attack-ready khi có valid target.
 - [ ] Fusion thất bại không làm mất Defender, Energy hoặc Power Crystal.
 - [ ] Không thể sử dụng cùng một Defender trong nhiều Fusion đồng thời.
@@ -1236,7 +1236,7 @@ Gameplay Mechanics được xem là triển khai đúng khi đáp ứng các đi
 
 | Product Design / Coding Planning | TBD chưa được phê duyệt |
 | --- | --- |
-| Product Design | Initial Base Defenders/Recipes, Achievement criteria/rewards/unlock mapping, Fusion có bắt buộc để thắng |
+| Product Design | Initial unlocks/mapping và Fusion optional đã Confirmed; Achievement UI/tracking và Steel Guardian technical IDs/combat/Ability còn TBD |
 | Coding Planning | HP/Damage/Attack Speed/Range/Move Speed/Summon Cost, Enemy behavior/targeting/collision |
 | Coding Planning | Wave composition/count/spawn timing/Wave Reward amounts; Energy Item amount/spawn rate/position distribution |
 | Coding Planning | Ability cost/cooldown/effects/area/commit/rollback; Pack Frenzy/Blizzard scope |
@@ -1271,7 +1271,7 @@ Quyết định hiện hành ngày 03/11/2026 đã hợp nhất vào Energy, Pow
 
 **Confirmed:** Main Menu, Level Selection, Settings, Achievements và Defender Collection; basic in-game instructions, không cần interactive tutorial.
 
-**Confirmed:** cả Base Defenders và Fusion Recipes có unlock qua Achievements/Challenges; bộ Defender ban đầu nhỏ, phần lớn Recipe bị khóa. Chỉ ghi nhận Achievement khi Victory; Defeat không tạo unlock mới và giữ unlock đã có. Grassland được replay nhưng sau lần hoàn thành đầu, replay không tạo thêm permanent unlock progress. Starter roster, Recipe mở sẵn, điều kiện/phần thưởng Achievement và Fusion có bắt buộc để thắng hay không vẫn TBD.
+**Confirmed — Product Design 03/11/2026:** Iron Golem và Skeleton mở từ đầu; Snow Golem mở sau First Grassland Victory; Wolf sau 50 Enemy kills tích lũy qua các trận Victory; Blaze sau 5 Grassland Victories tích lũy. Replay Victory được cộng tiến độ, Defeat không cộng; unlock vĩnh viễn, không cấp reward trùng. Recipe mở từ đầu: Skeleton Sniper và Steel Guardian. Ice Golem mở khi Snow Golem unlock; Frost Guardian khi Iron Golem và Snow Golem unlock; Alpha Wolf khi Wolf unlock; Inferno Archer khi Blaze và Skeleton unlock; Flame Fang khi Blaze và Wolf unlock. Fusion optional cho Grassland Victory: có thể thắng bằng Base Defenders, không thêm Fusion count vào điều kiện thắng. UI/tracking implementation vẫn TBD.
 
 **Confirmed:** Save & Resume trận đang chơi sau browser reload/close; persistent unlock progression giữa các trận là dữ liệu riêng. Cơ chế lưu, schema snapshot, thời điểm ghi và implementation cụ thể vẫn TBD.
 

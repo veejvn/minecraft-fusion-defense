@@ -13,10 +13,10 @@
 ## 2. MVP Overview
 
 - Một Grassland Level, Grid 5 Rows × 9 Columns, 5 Waves.
-- 5 Base Defenders, 6 Fusion Defenders, 4 Enemy Types.
-- 6 Fusion Recipes, 11 Special Abilities.
+- 5 Base Defenders, 7 Fusion Defenders, 4 Enemy Types.
+- 7 Fusion Recipes, 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD).
 - Energy dùng Summon; Power Crystal dùng Abilities.
-- Initial content sáu Tier-1 + Tier-1 → Tier-2 Recipes; engine không có Tier ceiling. Fusion miễn phí, mọi Lane/distance, Output tại Target Cell; full own HP/no inherited statuses/attack-ready.
+- Initial content bảy Tier-1 + Tier-1 → Tier-2 Recipes; engine không có Tier ceiling. Fusion miễn phí, mọi Lane/distance, Output tại Target Cell; full own HP/no inherited statuses/attack-ready.
 - Pause, Victory và Defeat theo gameplay rules đã xác nhận.
 
 **Confirmed — 03/11/2026:** Functional MVP cho internal testing trên Desktop Web (PC/laptop), chạy Local only; single-player Campaign Grassland duy nhất, 5 Waves, Grid 5 × 9, beginner-friendly và English-only UI/instructions/messages. Không yêu cầu Mobile/Tablet, Endless, Survival, Sandbox/Test mode hoặc online Preview/Staging/Production.
@@ -25,7 +25,7 @@
 
 **Confirmed:** Save & Resume trận đang chơi sau browser reload/close; persistent unlock progression giữa các trận là dữ liệu riêng. Cơ chế lưu, schema snapshot, thời điểm ghi và implementation cụ thể vẫn TBD.
 
-**Confirmed:** cả Base Defenders và Fusion Recipes có unlock qua Achievements/Challenges; bộ Defender ban đầu nhỏ, phần lớn Recipe bị khóa. Chỉ ghi nhận Achievement khi Victory; Defeat không tạo unlock mới và giữ unlock đã có. Grassland được replay nhưng sau lần hoàn thành đầu, replay không tạo thêm permanent unlock progress. Starter roster, Recipe mở sẵn, điều kiện/phần thưởng Achievement và Fusion có bắt buộc để thắng hay không vẫn TBD.
+**Confirmed — Product Design 03/11/2026:** Iron Golem và Skeleton mở từ đầu; Snow Golem mở sau First Grassland Victory; Wolf sau 50 Enemy kills tích lũy qua các trận Victory; Blaze sau 5 Grassland Victories tích lũy. Replay Victory được cộng tiến độ, Defeat không cộng; unlock vĩnh viễn, không cấp reward trùng. Recipe mở từ đầu: Skeleton Sniper và Steel Guardian. Ice Golem mở khi Snow Golem unlock; Frost Guardian khi Iron Golem và Snow Golem unlock; Alpha Wolf khi Wolf unlock; Inferno Archer khi Blaze và Skeleton unlock; Flame Fang khi Blaze và Wolf unlock. Fusion optional cho Grassland Victory: có thể thắng bằng Base Defenders, không thêm Fusion count vào điều kiện thắng. UI/tracking implementation vẫn TBD.
 
 **Confirmed:** basic Minecraft-style Pixel Art cho Base Defender, Enemy, Fusion Defender và battlefield Grassland; simple animations được chấp nhận. Placeholder-only không đáp ứng tiêu chí hình ảnh cuối Functional MVP. Sprite dimensions/frame counts và pipeline cụ thể vẫn TBD.
 

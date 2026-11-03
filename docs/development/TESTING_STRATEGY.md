@@ -28,23 +28,27 @@ Test files, fixtures, browser versions và commands cụ thể phải đối chi
 | Nhóm | Các trường hợp cần kiểm chứng |
 | --- | --- |
 | Grid/Placement | 5×9 cells, đặt Defender hợp lệ, occupancy và Energy Summon |
-| Fusion | 6 recipes; đảo thứ tự input vẫn khớp; Tier-1 + Tier-1 → Tier-2 |
-| Fusion transaction | 0 cost, mọi Lane/distance, Target Cell/Source trống; Output 100% own Max HP/no inherited statuses/attack-ready; no fixed engine Tier ceiling, chỉ sáu approved initial Recipes |
+| Fusion | 7 recipes; đảo thứ tự input vẫn khớp; Tier-1 + Tier-1 → Tier-2 |
+| Fusion transaction | 0 cost, mọi Lane/distance, Target Cell/Source trống; Output 100% own Max HP/no inherited statuses/attack-ready; no fixed engine Tier ceiling, chỉ bảy approved initial Recipes |
 | Resources | Initial Energy 0, +50 tại t=0 rồi +50 mỗi 3s Game Time, Unlimited cap; Crystal initial 0/cap 5; Item lifetime 10s Game Time; Enemy Energy direct/Crystal Item rewards; Pending Wave Reward và random attempt 30–60s/collect priority theo Confirmed definitions |
 | Pause | Đóng băng movement, combat, spawning, resource generation, cooldown và gameplay timers; Resume tiếp tục |
 | Combat/Enemies | 4 Enemy Types, di chuyển từ phải sang trái; hành vi chi tiết theo definitions đã duyệt |
 | Waves/End State | Một Grassland Level, 5 Waves; Defeat khi base breach; Victory sau tất cả Waves và hết Enemy |
-| Abilities | 11 Ability IDs và owner mapping; hiệu ứng, costs, cooldowns chỉ kiểm thử khi đã có cấu hình được phê duyệt |
+| Abilities | 12 required Ability definitions (11 existing IDs + Steel Guardian Ability TBD) và owner mapping; hiệu ứng, costs, cooldowns chỉ kiểm thử khi đã có cấu hình được phê duyệt |
 | Data Integrity | IDs/references/approved Recipes hợp lệ, không trùng unordered input pair, Zod validation |
 | Save & Resume | Trận tiếp tục sau reload/close; persistent unlock progression riêng |
-| Achievements / replay | Victory-only records; Defeat không cấp unlock mới; replay sau first completion không tăng permanent unlock progress |
+| Achievements / replay | Victory-only records; Defeat không cấp unlock mới; replay Victory được cộng dồn tiến độ; unlock reward không cấp trùng |
 | Simulation events | Attack/movement tính đồng thời, sequence number tăng dần; terminal result theo event resolve trước, không blanket priority |
+
+- Kiểm tra Iron Golem + Iron Golem → Steel Guardian, đảo thứ tự không đổi output; IDs mới TBD nên chưa tạo runtime fixture.
+- Kiểm tra mapping: Iron Golem/Skeleton và Skeleton Sniper/Steel Guardian mở đầu; Snow Golem first Victory, Wolf 50 qualifying kills, Blaze 5 Victories; các Recipe còn lại auto-unlock theo inputs. Replay Victory cộng tiến độ; Defeat không cộng; reward idempotent.
+- Kiểm tra thắng Grassland bằng Base Defenders không cần Fusion count. Balance/harness/coverage chưa được tự chốt.
 
 ## 4. Kiểm thử Data và trạng thái TBD
 
 - Không sử dụng Prototype/placeholder balance numbers như expected values chính thức.
 - Với thiếu definition hoặc reference sai, test phải xác minh lỗi được báo rõ theo contract đã được phê duyệt.
-- Với Ability spend/commit/rollback, combat stats, Wave composition, starter unlocks/Achievement mapping hoặc chi tiết Save/Event generation chưa chốt, ghi `Blocked — TBD` thay vì tự đặt expected. Enemy Rewards, caps và Fusion HP/status/readiness đã Confirmed, không còn blocker TBD.
+- Với Ability spend/commit/rollback, combat stats, Wave composition, Steel Guardian technical IDs/Ability hoặc chi tiết Save/Event generation chưa chốt, ghi `Blocked — TBD` thay vì tự đặt expected. Enemy Rewards, caps và Fusion HP/status/readiness đã Confirmed, không còn blocker TBD.
 - Không biến mô tả Proposed thành acceptance test bắt buộc khi chưa được duyệt.
 
 ## 5. Test Workflow (Proposed)

@@ -64,7 +64,7 @@ R4  [ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
 - Fusion thực hiện bằng cách kéo Source lên Target; Source và Target có thể ở bất kỳ Lane hoặc khoảng cách nào.
 - Fusion miễn phí: 0 Energy, 0 Power Crystal.
 - Hai Defender đầu vào bị tiêu thụ; Fusion Output xuất hiện tại **Target Cell**, Source Cell trở thành trống.
-- Initial content chỉ sáu approved Tier-1 + Tier-1 → Tier-2 Recipes; engine không có Tier ceiling, future content cần phê duyệt.
+- Initial content chỉ bảy approved Tier-1 + Tier-1 → Tier-2 Recipes; engine không có Tier ceiling, future content cần phê duyệt.
 - **Confirmed:** Fusion Output bắt đầu ở 100% Max HP của chính nó, không kế thừa status effects tích cực hoặc tiêu cực từ input, có thể tấn công ngay khi có target hợp lệ. Không cộng chỉ số hai input.
 - Không được thêm quy tắc Fusion cùng Lane, liền kề hoặc tiêu Energy vào Level Config.
 
@@ -180,7 +180,7 @@ Enemy Crystal drops và Wave Rewards theo Gameplay Mechanics/Game Balancing; Wav
 
 Wave Reward chỉ cấp đúng một lần sau completion hợp lệ. Crystal overflow vào Pending Wave Reward không có pending cap; manual partial claim khi Playing và còn sức chứa; hủy pending khi Victory/Defeat.
 
-**Confirmed:** cả Base Defenders và Fusion Recipes có unlock qua Achievements/Challenges; bộ Defender ban đầu nhỏ, phần lớn Recipe bị khóa. Chỉ ghi nhận Achievement khi Victory; Defeat không tạo unlock mới và giữ unlock đã có. Grassland được replay nhưng sau lần hoàn thành đầu, replay không tạo thêm permanent unlock progress. Starter roster, Recipe mở sẵn, điều kiện/phần thưởng Achievement và Fusion có bắt buộc để thắng hay không vẫn TBD.
+**Confirmed — Product Design 03/11/2026:** Iron Golem và Skeleton mở từ đầu; Snow Golem mở sau First Grassland Victory; Wolf sau 50 Enemy kills tích lũy qua các trận Victory; Blaze sau 5 Grassland Victories tích lũy. Replay Victory được cộng tiến độ, Defeat không cộng; unlock vĩnh viễn, không cấp reward trùng. Recipe mở từ đầu: Skeleton Sniper và Steel Guardian. Ice Golem mở khi Snow Golem unlock; Frost Guardian khi Iron Golem và Snow Golem unlock; Alpha Wolf khi Wolf unlock; Inferno Archer khi Blaze và Skeleton unlock; Flame Fang khi Blaze và Wolf unlock. Fusion optional cho Grassland Victory: có thể thắng bằng Base Defenders, không thêm Fusion count vào điều kiện thắng. UI/tracking implementation vẫn TBD.
 
 Không tự thiết kế Achievement criteria/rewards hoặc Wave Reward amounts.
 
@@ -292,7 +292,7 @@ Khi terminal result được resolve: dừng Spawn/Combat, khóa gameplay, hiể
 - [ ] Không dùng Base HP/Lives.
 - [ ] Dữ liệu thiếu hoặc sai được báo rõ trước khi bắt đầu Level.
 - [ ] Save & Resume sau reload/close và permanent progression riêng được kiểm chứng.
-- [ ] Achievements chỉ ghi nhận Victory; replay sau completion đầu không tăng unlock progress.
+- [ ] Achievements chỉ ghi nhận Victory; replay Victory cộng tiến độ tích lũy; Defeat không cộng.
 - [ ] Manual playthrough và core automated tests có bằng chứng.
 
 ## 14. Open Design Decisions
@@ -311,7 +311,7 @@ Khi terminal result được resolve: dừng Spawn/Combat, khóa gameplay, hiể
 | Spawn Offset và Base Boundary tọa độ chính xác | TBD |
 | Background, Decoration, Tilemap, VFX/Audio | TBD |
 | Tutorial/Onboarding | Confirmed: basic English in-game instructions, không interactive tutorial; UI details TBD |
-| Progression/Save/Replay | Save & Resume và permanent unlocks Confirmed; initial unlocks/Achievement mapping/UI details TBD |
+| Progression/Save/Replay | Save & Resume và permanent unlocks Confirmed; unlock mapping Confirmed; UI/tracking details TBD |
 
 ## 15. Tài liệu liên quan
 

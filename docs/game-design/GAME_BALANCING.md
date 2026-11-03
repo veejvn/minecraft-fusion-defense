@@ -29,7 +29,7 @@ Tài liệu này không thay thế các quy tắc gameplay đã xác nhận tron
 | Grid | 5 Rows × 9 Columns | Confirmed |
 | Số Waves | 5 | Confirmed |
 | Base Defenders | 5 | Confirmed |
-| Fusion Defenders | 6 | Confirmed |
+| Fusion Defenders | 7 | Confirmed |
 | Enemy Types | 4 | Confirmed |
 | Hướng Enemy | Spawn từ Right, di chuyển về Left | Confirmed |
 | Defeat | Enemy xâm nhập căn cứ là thua ngay | Confirmed |
@@ -40,7 +40,7 @@ Tài liệu này không thay thế các quy tắc gameplay đã xác nhận tron
 | Fusion Cost | 0 Energy, 0 Power Crystal | Confirmed |
 | Fusion Range / Lane | Không giới hạn khoảng cách hoặc Lane | Confirmed |
 | Fusion Output | Target Cell; Source trống; tiêu thụ hai input; 100% own Max HP, no inherited statuses, attack ngay khi valid target | Confirmed |
-| Fusion Tier | Engine không có fixed Tier ceiling; chỉ sáu approved Tier-1 + Tier-1 → Tier-2 Recipes cho initial content | Confirmed |
+| Fusion Tier | Engine không có fixed Tier ceiling; chỉ bảy approved Tier-1 + Tier-1 → Tier-2 Recipes cho initial content | Confirmed |
 | Pause | Đóng băng gameplay simulation và timers | Confirmed |
 
 Các cơ chế Confirmed là ràng buộc thiết kế, **không phải các giá trị để tối ưu bằng Balance**.
@@ -94,6 +94,7 @@ Không ghi giá trị giả vào Decision Log.
 | Inputs | Fusion Output | Fusion Cost |
 | --- | --- | --- |
 | Skeleton + Skeleton | Skeleton Sniper | 0 |
+| Iron Golem + Iron Golem | Steel Guardian | 0 |
 | Snow Golem + Snow Golem | Ice Golem | 0 |
 | Iron Golem + Snow Golem | Frost Guardian | 0 |
 | Blaze + Wolf | Flame Fang | 0 |
@@ -107,6 +108,7 @@ Thứ tự Inputs không ảnh hưởng Recipe. Fusion được phép giữa hai
 | Fusion Defender | HP | Damage | Attack Speed | Attack Range | Targeting | Attack Rules |
 | --- | --- | --- | --- | --- | --- | --- |
 | Skeleton Sniper | TBD | TBD | TBD | TBD | TBD | TBD |
+| Steel Guardian | TBD | TBD | TBD | TBD | TBD | TBD |
 | Ice Golem | TBD | TBD | TBD | TBD | TBD | TBD |
 | Frost Guardian | TBD | TBD | TBD | TBD | TBD | TBD |
 | Flame Fang | TBD | TBD | TBD | TBD | TBD | TBD |
@@ -115,7 +117,7 @@ Thứ tự Inputs không ảnh hưởng Recipe. Fusion được phép giữa hai
 
 **Confirmed:** Fusion Output bắt đầu ở 100% Max HP của chính nó, không kế thừa status effects tích cực hoặc tiêu cực từ input, có thể tấn công ngay khi có target hợp lệ. Không cộng chỉ số hai input.
 
-**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 6 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
+**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 7 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
 
 HP amount, Damage, Attack Speed/Range, Targeting và Attack Rules cụ thể vẫn TBD; không dùng Prototype làm thông số chính thức.
 
@@ -178,6 +180,7 @@ Không tự đặt Ability Cost, Wave Reward amounts hoặc thuật toán chọn
 | Defender | Ability ID | Power Crystal Cost | Cooldown | Damage / Effect Amount | Duration / Range |
 | --- | --- | --- | --- | --- | --- |
 | Snow Golem | `blizzard` | TBD | TBD | TBD | TBD |
+| Steel Guardian | TBD | TBD | TBD | TBD | TBD |
 | Iron Golem | `earthquake` | TBD | TBD | TBD | TBD |
 | Skeleton | `arrow_storm` | TBD | TBD | TBD | TBD |
 | Wolf | `pack_frenzy` | TBD | TBD | TBD | TBD |
@@ -299,7 +302,7 @@ Các mục này là **rủi ro cần kiểm thử**, không phải cơ chế m�
 ### Nhóm B — Defender và Fusion
 
 5. HP, Damage, Attack Speed, Range, Summon Energy Cost, Summon Cooldown của 5 Base Defenders?
-6. HP, Damage, Attack Speed, Range và Attack Rules của 6 Fusion Defenders?
+6. HP, Damage, Attack Speed, Range và Attack Rules của 7 Fusion Defenders?
 7. HP Output = 100% own Max HP, không inherited statuses và có thể attack ngay khi valid target đã Confirmed. Fusion interaction cooldown/animation và chi tiết implementation còn TBD.
 
 ### Nhóm C — Enemy
@@ -329,9 +332,9 @@ Các mục này là **rủi ro cần kiểm thử**, không phải cơ chế m�
 ## 16. Acceptance Criteria cho tài liệu Balance
 
 - [ ] Tất cả 5 Base Defenders có dòng thông số rõ ràng.
-- [ ] Tất cả 6 Fusion Defenders có dòng thông số rõ ràng.
+- [ ] Tất cả 7 Fusion Defenders có dòng thông số rõ ràng.
 - [ ] Tất cả 4 Enemies có dòng thông số rõ ràng.
-- [ ] Tất cả 11 Special Abilities có dòng Cost/Cooldown/Effect.
+- [ ] Tất cả 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD) có dòng Cost/Cooldown/Effect.
 - [ ] Cả 5 Waves có bảng Composition/Spawn/Reward.
 - [ ] Các thông số chưa được xác nhận đều là TBD.
 - [ ] Không sử dụng số Prototype như thông số chính thức.

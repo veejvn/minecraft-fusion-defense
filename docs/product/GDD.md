@@ -265,7 +265,7 @@ HP, Damage, Move Speed, targeting và behavior vẫn TBD.
 
 Fusion là cơ chế kết hợp hai Defender theo Recipe data-driven, hỗ trợ same-type và cross-type.
 
-**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 6 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
+**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 7 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
 
 ### 6.2. Fusion Rules
 
@@ -304,11 +304,12 @@ Ví dụ:
 
 ### 6.4. Initial Fusion Recipes
 
-**Confirmed — 02/11/2026:** đúng 6 công thức dùng 5 Base Defenders, gồm 3 same-type và 3 cross-type.
+**Confirmed — Product Design 03/11/2026 (thay thế danh mục 6 Recipe ngày 02/11/2026):** đúng 7 công thức dùng 5 Base Defenders, gồm 4 same-type và 3 cross-type.
 
 | Input A | Input B | Fusion Result |
 | --- | --- | --- |
 | Skeleton | Skeleton | Skeleton Sniper |
+| Iron Golem | Iron Golem | Steel Guardian |
 | Snow Golem | Snow Golem | Ice Golem |
 | Iron Golem | Snow Golem | Frost Guardian |
 | Blaze | Wolf | Flame Fang |
@@ -439,7 +440,7 @@ MVP dự kiến có 5 Wave trong một Level.
 
 **Confirmed — 03/11/2026:** Functional MVP cho internal testing trên Desktop Web (PC/laptop), chạy Local only; single-player Campaign Grassland duy nhất, 5 Waves, Grid 5 × 9, beginner-friendly và English-only UI/instructions/messages. Không yêu cầu Mobile/Tablet, Endless, Survival, Sandbox/Test mode hoặc online Preview/Staging/Production.
 
-**Confirmed:** cả Base Defenders và Fusion Recipes có unlock qua Achievements/Challenges; bộ Defender ban đầu nhỏ, phần lớn Recipe bị khóa. Chỉ ghi nhận Achievement khi Victory; Defeat không tạo unlock mới và giữ unlock đã có. Grassland được replay nhưng sau lần hoàn thành đầu, replay không tạo thêm permanent unlock progress. Starter roster, Recipe mở sẵn, điều kiện/phần thưởng Achievement và Fusion có bắt buộc để thắng hay không vẫn TBD.
+**Confirmed — Product Design 03/11/2026:** Iron Golem và Skeleton mở từ đầu; Snow Golem mở sau First Grassland Victory; Wolf sau 50 Enemy kills tích lũy qua các trận Victory; Blaze sau 5 Grassland Victories tích lũy. Replay Victory được cộng tiến độ, Defeat không cộng; unlock vĩnh viễn, không cấp reward trùng. Recipe mở từ đầu: Skeleton Sniper và Steel Guardian. Ice Golem mở khi Snow Golem unlock; Frost Guardian khi Iron Golem và Snow Golem unlock; Alpha Wolf khi Wolf unlock; Inferno Archer khi Blaze và Skeleton unlock; Flame Fang khi Blaze và Wolf unlock. Fusion optional cho Grassland Victory: có thể thắng bằng Base Defenders, không thêm Fusion count vào điều kiện thắng. UI/tracking implementation vẫn TBD.
 
 **Confirmed:** Save & Resume trận đang chơi sau browser reload/close; persistent unlock progression giữa các trận là dữ liệu riêng. Cơ chế lưu, schema snapshot, thời điểm ghi và implementation cụ thể vẫn TBD.
 
@@ -563,9 +564,9 @@ Phiên bản MVP tập trung vào:
 - Năm Defender cơ bản.
 - Bốn Enemy cơ bản.
 - Fusion cùng loại và khác loại.
-- Sáu Fusion Recipes và sáu Tier-2 Fusion Defenders, theo mục 6.4.
-- Nội dung ban đầu chỉ sáu Recipe Tier-2; engine không có Tier ceiling cố định.
-- Special Ability cho các Defender và Fusion Defender được đưa vào MVP.
+- Bảy Fusion Recipes và bảy Tier-2 Fusion Defenders, theo mục 6.4.
+- Nội dung ban đầu chỉ bảy Recipe Tier-2; engine không có Tier ceiling cố định.
+- 12 required Special Ability definitions (11 existing draft IDs + Steel Guardian Ability TBD) cho các Defender và Fusion Defender được đưa vào MVP.
 - Energy System.
 - Wave System.
 - Combat System.
@@ -696,7 +697,7 @@ Nếu dự án được phát hành công khai hoặc thương mại:
 
 | Nhóm | TBD chưa được phê duyệt |
 | --- | --- |
-| Product Design | Starter roster/Recipes, Achievement conditions/rewards/unlock mapping; Fusion có bắt buộc để thắng |
+| Product Design | Initial unlocks/mapping và Fusion optional đã Confirmed; Achievement UI/tracking và Steel Guardian technical IDs/combat/Ability còn TBD |
 | Coding Planning | Combat stats, Summon Cost, Enemy behavior/targeting; Wave composition/timing/reward amounts; Energy Item amount/rate |
 | Coding Planning | Ability effects/area/cost/cooldown/spend/commit/rollback; Pack Frenzy/Blizzard scope |
 | Coding Planning | Fusion interaction cooldown/animation; Save implementation; detailed Event Queue generation/edge cases |

@@ -15,7 +15,7 @@
 
 Desktop web, side-view 2D pixel art, 5 lanes × 9 columns. Defenders occupy one grid cell each; enemies spawn from the right and move left. Enemy behavior is configured per enemy; defender target selection is configured per defender. Enemy base breach generates Defeat; simultaneous terminal events follow Event Queue insertion order, with the first resolved terminal event deciding the result.
 
-MVP: **5 Base Defenders, 6 Tier-2 Fusion Defenders, 4 Enemy types**, one Grassland level with five waves. Fusion is free, may cross lanes and any distance, and spawns its output at the target's original cell. Output HP/status/readiness follow the Confirmed 03/11/2026 rules in section 3. Power Crystal activates Special Abilities and is obtained from Wave Rewards and collectible Power Crystal Items.
+MVP: **5 Base Defenders, 7 Tier-2 Fusion Defenders, 4 Enemy types**, one Grassland level with five waves. Fusion is free, may cross lanes and any distance, and spawns its output at the target's original cell. Output HP/status/readiness follow the Confirmed 03/11/2026 rules in section 3. Power Crystal activates Special Abilities and is obtained from Wave Rewards and collectible Power Crystal Items.
 
 ## 2. Base Defender catalog
 
@@ -33,11 +33,12 @@ Each Defender Definition must include: stable ID, display name, tier, role, HP, 
 
 ## 3. Fusion Defender catalog
 
-**Confirmed:** six output identities, IDs, input pairs and Tier 2. **Proposed:** combat roles, attacks and Special Ability names.
+**Confirmed:** seven output names/input pairs and Tier 2; six existing IDs unchanged, Steel Guardian Entity ID TBD. **Proposed:** combat roles, attacks and Special Ability names.
 
 | Entity ID | Name | Inputs | Tier | Combat role | Special Ability |
 | --- | --- | --- | --- | --- | --- |
 | `skeleton_sniper` | Skeleton Sniper | Skeleton + Skeleton | 2 | Long-range burst | Piercing Barrage |
+| `TBD` | Steel Guardian | Iron Golem + Iron Golem | 2 | TBD | TBD |
 | `ice_golem` | Ice Golem | Snow Golem + Snow Golem | 2 | Ice Control | Absolute Zero |
 | `frost_guardian` | Frost Guardian | Iron Golem + Snow Golem | 2 | Tank / Control | Glacial Fortress |
 | `flame_fang` | Flame Fang | Blaze + Wolf | 2 | Melee Damage / Burn | Wildfire Rush |
@@ -58,7 +59,7 @@ Each Defender Definition must include: stable ID, display name, tier, role, HP, 
 
 Other combat stats, exact attack rules and targeting strategies remain TBD; prototype numbers above are not approved balance. **Confirmed:** Fusion Output bắt đầu ở 100% Max HP của chính nó, không kế thừa status effects tích cực hoặc tiêu cực từ input, có thể tấn công ngay khi có target hợp lệ. Không cộng chỉ số hai input.
 
-**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 6 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
+**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 7 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
 
 ## 4. Enemy catalog
 
@@ -86,7 +87,7 @@ Each Enemy Definition must declare: HP, movement speed, damage, lane behavior, i
 
 Crystal Item từ Enemy death xuất hiện kể cả khi storage đầy (cap 5), lifetime 10 giây Game Time; không collect trong Pause. Combat stats và Enemy behavior vẫn TBD.
 
-**Confirmed:** cả Base Defenders và Fusion Recipes có unlock qua Achievements/Challenges; bộ Defender ban đầu nhỏ, phần lớn Recipe bị khóa. Chỉ ghi nhận Achievement khi Victory; Defeat không tạo unlock mới và giữ unlock đã có. Grassland được replay nhưng sau lần hoàn thành đầu, replay không tạo thêm permanent unlock progress. Starter roster, Recipe mở sẵn, điều kiện/phần thưởng Achievement và Fusion có bắt buộc để thắng hay không vẫn TBD.
+**Confirmed — Product Design 03/11/2026:** Iron Golem và Skeleton mở từ đầu; Snow Golem mở sau First Grassland Victory; Wolf sau 50 Enemy kills tích lũy qua các trận Victory; Blaze sau 5 Grassland Victories tích lũy. Replay Victory được cộng tiến độ, Defeat không cộng; unlock vĩnh viễn, không cấp reward trùng. Recipe mở từ đầu: Skeleton Sniper và Steel Guardian. Ice Golem mở khi Snow Golem unlock; Frost Guardian khi Iron Golem và Snow Golem unlock; Alpha Wolf khi Wolf unlock; Inferno Archer khi Blaze và Skeleton unlock; Flame Fang khi Blaze và Wolf unlock. Fusion optional cho Grassland Victory: có thể thắng bằng Base Defenders, không thêm Fusion count vào điều kiện thắng. UI/tracking implementation vẫn TBD.
 
 ## 5. Special Ability references
 
@@ -95,6 +96,7 @@ Crystal Item từ Enemy death xuất hiện kể cả khi storage đầy (cap 5)
 | Defender | Ability ID |
 | --- | --- |
 | Snow Golem | `blizzard` |
+| Steel Guardian | `TBD` |
 | Iron Golem | `earthquake` |
 | Skeleton | `arrow_storm` |
 | Wolf | `pack_frenzy` |
@@ -111,7 +113,7 @@ Ability names/effects are design drafts. Exact Power Crystal cost, cooldown, dur
 ## 6. Data integrity and acceptance
 
 - All IDs are unique and stable; references resolve to existing entity and ability definitions.
-- Exactly five Tier-1 defenders and six Tier-2 fusion defenders.
+- Exactly five Tier-1 defenders and seven Tier-2 fusion defenders.
 - Exactly four MVP enemy types.
 - Zombie is an enemy, not a Fusion input. Creeper is outside the MVP roster.
 - Every initial approved Recipe uses the five Base Defenders. Engine validation follows approved Recipe definitions across any Tier; no fixed Tier ceiling.

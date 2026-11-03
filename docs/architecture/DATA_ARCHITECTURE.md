@@ -32,7 +32,9 @@ Xác định các nhóm Game Data, ranh giới giữa dữ liệu tĩnh và tr�
 | Wave Definition | 5 Waves, spawn entries, timing, rewards | Level Design |
 | Resource Configuration | Energy generation/items, Power Crystal items/rewards, caps | Gameplay Mechanics, Game Balancing |
 
-MVP có 5 Base Defenders, 6 Fusion Defenders, 4 Enemy Types, 6 Recipes và 11 Ability IDs. Không tự mở rộng các danh mục này.
+MVP có 5 Base Defenders, 7 Fusion Defenders, 4 Enemy Types, 7 Recipes và 12 required Ability definitions (11 existing IDs + Steel Guardian Ability TBD). Không tự mở rộng các danh mục này.
+
+**Confirmed content / TBD IDs:** Steel Guardian (Iron Golem + Iron Golem, Tier 2) thuộc 7 outputs. Entity ID, Recipe ID và Ability ID/name đều `TBD`, không tự đặt identifier hoặc schema. 12 required Ability definitions gồm 11 existing draft IDs và một Steel Guardian Ability TBD. Unlock mapping đọc theo Fusion Recipes; replay Victory cộng tiến độ, Fusion không là Victory prerequisite.
 
 ## 4. Definition và Runtime State
 
@@ -59,7 +61,7 @@ Fusion Recipe
 ```
 
 - Recipe matching **không phụ thuộc thứ tự** input.
-- Initial content chỉ sáu approved Tier-1 + Tier-1 → Tier-2 Recipes. Engine không có Tier ceiling, chỉ validate Recipe được duyệt; không tự tạo higher-tier content.
+- Initial content chỉ bảy approved Tier-1 + Tier-1 → Tier-2 Recipes. Engine không có Tier ceiling, chỉ validate Recipe được duyệt; không tự tạo higher-tier content.
 - Fusion không tiêu Energy hoặc Power Crystal; Source và Target không bị giới hạn Lane/khoảng cách.
 - Output xuất hiện tại Target Cell; Source Cell trống.
 - Không thêm trường `fusionEnergyCost` bắt buộc hoặc điều kiện cùng Lane/adjacent.
@@ -90,7 +92,7 @@ Ví dụ JSON, số Prototype và `null` minh họa trong tài liệu thiết k�
 
 - References trỏ đến IDs tồn tại.
 - Không có recipe trùng khi đảo thứ tự input.
-- Sáu Recipe initial content có input Tier-1/output Tier-2 hợp lệ. Engine không dùng hard Tier ceiling, có thể đọc future approved Recipes qua dữ liệu.
+- Bảy Recipe initial content có input Tier-1/output Tier-2 hợp lệ. Engine không dùng hard Tier ceiling, có thể đọc future approved Recipes qua dữ liệu.
 - Ability owner tham chiếu Defender hợp lệ.
 - Wave chỉ tham chiếu Enemy trong danh mục MVP.
 - Level MVP có 5 Waves và Grid 5×9.

@@ -7,7 +7,7 @@
 
 ## 1. Mục tiêu
 
-Định nghĩa trách nhiệm của Game Runtime, các Game Systems và luồng giao tiếp với React để AI Agent có cơ sở triển khai từng phần. Runtime phục vụ một Grassland Level, Battlefield 5×9, 5 Waves, 5 Base Defenders, 4 Enemy Types, 6 Fusion Defenders và 11 Special Abilities.
+Định nghĩa trách nhiệm của Game Runtime, các Game Systems và luồng giao tiếp với React để AI Agent có cơ sở triển khai từng phần. Runtime phục vụ một Grassland Level, Battlefield 5×9, 5 Waves, 5 Base Defenders, 4 Enemy Types, 7 Fusion Defenders và 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD).
 
 ## 2. Ranh giới Runtime
 
@@ -55,8 +55,8 @@ React UI / HUD
 | Placement | Kiểm tra cell hợp lệ và điều kiện triệu hồi | Triệu hồi tiêu Energy; không tự thêm điều kiện |
 | Resource | Energy/Items, Crystal/Items, Wave/Pending Rewards, Enemy rewards, spending | Values/caps/lifetimes đã Confirmed theo Gameplay Mechanics; Ability commit TBD |
 | Combat / Targeting | Chọn mục tiêu, tấn công, HP, damage, death và status effects | Enemy behaviors theo từng definition; chi tiết TBD |
-| Fusion | Validate approved Recipe data, consume inputs, create output | Không Tier ceiling; initial sáu Recipes; 0 cost, mọi Lane/distance, Target Cell/full HP/no statuses/attack-ready |
-| Special Ability | Kích hoạt Ability riêng của từng Defender và áp dụng hiệu ứng | 11 Ability IDs; costs/effects/commit timing TBD |
+| Fusion | Validate approved Recipe data, consume inputs, create output | Không Tier ceiling; initial bảy Recipes; 0 cost, mọi Lane/distance, Target Cell/full HP/no statuses/attack-ready |
+| Special Ability | Kích hoạt Ability riêng của từng Defender và áp dụng hiệu ứng | 12 required Ability definitions (11 existing IDs + Steel Guardian Ability TBD); costs/effects/commit timing TBD |
 | Wave / Spawning | Đọc Wave Config, spawn Enemy, theo dõi tiến độ 5 Waves | Wave composition/timing TBD |
 | Victory / Defeat | Phát hiện thắng/thua và kết thúc simulation | Defeat ngay khi Enemy vượt base; Victory sau 5 Waves và hết Enemy |
 
@@ -78,7 +78,7 @@ Các mốc runtime cần hỗ trợ:
 
 **Confirmed:** Save & Resume trận đang chơi sau browser reload/close; persistent unlock progression giữa các trận là dữ liệu riêng. Cơ chế lưu, schema snapshot, thời điểm ghi và implementation cụ thể vẫn TBD.
 
-**Confirmed:** cả Base Defenders và Fusion Recipes có unlock qua Achievements/Challenges; bộ Defender ban đầu nhỏ, phần lớn Recipe bị khóa. Chỉ ghi nhận Achievement khi Victory; Defeat không tạo unlock mới và giữ unlock đã có. Grassland được replay nhưng sau lần hoàn thành đầu, replay không tạo thêm permanent unlock progress. Starter roster, Recipe mở sẵn, điều kiện/phần thưởng Achievement và Fusion có bắt buộc để thắng hay không vẫn TBD.
+**Confirmed — Product Design 03/11/2026:** Iron Golem và Skeleton mở từ đầu; Snow Golem mở sau First Grassland Victory; Wolf sau 50 Enemy kills tích lũy qua các trận Victory; Blaze sau 5 Grassland Victories tích lũy. Replay Victory được cộng tiến độ, Defeat không cộng; unlock vĩnh viễn, không cấp reward trùng. Recipe mở từ đầu: Skeleton Sniper và Steel Guardian. Ice Golem mở khi Snow Golem unlock; Frost Guardian khi Iron Golem và Snow Golem unlock; Alpha Wolf khi Wolf unlock; Inferno Archer khi Blaze và Skeleton unlock; Flame Fang khi Blaze và Wolf unlock. Fusion optional cho Grassland Victory: có thể thắng bằng Base Defenders, không thêm Fusion count vào điều kiện thắng. UI/tracking implementation vẫn TBD.
 
 ## 6. Simulation và Rendering
 
@@ -103,9 +103,9 @@ Chi tiết cooldown/validation và rollback: theo Gameplay Mechanics, phần ch�
 ### 7.2. Fusion Defender
 
 1. Người chơi kéo **Source** lên **Target**.
-2. Kiểm tra hai Defender tồn tại, hợp lệ, Tier/IDs khớp Recipe được phê duyệt, enabled và đã unlock; không hardcode Tier ceiling. Initial content chỉ sáu Tier-1 + Tier-1 → Tier-2 Recipes; input order-independent. Danh sách Recipe mở sẵn vẫn Product Design TBD.
+2. Kiểm tra hai Defender tồn tại, hợp lệ, Tier/IDs khớp Recipe được phê duyệt, enabled và đã unlock; không hardcode Tier ceiling. Initial content chỉ bảy Tier-1 + Tier-1 → Tier-2 Recipes; input order-independent. Initial Base Defenders: Iron Golem/Skeleton; initial Recipes: Skeleton Sniper/Steel Guardian — Confirmed.
 3. **Không** kiểm tra hoặc trừ Energy/Power Crystal; **không** giới hạn khoảng cách hoặc Lane.
-4. Khi thành công, tiêu thụ Source và Target, tạo Output Tier theo Recipe tại **Target Cell**, Source Cell thành trống. Sáu Recipe ban đầu cho Tier-2 outputs.
+4. Khi thành công, tiêu thụ Source và Target, tạo Output Tier theo Recipe tại **Target Cell**, Source Cell thành trống. Bảy Recipe ban đầu cho Tier-2 outputs.
 5. Cập nhật Grid, Entities và UI; nếu không hợp lệ, không tiêu thụ hai Defender.
 
 **Confirmed:** Fusion Output bắt đầu ở 100% Max HP của chính nó, không kế thừa status effects tích cực hoặc tiêu cực từ input, có thể tấn công ngay khi có target hợp lệ. Không cộng chỉ số hai input.
