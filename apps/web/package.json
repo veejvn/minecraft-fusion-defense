@@ -5,9 +5,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test --config tests/e2e/playwright.config.cjs",
+    "test:production": "playwright test --config tests/e2e/production.config.cjs"
   },
   "dependencies": {
+    "@mfd/game": "workspace:*",
     "next": "16.4.5",
     "react": "19.3.1",
     "react-dom": "19.3.1"
