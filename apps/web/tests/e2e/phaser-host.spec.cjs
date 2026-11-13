@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { mkdirSync } = require('node:fs');
+const { existsSync, mkdirSync } = require('node:fs');
 const path = require('node:path');
 
 test('real production Host renders, cleans up, and remounts under Strict Mode', async ({ page }) => {
@@ -32,9 +32,13 @@ test('real production Host renders, cleans up, and remounts under Strict Mode', 
   expect(dimensions.displayWidth / dimensions.displayHeight).toBeCloseTo(16 / 9, 2);
 
   const candidate = path.resolve(__dirname, '../../../../docs/reports/artifacts/T-02-hello-scene-candidate.png');
-  mkdirSync(path.dirname(candidate), { recursive: true });
-  await canvas.screenshot({ path: candidate });
-  console.log('SCREENSHOT_CANDIDATE=' + candidate);
+  if (!existsSync(candidate)) {
+    mkdirSync(path.dirname(candidate), { recursive: true });
+    await canvas.screenshot({ path: candidate });
+    console.log('SCREENSHOT_CANDIDATE=' + candidate);
+  } else {
+    console.log('SCREENSHOT_CANDIDATE_PRESERVED=' + candidate);
+  }
 
   await page.locator('#unmount').click();
   await expect(page.locator('canvas')).toHaveCount(0);

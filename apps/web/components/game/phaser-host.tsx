@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { GameHandle } from '@mfd/game';
 
 type Status = 'loading' | 'ready' | 'error';
+const MAX_OWNED_WAIT_MS = 6_000;
 
 export function PhaserHost() {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -14,7 +15,9 @@ export function PhaserHost() {
     if (!host) return;
 
     let cancelled = false;
-    let retryFrame = 0;
+    let retryTimer: number | undefined;
+    let firstOwnedAt: number | undefined;
+    let retryDelayMs = 50;
     let handle: GameHandle | undefined;
 
     const showError = (error: unknown) => {
@@ -36,9 +39,16 @@ export function PhaserHost() {
           );
         } catch (error) {
           if (error instanceof Error && error.name === 'HostOwnedError') {
-            // Retry only while the adapter still owns this host. A frame is a
-            // scheduling opportunity, never proof that cleanup succeeded.
-            retryFrame = requestAnimationFrame(create);
+            firstOwnedAt ??= Date.now();
+            if (Date.now() - firstOwnedAt >= MAX_OWNED_WAIT_MS) {
+              // This reports a stuck host; it never releases ownership.
+              showError(new Error('Phaser host ownership did not clear'));
+              return;
+            }
+            // Timers remain available when animation frames are suspended.
+            // Only verified adapter cleanup can make the next creation succeed.
+            retryTimer = window.setTimeout(create, retryDelayMs);
+            retryDelayMs = Math.min(retryDelayMs * 2, 500);
             return;
           }
           showError(error);
@@ -50,7 +60,7 @@ export function PhaserHost() {
 
     return () => {
       cancelled = true;
-      cancelAnimationFrame(retryFrame);
+      window.clearTimeout(retryTimer);
       if (handle) {
         try { handle.destroy(); } catch (error) { console.error('Phaser destroy request failed:', error); }
       }
