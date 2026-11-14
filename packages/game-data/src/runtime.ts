@@ -24,7 +24,9 @@ const runtimeBundleSchema = gameDataBundleSchema.superRefine((bundle, ctx) => {
   });
   bundle.abilities.forEach((item, index) => {
     if (item.powerCrystalCost === undefined) issue(['abilities', index, 'powerCrystalCost'], 'Runtime Ability cost is missing');
-    if (item.cooldownSeconds === undefined) issue(['abilities', index, 'cooldownSeconds'], 'Runtime Ability cooldown is missing');
+    // No executable Ability effect contract has been approved. Keep runtime data
+    // closed until that contract can validate the actual effect configuration.
+    issue(['abilities', index, 'effects'], `Executable Ability effect contract is not approved for ${item.id}`);
   });
   bundle.levels.forEach((item, index) => {
     if (item.rows !== 5 || item.columns !== 9) issue(['levels', index], 'Grassland battlefield must be 5 rows × 9 columns');

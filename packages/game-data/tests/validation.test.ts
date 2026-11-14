@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ZodError } from 'zod';
 import {
   abilityDefinitionSchema,
   defenderDefinitionSchema,
@@ -50,6 +51,16 @@ function syntheticBundle() {
   };
 }
 
+function runtimeIssues(candidate: unknown) {
+  try {
+    loadRuntimeData(candidate);
+    throw new Error('Expected runtime validation to reject the candidate');
+  } catch (error) {
+    expect(error).toBeInstanceOf(ZodError);
+    return (error as ZodError).issues;
+  }
+}
+
 describe('independent category schemas', () => {
   it('accepts each valid category independently', () => {
     const data = syntheticBundle();
@@ -74,6 +85,17 @@ describe('independent category schemas', () => {
   it('rejects negative resources and invalid caps', () => {
     expect(resourceConfigurationSchema.safeParse({ initialEnergy: -1 }).success).toBe(false);
     expect(resourceConfigurationSchema.safeParse({ maxPowerCrystals: -1 }).success).toBe(false);
+  });
+  it('keeps an effect-incomplete Ability structurally valid', () => {
+    const ability = { id: 'test_ability', ownerDefenderId: 'test_defender' };
+    expect(abilityDefinitionSchema.safeParse(ability).success).toBe(true);
+  });
+  it('accepts an optional valid cooldown and rejects an invalid supplied cooldown', () => {
+    const ability = { id: 'test_ability', ownerDefenderId: 'test_defender' };
+    expect(abilityDefinitionSchema.safeParse({ ...ability, cooldownSeconds: 1 }).success).toBe(true);
+    const result = abilityDefinitionSchema.safeParse({ ...ability, cooldownSeconds: -1 });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.some(issue => issue.path.join('.') === 'cooldownSeconds')).toBe(true);
   });
 });
 
@@ -146,31 +168,43 @@ describe('bundle version and referential integrity', () => {
 });
 
 describe('runtime boundary', () => {
-  it('returns only a validated, complete synthetic bundle', () => {
-    expect(loadRuntimeData(syntheticBundle()).levels[0].rows).toBe(5);
+  it('rejects effect-incomplete Abilities even when the bundle says approved', () => {
+    const issues = runtimeIssues(syntheticBundle());
+    expect(issues.some(issue => issue.path.join('.') === 'abilities.0.effects' && issue.message.includes('effect contract'))).toBe(true);
   });
   it('rejects structurally valid but explicitly incomplete content', () => {
     const data = { ...syntheticBundle(), contentStatus: 'incomplete' };
     expect(validateGameData(data).contentStatus).toBe('incomplete');
-    expect(() => loadRuntimeData(data)).toThrow(/requires approved content/);
+    const issues = runtimeIssues(data);
+    expect(issues.some(issue => issue.path.join('.') === 'contentStatus' && issue.message.includes('requires approved content'))).toBe(true);
+    expect(issues.some(issue => issue.path.join('.') === 'abilities.0.effects')).toBe(true);
   });
-  it('rejects missing combat balance and Ability configuration', () => {
+  it('keeps cooldown absence unresolved without inserting a default', () => {
+    const data = syntheticBundle();
+    delete (data.abilities[0] as Partial<typeof data.abilities[0]>).cooldownSeconds;
+    expect(abilityDefinitionSchema.safeParse(data.abilities[0]).success).toBe(true);
+    expect(validateGameData(data).abilities[0].cooldownSeconds).toBeUndefined();
+    const issues = runtimeIssues(data);
+    expect(issues.some(issue => issue.path.join('.') === 'abilities.0.effects')).toBe(true);
+    expect(issues.some(issue => issue.path.join('.') === 'abilities.0.cooldownSeconds')).toBe(false);
+  });
+  it('rejects missing combat balance independently of the effect blocker', () => {
     const data = syntheticBundle();
     delete (data.defenders[0] as Partial<typeof data.defenders[0]>).stats;
-    delete (data.abilities[0] as Partial<typeof data.abilities[0]>).cooldownSeconds;
-    expect(() => loadRuntimeData(data)).toThrow(/Runtime Defender stats are missing/);
+    const issues = runtimeIssues(data);
+    expect(issues.some(issue => issue.path.join('.') === 'defenders.0.stats' && issue.message.includes('stats are missing'))).toBe(true);
   });
   it('enforces confirmed Grassland dimensions and five Waves', () => {
     const data = syntheticBundle();
     data.levels[0].rows = 6;
     data.levels[0].waveIds.pop();
-    expect(() => loadRuntimeData(data)).toThrow(/Grassland battlefield must be 5 rows/);
+    expect(runtimeIssues(data).some(issue => issue.path.join('.') === 'levels.0' && issue.message.includes('5 rows'))).toBe(true);
     data.levels[0].rows = 5;
-    expect(() => loadRuntimeData(data)).toThrow(/Grassland must reference 5 Waves/);
+    expect(runtimeIssues(data).some(issue => issue.path.join('.') === 'levels.0.waveIds' && issue.message.includes('5 Waves'))).toBe(true);
   });
   it('rejects absent Wave composition and timing', () => {
     const data = syntheticBundle();
     data.waves[0].spawns = [];
-    expect(() => loadRuntimeData(data)).toThrow(/Runtime Wave spawn composition\/timing is missing/);
+    expect(runtimeIssues(data).some(issue => issue.path.join('.') === 'waves.0.spawns' && issue.message.includes('composition/timing'))).toBe(true);
   });
 });
