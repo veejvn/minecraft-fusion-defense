@@ -2,19 +2,19 @@
 **Project:** Minecraft Fusion Defense  
 **Status:** Draft v1.0 — nội dung Confirmed kế thừa tài liệu dự án; lịch trình, thông số kỹ thuật và lựa chọn chưa duyệt giữ Proposed/TBD.
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Documentation authority:** Markdown under [`docs/`](docs/DOCUMENTATION_POLICY.md) is the sole authoritative project documentation. See the [Entity](docs/game-design/ENTITY_CATALOG.md), [Fusion](docs/game-design/FUSION_RECIPES.md), and [Ability](docs/game-design/ABILITY_CATALOG.md) catalogs and [PGD-01](docs/decisions/PGD-01-STEEL-GUARDIAN.md). Historical Notion links are archival only.
 
 ## 1. Giới thiệu
 
 **Minecraft Fusion Defense** là dự án game Tower Defense 2D Pixel Art side-view, single-player dành cho Desktop Web, lấy cảm hứng từ Minecraft và Plants vs. Zombies. Người chơi triệu hồi Defenders, thu thập tài nguyên, kết hợp Defenders bằng Fusion và chống lại các đợt Enemy.
 
-**Project status:** tài liệu đang được đồng bộ theo Confirmed Decision Baseline 03/11/2026; không suy diễn game đã có build chạy được.
+**Project status:** current project decisions are documented under `docs/`; the Production Game Dataset remains blocked by unapproved content.
 
 ## 2. MVP Overview
 
 - Một Grassland Level, Grid 5 Rows × 9 Columns, 5 Waves.
 - 5 Base Defenders, 7 Fusion Defenders, 4 Enemy Types.
-- 7 Fusion Recipes, 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD).
+- 7 Fusion Recipes, 12 required Special Abilities (11 existing draft IDs; Steel Guardian `iron_bastion`).
 - Energy dùng Summon; Power Crystal dùng Abilities.
 - Initial content bảy Tier-1 + Tier-1 → Tier-2 Recipes; engine không có Tier ceiling. Fusion miễn phí, mọi Lane/distance, Output tại Target Cell; full own HP/no inherited statuses/attack-ready.
 - Pause, Victory và Defeat theo gameplay rules đã xác nhận.
@@ -45,14 +45,14 @@ Không có backend trong phạm vi MVP hiện tại. Chi tiết cấu trúc pack
 
 ## 5. Tài liệu dự án
 
-- [GDD — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81e4af03d52a246e9a7a)
-- [MVP Scope — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb)
-- [Technical Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81b6893ac6d59454f8be)
-- [Development Workflow — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81ccb23dea79a85f7123)
-- [Testing Strategy — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81dea9f1ffc88723a885)
-- [Tình trạng tài liệu — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d)
+- [GDD](docs/product/GDD.md)
+- [MVP Scope](docs/product/MVP_SCOPE.md)
+- [Technical Architecture](docs/architecture/TECHNICAL_ARCHITECTURE.md)
+- [Development Workflow](docs/development/DEVELOPMENT_WORKFLOW.md)
+- [Testing Strategy](docs/development/TESTING_STRATEGY.md)
+- [Documentation Status](docs/DOCUMENTATION_STATUS.md)
 
-Notion là nguồn tài liệu chính; Markdown trong repository là bản đồng bộ. `Synced` không đồng nghĩa `Approved`.
+The repository `docs/` directory is authoritative. A historical `Synced` label does not imply Owner approval.
 
 ## 6. Trạng thái và quyết định chưa chốt
 

@@ -3,11 +3,11 @@
 **Trạng thái:** Draft v1.0 — các Gameplay Rules được dẫn từ tài liệu Confirmed; cách chia module, interface và trình tự nội bộ là Proposed/TBD.  
 **Phạm vi:** Kiến trúc Phaser 3 cấp cao cho MVP; không mô tả thuật toán chi tiết hay chốt thông số Balance.
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Mục tiêu
 
-Định nghĩa trách nhiệm của Game Runtime, các Game Systems và luồng giao tiếp với React để AI Agent có cơ sở triển khai từng phần. Runtime phục vụ một Grassland Level, Battlefield 5×9, 5 Waves, 5 Base Defenders, 4 Enemy Types, 7 Fusion Defenders và 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD).
+Định nghĩa trách nhiệm của Game Runtime, các Game Systems và luồng giao tiếp với React để AI Agent có cơ sở triển khai từng phần. Runtime phục vụ một Grassland Level, Battlefield 5×9, 5 Waves, 5 Base Defenders, 4 Enemy Types, 7 Fusion Defenders và 12 required Special Abilities (11 existing draft IDs; Steel Guardian `iron_bastion` (effects TBD)).
 
 ## 2. Ranh giới Runtime
 
@@ -56,7 +56,7 @@ React UI / HUD
 | Resource | Energy/Items, Crystal/Items, Wave/Pending Rewards, Enemy rewards, spending | Values/caps/lifetimes đã Confirmed theo Gameplay Mechanics; Ability commit TBD |
 | Combat / Targeting | Chọn mục tiêu, tấn công, HP, damage, death và status effects | Enemy behaviors theo từng definition; chi tiết TBD |
 | Fusion | Validate approved Recipe data, consume inputs, create output | Không Tier ceiling; initial bảy Recipes; 0 cost, mọi Lane/distance, Target Cell/full HP/no statuses/attack-ready |
-| Special Ability | Kích hoạt Ability riêng của từng Defender và áp dụng hiệu ứng | 12 required Ability definitions (11 existing IDs + Steel Guardian Ability TBD); costs/effects/commit timing TBD |
+| Special Ability | Kích hoạt Ability riêng của từng Defender và áp dụng hiệu ứng | 12 required Ability definitions (11 existing IDs + Steel Guardian `iron_bastion` (effects TBD)); costs/effects/commit timing TBD |
 | Wave / Spawning | Đọc Wave Config, spawn Enemy, theo dõi tiến độ 5 Waves | Wave composition/timing TBD |
 | Victory / Defeat | Phát hiện thắng/thua và kết thúc simulation | Defeat ngay khi Enemy vượt base; Victory sau 5 Waves và hết Enemy |
 

@@ -3,7 +3,7 @@
 **Status:** Draft v1.0 — các danh mục và luật Confirmed lấy từ tài liệu thiết kế; mô hình dữ liệu và cấu trúc file là Proposed/TBD.  
 **Scope:** Nền tảng dữ liệu cho MVP; không phải schema code cuối cùng hoặc Runtime Config đã phê duyệt.
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Mục tiêu
 
@@ -32,9 +32,9 @@ Xác định các nhóm Game Data, ranh giới giữa dữ liệu tĩnh và tr�
 | Wave Definition | 5 Waves, spawn entries, timing, rewards | Level Design |
 | Resource Configuration | Energy generation/items, Power Crystal items/rewards, caps | Gameplay Mechanics, Game Balancing |
 
-MVP có 5 Base Defenders, 7 Fusion Defenders, 4 Enemy Types, 7 Recipes và 12 required Ability definitions (11 existing IDs + Steel Guardian Ability TBD). Không tự mở rộng các danh mục này.
+MVP có 5 Base Defenders, 7 Fusion Defenders, 4 Enemy Types, 7 Recipes và 12 required Ability definitions (11 existing draft IDs + Steel Guardian `iron_bastion`). Không tự mở rộng các danh mục này.
 
-**Confirmed content / TBD IDs:** Steel Guardian (Iron Golem + Iron Golem, Tier 2) thuộc 7 outputs. Entity ID, Recipe ID và Ability ID/name đều `TBD`, không tự đặt identifier hoặc schema. 12 required Ability definitions gồm 11 existing draft IDs và một Steel Guardian Ability TBD. Unlock mapping đọc theo Fusion Recipes; replay Victory cộng tiến độ, Fusion không là Victory prerequisite.
+**Confirmed — [PGD-01](../decisions/PGD-01-STEEL-GUARDIAN.md):** Steel Guardian (`steel_guardian`, Iron Golem + Iron Golem, Tier 2) uses recipe `fusion_steel_guardian` and Ability `iron_bastion` (Iron Bastion). Crowd Control Guardian and Crushing Strike are confirmed design identities; executable effects, stats, cost and cooldown remain TBD. The other 11 Ability IDs retain Draft status. Unlock mapping đọc theo Fusion Recipes; replay Victory cộng tiến độ, Fusion không là Victory prerequisite.
 
 ## 4. Definition và Runtime State
 

@@ -4,7 +4,7 @@
 
 **Repository path:** `docs/development/TESTING_STRATEGY.md`
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Mục tiêu
 
@@ -34,13 +34,13 @@ Test files, fixtures, browser versions và commands cụ thể phải đối chi
 | Pause | Đóng băng movement, combat, spawning, resource generation, cooldown và gameplay timers; Resume tiếp tục |
 | Combat/Enemies | 4 Enemy Types, di chuyển từ phải sang trái; hành vi chi tiết theo definitions đã duyệt |
 | Waves/End State | Một Grassland Level, 5 Waves; Defeat khi base breach; Victory sau tất cả Waves và hết Enemy |
-| Abilities | 12 required Ability definitions (11 existing IDs + Steel Guardian Ability TBD) và owner mapping; hiệu ứng, costs, cooldowns chỉ kiểm thử khi đã có cấu hình được phê duyệt |
+| Abilities | 12 required Ability definitions (11 existing IDs + Steel Guardian `iron_bastion` (effects TBD)) và owner mapping; hiệu ứng, costs, cooldowns chỉ kiểm thử khi đã có cấu hình được phê duyệt |
 | Data Integrity | IDs/references/approved Recipes hợp lệ, không trùng unordered input pair, Zod validation |
 | Save & Resume | Trận tiếp tục sau reload/close; persistent unlock progression riêng |
 | Achievements / replay | Victory-only records; Defeat không cấp unlock mới; replay Victory được cộng dồn tiến độ; unlock reward không cấp trùng |
 | Simulation events | Attack/movement tính đồng thời, sequence number tăng dần; terminal result theo event resolve trước, không blanket priority |
 
-- Kiểm tra Iron Golem + Iron Golem → Steel Guardian, đảo thứ tự không đổi output; IDs mới TBD nên chưa tạo runtime fixture.
+- Kiểm tra `iron_golem` + `iron_golem` → `steel_guardian`, đảo thứ tự không đổi output; IDs được PGD-01 xác nhận, nhưng chưa tạo production runtime fixture vì executable Ability effects và nhiều nội dung khác còn TBD.
 - Kiểm tra mapping: Iron Golem/Skeleton và Skeleton Sniper/Steel Guardian mở đầu; Snow Golem first Victory, Wolf 50 qualifying kills, Blaze 5 Victories; các Recipe còn lại auto-unlock theo inputs. Replay Victory cộng tiến độ; Defeat không cộng; reward idempotent.
 - Kiểm tra thắng Grassland bằng Base Defenders không cần Fusion count. Balance/harness/coverage chưa được tự chốt.
 
@@ -48,7 +48,7 @@ Test files, fixtures, browser versions và commands cụ thể phải đối chi
 
 - Không sử dụng Prototype/placeholder balance numbers như expected values chính thức.
 - Với thiếu definition hoặc reference sai, test phải xác minh lỗi được báo rõ theo contract đã được phê duyệt.
-- Với Ability spend/commit/rollback, combat stats, Wave composition, Steel Guardian technical IDs/Ability hoặc chi tiết Save/Event generation chưa chốt, ghi `Blocked — TBD` thay vì tự đặt expected. Enemy Rewards, caps và Fusion HP/status/readiness đã Confirmed, không còn blocker TBD.
+- Với Ability spend/commit/rollback, combat stats, Wave composition, Steel Guardian effect mechanics hoặc chi tiết Save/Event generation chưa chốt, ghi `Blocked — TBD` thay vì tự đặt expected. Steel Guardian IDs/names/identity theo PGD-01; Enemy Rewards, caps và Fusion HP/status/readiness đã Confirmed.
 - Không biến mô tả Proposed thành acceptance test bắt buộc khi chưa được duyệt.
 
 ## 5. Test Workflow (Proposed)

@@ -3,7 +3,7 @@
 **Phiên bản:** Draft v1.0 — Chưa chốt thông số  
 **Ngôn ngữ:** Tiếng Việt; giữ nguyên tên riêng và định danh kỹ thuật bằng tiếng Anh.
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Mục đích
 
@@ -180,7 +180,7 @@ Không tự đặt Ability Cost, Wave Reward amounts hoặc thuật toán chọn
 | Defender | Ability ID | Power Crystal Cost | Cooldown | Damage / Effect Amount | Duration / Range |
 | --- | --- | --- | --- | --- | --- |
 | Snow Golem | `blizzard` | TBD | TBD | TBD | TBD |
-| Steel Guardian | TBD | TBD | TBD | TBD | TBD |
+| Steel Guardian | `iron_bastion` | TBD | TBD | TBD | TBD |
 | Iron Golem | `earthquake` | TBD | TBD | TBD | TBD |
 | Skeleton | `arrow_storm` | TBD | TBD | TBD | TBD |
 | Wolf | `pack_frenzy` | TBD | TBD | TBD | TBD |
@@ -334,7 +334,7 @@ Các mục này là **rủi ro cần kiểm thử**, không phải cơ chế m�
 - [ ] Tất cả 5 Base Defenders có dòng thông số rõ ràng.
 - [ ] Tất cả 7 Fusion Defenders có dòng thông số rõ ràng.
 - [ ] Tất cả 4 Enemies có dòng thông số rõ ràng.
-- [ ] Tất cả 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD) có dòng Cost/Cooldown/Effect.
+- [ ] Tất cả 12 required Special Abilities (11 existing draft IDs; Steel Guardian `iron_bastion` (effects TBD)) có dòng Cost/Cooldown/Effect.
 - [ ] Cả 5 Waves có bảng Composition/Spawn/Reward.
 - [ ] Các thông số chưa được xác nhận đều là TBD.
 - [ ] Không sử dụng số Prototype như thông số chính thức.

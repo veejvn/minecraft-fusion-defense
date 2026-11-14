@@ -3,11 +3,11 @@
 **Trạng thái:** Draft v1.0 — Bản tiếng Việt  
 **Phạm vi:** MVP Desktop Web; chiến trường 5 × 9; 5 Base Defenders; 7 Fusion Defenders; 4 Enemy; 5 Waves tại Grassland.
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Mục đích
 
-Tài liệu định nghĩa danh mục 12 **required Special Abilities** (11 existing draft IDs + Steel Guardian Ability TBD), quy tắc kích hoạt, hiệu ứng, cấu trúc dữ liệu, tình huống đặc biệt và tiêu chí nghiệm thu cho MVP. Cần đọc cùng `GDD.md`, `GAMEPLAY_MECHANICS.md`, `ENTITY_CATALOG.md` và `FUSION_RECIPES.md`.
+Tài liệu định nghĩa danh mục 12 **required Special Abilities** (11 existing draft IDs + Steel Guardian `iron_bastion` (effects TBD)), quy tắc kích hoạt, hiệu ứng, cấu trúc dữ liệu, tình huống đặc biệt và tiêu chí nghiệm thu cho MVP. Cần đọc cùng `GDD.md`, `GAMEPLAY_MECHANICS.md`, `ENTITY_CATALOG.md` và `FUSION_RECIPES.md`.
 
 **Nhãn quyết định:** **Confirmed** = đã xác nhận; **Draft** = đề xuất thiết kế; **TBD** = chưa quyết định. Không được xem cơ chế hoặc thông số Draft là đã chốt.
 
@@ -27,7 +27,7 @@ Tài liệu định nghĩa danh mục 12 **required Special Abilities** (11 exis
 | Ability ID | Tên Ability | Defender sở hữu | Vai trò | Trạng thái |
 | --- | --- | --- | --- | --- |
 | `blizzard` | Blizzard | `snow_golem` | Khống chế diện rộng | Draft |
-| `TBD` | TBD | Steel Guardian (Entity ID TBD) | TBD | TBD — chưa phê duyệt Ability ID/name/effect |
+| `iron_bastion` | Iron Bastion | `steel_guardian` | Defensive identity | Confirmed identity/name/ID; effects TBD |
 | `earthquake` | Earthquake | `iron_golem` | Sát thương tuyến trước / gián đoạn | Draft |
 | `arrow_storm` | Arrow Storm | `skeleton` | Sát thương tầm xa diện rộng | Draft |
 | `pack_frenzy` | Pack Frenzy | `wolf` | Bùng nổ cận chiến / Buff | Draft |
@@ -134,9 +134,9 @@ Tên kỹ năng và ý tưởng hiệu ứng trong bảng vẫn ở trạng thá
 - **Thông số:** `radiusCells`, `attackSpeedMultiplier`, `damageMultiplier`, `durationMs` — TBD.
 - **Lưu ý:** Quy tắc cộng dồn Buff và việc áp dụng lên Fusion Defender vẫn TBD.
 
-### 5.7. Steel Guardian — Ability TBD
+### 5.7. Steel Guardian — Iron Bastion
 
-**Confirmed:** Steel Guardian cần Ability riêng trong tổng 12 definitions. **TBD:** Entity ID, Ability ID/name/effects, combat role, Power Crystal cost/cooldown; không tự tạo tên hoặc cơ chế. 11 Ability IDs cũ giữ Draft.
+**Confirmed — [PGD-01](../decisions/PGD-01-STEEL-GUARDIAN.md):** Steel Guardian (`steel_guardian`) has Iron Bastion (`iron_bastion`), a Special Ability with defensive identity. The other eleven Ability IDs retain their Draft status. **TBD:** whether this uses Shield, Armor, resistance or another mechanic; area, targeting, duration, Power Crystal cost, cooldown applicability, executable effect contract and lifecycle. The approved name and identity are not executable effects.
 
 ## 6. Quy trình kích hoạt Ability
 
@@ -242,7 +242,7 @@ Ví dụ JSON **chỉ minh họa cấu trúc**, không phải thông số đã c
 
 ## 12. Acceptance Criteria của MVP
 
-- [ ] Có đúng 12 Ability definitions tham chiếu tới 12 Defender (Steel Guardian Ability ID TBD) trong MVP.
+- [ ] Có đúng 12 Ability definitions tham chiếu tới 12 Defender (Steel Guardian Ability ID `iron_bastion`) trong MVP.
 - [ ] Mỗi Defender có đúng một Special Ability được định nghĩa.
 - [ ] Power Crystal độc lập với Energy.
 - [ ] Kích hoạt Ability yêu cầu đủ Power Crystal.

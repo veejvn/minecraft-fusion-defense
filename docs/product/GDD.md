@@ -12,13 +12,13 @@
 **Target resolution:** 16:9  
 **Primary language:** English-only UI, instructions and messages — Confirmed 03/11/2026
 
-**Source:** [GDD — Notion](https://app.notion.com/p/40c62d2ce36e81e4af03d52a246e9a7a)  
+**Archival source:** [GDD — Notion](https://app.notion.com/p/40c62d2ce36e81e4af03d52a246e9a7a)
 **Confirmed decisions:** 02/11/2026  
 **Decision status:** Confirmed = quyết định được chủ dự án xác nhận; ưu tiên baseline 03/11/2026 cho các điểm được thay thế; Proposed = đề xuất chưa được phê duyệt; TBD = chưa xác định. Trạng thái Draft của tài liệu không làm thay đổi các quyết định Confirmed.
 
 ---
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Game Overview
 
@@ -566,7 +566,7 @@ Phiên bản MVP tập trung vào:
 - Fusion cùng loại và khác loại.
 - Bảy Fusion Recipes và bảy Tier-2 Fusion Defenders, theo mục 6.4.
 - Nội dung ban đầu chỉ bảy Recipe Tier-2; engine không có Tier ceiling cố định.
-- 12 required Special Ability definitions (11 existing draft IDs + Steel Guardian Ability TBD) cho các Defender và Fusion Defender được đưa vào MVP.
+- 12 required Special Ability definitions (11 existing draft IDs + Steel Guardian `iron_bastion` (effects TBD)) cho các Defender và Fusion Defender được đưa vào MVP.
 - Energy System.
 - Wave System.
 - Combat System.
@@ -697,7 +697,7 @@ Nếu dự án được phát hành công khai hoặc thương mại:
 
 | Nhóm | TBD chưa được phê duyệt |
 | --- | --- |
-| Product Design | Initial unlocks/mapping và Fusion optional đã Confirmed; Achievement UI/tracking và Steel Guardian technical IDs/combat/Ability còn TBD |
+| Product Design | Initial unlocks/mapping và Fusion optional đã Confirmed; Achievement UI/tracking và Steel Guardian IDs/names/identity đã Confirmed; detailed combat/Ability mechanics còn TBD |
 | Coding Planning | Combat stats, Summon Cost, Enemy behavior/targeting; Wave composition/timing/reward amounts; Energy Item amount/rate |
 | Coding Planning | Ability effects/area/cost/cooldown/spend/commit/rollback; Pack Frenzy/Blizzard scope |
 | Coding Planning | Fusion interaction cooldown/animation; Save implementation; detailed Event Queue generation/edge cases |

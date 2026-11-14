@@ -6,20 +6,20 @@
 
 ## 1. Mục tiêu
 
-Mô tả vòng đời một task coding và đồng bộ tài liệu, không áp đặt Git branching/CI/CD policy chưa được phê duyệt.
+Mô tả vòng đời một task coding và cập nhật tài liệu repository, không áp đặt Git branching/CI/CD policy chưa được phê duyệt.
 
 ## 2. Nguồn sự thật và phạm vi
 
-- Notion là nguồn tài liệu chính; Markdown Local được đồng bộ để AI Agent coding.
+- Markdown under [`docs/`](../DOCUMENTATION_POLICY.md) in this repository is the sole authoritative project documentation. Notion links are archival only.
 - `Confirmed` có thể dùng để triển khai trong phạm vi; `Draft`, `Proposed`, `Prototype`, `TBD` cần xác nhận khi ảnh hưởng quyết định.
-- `Synced` không đồng nghĩa `Approved`.
+- A commit or file timestamp does not itself establish approval.
 - Chỉ làm đúng task được giao, không mở rộng gameplay hoặc tự thêm package/dependency.
 
 ## 3. Quy trình cho một task
 
 1. **Nhận yêu cầu:** xác định mục tiêu, phạm vi và tiêu chí hoàn thành.
 2. **Kiểm tra:** đọc Git status, file liên quan và các tài liệu Confirmed.
-3. **Phát hiện blockers:** so sánh nguồn; phân biệt Conflict đồng bộ và Open Decision thiết kế.
+3. **Phát hiện blockers:** so sánh tài liệu repository; phân biệt mâu thuẫn quyết định và Open Decision thiết kế.
 4. **Lập kế hoạch ngắn:** liệt kê file dự kiến sửa, test dự kiến chạy và câu hỏi cần chủ dự án chọn.
 5. **Triển khai:** chỉ thực hiện phần không bị TBD/Conflict chặn; giữ nguyên thay đổi ngoài phạm vi.
 6. **Xác minh:** chạy test/lint/typecheck có sẵn, kiểm tra gameplay rules liên quan.
@@ -27,14 +27,16 @@ Mô tả vòng đời một task coding và đồng bộ tài liệu, không áp
 
 Không tự commit, push, reset hoặc clean.
 
-## 4. Quy trình tài liệu Notion ↔ Local
+## 4. Quy trình tài liệu repository
 
-- Trước sync, đọc cả hai bản và so sánh đầy đủ.
-- Local trống: nhập từ Notion và xác minh.
-- Hai bản tương đương: giữ nguyên, đánh dấu Synced.
-- Hai bản khác: báo Diff/Conflict; không tự merge hoặc ghi đè.
-- Sau sync, cập nhật `docs/DOCUMENTATION_STATUS.md` và trang báo cáo Notion khi được giao; xác minh kết quả.
-- Không tự nâng `Draft/Proposed/TBD` thành `Confirmed`.
+1. Read current relevant `docs/` files.
+2. Identify Confirmed decisions, TBD fields and conflicts.
+3. Obtain Owner approval for decisions that remain open.
+4. Update the appropriate Markdown documents.
+5. Update related references and documentation status.
+6. Validate internal consistency and report actual changes.
+
+Never promote `Draft`, `Proposed`, `Prototype` or `TBD` to `Confirmed` without Owner approval. Do not require Notion updates or synchronization verification.
 
 ## 5. Thực hiện gameplay theo lát cắt nhỏ (Proposed)
 
@@ -65,6 +67,6 @@ Không tự commit, push, reset hoặc clean.
 
 ## 8. Tài liệu tham chiếu
 
-- [AI Agent Guidelines — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e8178b14edef36999a832)
-- [MVP Scope — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb)
-- [Tình trạng tài liệu — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d)
+- [AI Agent Guidelines](AI_AGENT_GUIDELINES.md)
+- [MVP Scope](../product/MVP_SCOPE.md)
+- [Documentation Status](../DOCUMENTATION_STATUS.md)

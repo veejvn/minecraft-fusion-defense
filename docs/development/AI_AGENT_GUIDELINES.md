@@ -3,18 +3,18 @@
 **Status:** Draft v1.0 — hướng dẫn quy trình đề xuất; không tự thay thế chỉ đạo trực tiếp của chủ dự án.  
 **Audience:** AI Coding Agents làm việc trong repository.
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Mục tiêu
 
-Giúp AI Agent triển khai MVP nhất quán với tài liệu đã phê duyệt, tránh tự quyết định gameplay, thay đổi phạm vi hoặc ghi đè nội dung Local/Notion khi chưa có sự đồng ý.
+Giúp AI Agent triển khai MVP nhất quán với tài liệu repository đã phê duyệt, tránh tự quyết định gameplay, thay đổi phạm vi hoặc ghi đè thay đổi hiện có.
 
 ## 2. Nguồn thông tin và trạng thái quyết định
 
-- **Notion:** nguồn tài liệu thiết kế chính; Local Markdown là bản đồng bộ dùng cho coding.
+- **Repository `docs/`:** sole authoritative project documentation; read [Documentation Policy](../DOCUMENTATION_POLICY.md), relevant decision records and catalogs. Notion is neither a required reference nor a synchronization target.
 - **Confirmed:** có thể dùng làm yêu cầu triển khai trong đúng phạm vi đã xác nhận.
 - **Draft / Proposed / Prototype / TBD:** chưa được phê duyệt; không tự nâng thành Confirmed.
-- **Synced:** chỉ chứng minh Local và Notion tương đương, không có nghĩa Approved.
+- A commit or file timestamp does not establish Owner approval.
 - Nếu hai tài liệu mâu thuẫn hoặc một quyết định thiếu thông tin, **dừng tại phần phụ thuộc**, nêu nguồn và hỏi chủ dự án; không tự chọn.
 - Không dựa vào thời gian sửa file mới hơn để kết luận tài liệu có thẩm quyền hơn.
 
@@ -39,7 +39,7 @@ Giúp AI Agent triển khai MVP nhất quán với tài liệu đã phê duyệt
 ## 5. Gameplay Rules không được làm sai
 
 - Battlefield 5 Rows × 9 Columns; Enemy di chuyển từ phải sang trái theo Lane.
-- MVP gồm 5 Base Defenders, 4 Enemies, 7 Fusion Recipes, 7 Fusion Defenders, 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD), một Grassland Level và 5 Waves.
+- MVP gồm 5 Base Defenders, 4 Enemies, 7 Fusion Recipes, 7 Fusion Defenders, 12 required Special Abilities (11 existing draft IDs; Steel Guardian `iron_bastion`), một Grassland Level và 5 Waves.
 - Fusion: kéo Source lên Target, order-independent, 0 cost, mọi Lane/distance, Target Cell/Source trống. Output 100% own Max HP, không inherited statuses, attack-ready; engine không fixed Tier ceiling, chỉ bảy approved initial Recipes.
 - Energy dùng Summon; Power Crystal dùng Special Abilities.
 - Pause đóng băng simulation và gameplay timers.
@@ -53,7 +53,7 @@ Giúp AI Agent triển khai MVP nhất quán với tài liệu đã phê duyệt
 - **Confirmed:** manual playthrough toàn bộ Grassland 5 Waves và automated tests cho core gameplay (Fusion, resources, combat, Victory/Defeat, Save & Resume). Coverage, cases/harness/fixtures, browser/OS matrix và CI gates vẫn Coding Planning TBD.
 - Không tự thêm Base HP/Lives, Fusion Energy Cost hoặc Recipe ngoài danh mục.
 
-- Steel Guardian: Iron Golem + Iron Golem, Tier 2, Recipe mở đầu — Confirmed. Entity/Recipe technical IDs, combat identity/stats và Ability ID/name/effects/cost/cooldown vẫn TBD; không tự đặt identifier hay nâng draft Ability concepts thành Confirmed.
+- Steel Guardian: Iron Golem + Iron Golem, Tier 2, Recipe mở đầu — Confirmed. [PGD-01](../decisions/PGD-01-STEEL-GUARDIAN.md) confirms its IDs, Crowd Control Guardian identity, Crushing Strike and Iron Bastion; stats, executable effects, cost and cooldown applicability remain TBD.
 
 ## 6. Quy tắc kiến trúc
 

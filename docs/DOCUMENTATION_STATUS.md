@@ -1,6 +1,12 @@
 # Tình trạng tài liệu — Minecraft Fusion Defense
 
-## Current Documentation Status — Notion Source Cleanup
+## Current Documentation Status — Repository Authority (2026-11-14)
+
+Effective 2026-11-14, Markdown under `docs/` in this GitHub repository is the sole authoritative project documentation. Notion authority and synchronization requirements are retired; historical Notion links and sync reports below are archival evidence, not current instructions. See [Documentation Policy](DOCUMENTATION_POLICY.md).
+
+[PGD-01 Steel Guardian](decisions/PGD-01-STEEL-GUARDIAN.md) is Confirmed: `steel_guardian`, `fusion_steel_guardian`, `iron_bastion`, Crowd Control Guardian, Crushing Strike, Iron Bastion, and initial recipe unlock. The Production Game Dataset remains **BLOCKED BY UNAPPROVED CONTENT**. The executable Ability effect contract is not yet approved. Historical claims below that Steel Guardian IDs, name, or identity are TBD are superseded by PGD-01; other stated TBD mechanics and numerical values remain open.
+
+## Historical Documentation Status — Notion Source Cleanup (Superseded)
 
 **Revision timestamp:** 2026-11-03T21:50:56+07:00. R1 là snapshot validation đã được Approve; checkpoint xuất bản bên dưới cập nhật trạng thái hiện hành. Đây là phần trạng thái hiện hành duy nhất; các mục 5.x và khối Product Design Update nhúng đều là lịch sử superseded.
 

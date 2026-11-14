@@ -2,7 +2,7 @@
 **Project:** Minecraft Fusion Defense  
 **Status:** Draft v1.0 — nội dung Confirmed kế thừa tài liệu dự án; lịch trình, thông số kỹ thuật và lựa chọn chưa duyệt giữ Proposed/TBD.
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Mục tiêu
 
@@ -19,7 +19,7 @@ Pixel dimensions, atlas layout, source licensing/attribution policy và pipeline
 | Defender sprites | 5 Base + 7 Fusion Defenders |
 | Enemy sprites | Zombie, Husk, Spider, Pillager |
 | Battlefield | Grassland, 5×9 Grid, background/tiles |
-| Effects | Combat, Fusion, 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD) |
+| Effects | Combat, Fusion, 12 required Special Abilities (11 existing draft IDs; Steel Guardian `iron_bastion` (effects TBD)) |
 | UI assets | HUD, Energy, Power Crystal, controls |
 | Audio | Optional/deferred; không bắt buộc SFX/BGM cho MVP |
 

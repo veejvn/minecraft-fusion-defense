@@ -3,7 +3,7 @@
 **Trạng thái:** Draft v1.0 — phạm vi Confirmed được kế thừa từ tài liệu nguồn; các mục chưa chốt vẫn TBD.  
 **Mục đích:** Xác định ranh giới triển khai MVP để AI Agent bắt đầu coding mà không mở rộng tính năng hoặc tự chốt Game Balancing.
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Decision references:** [Documentation Policy](../DOCUMENTATION_POLICY.md), [PGD-01 Steel Guardian](../decisions/PGD-01-STEEL-GUARDIAN.md), and confirmed decisions in the current repository catalogs. Historical Notion links are archival only; Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Mục tiêu MVP
 
@@ -19,7 +19,7 @@
 | --- | --- | --- |
 | Platform | Desktop Web PC/laptop, Local only, internal testing | Confirmed |
 | Campaign / difficulty / language | Grassland, 5 Waves, 5 × 9, beginner-friendly, English-only | Confirmed |
-| Content | 5 Base Defenders, 4 Enemy types, 7 approved Fusion Defenders/Recipes, 12 required Special Abilities (11 existing draft IDs; Steel Guardian Ability TBD) | Confirmed scope; chưa phê duyệt Ability effects/parameters |
+| Content | 5 Base Defenders, 4 Enemy types, 7 approved Fusion Defenders/Recipes, 12 required Special Abilities (11 existing draft IDs; Steel Guardian `iron_bastion`) | Confirmed scope; chưa phê duyệt Ability effects/parameters |
 | Fusion | Miễn phí, mọi Lane/khoảng cách, Output tại Target; 100% own Max HP, no inherited status effects, attack khi có target | Confirmed |
 | Resources | Energy/Crystal values và delivery theo Gameplay Mechanics / Game Balancing | Confirmed cho các thông số đã liệt kê |
 | Navigation | Main Menu, Level Selection, Settings, Achievements, Defender Collection | Confirmed |
@@ -47,7 +47,7 @@
 | Defender | Ability ID |
 | --- | --- |
 | Snow Golem | `blizzard` |
-| Steel Guardian | `TBD` |
+| Steel Guardian (`steel_guardian`) | `iron_bastion` |
 | Iron Golem | `earthquake` |
 | Skeleton | `arrow_storm` |
 | Wolf | `pack_frenzy` |
@@ -113,7 +113,7 @@ Checklist là tiêu chí chưa được kiểm chứng bằng gameplay trong nhi
 
 | Nhóm | Nội dung chưa chốt |
 | --- | --- |
-| Product Design | Initial unlocks/mapping và Fusion optional đã Confirmed; Achievement UI/tracking và Steel Guardian technical IDs/combat/Ability còn TBD |
+| Product Design | Initial unlocks/mapping, Fusion optional, Steel Guardian IDs/names/identity đã Confirmed; Achievement UI/tracking và Steel Guardian effect mechanics còn TBD |
 | Coding Planning | Combat stats/costs; Wave composition/timing/reward amounts; Energy Item amount/spawn rate; Ability effects/area/cost/cooldown/commit/rollback |
 | Coding Planning | Save schema/storage/autosave/resume details; UI; exact event generation order/edge cases; tick/update details không được baseline chốt |
 | Coding Planning | Sprite dimensions/frames; test cases/coverage/harness; 0-based indexing và Loading/Ready approval status |
@@ -122,7 +122,7 @@ Energy/Crystal caps, passive Energy, Enemy rewards, Item lifetimes và Fusion ou
 
 ## 7. Nguyên tắc triển khai
 
-1. **Notion là nguồn tài liệu thiết kế chính**; Local Markdown được đồng bộ và kiểm tra riêng.
+1. **Markdown under `docs/` in this repository is the sole authoritative project documentation**; see [Documentation Policy](../DOCUMENTATION_POLICY.md).
 2. Chỉ coi nội dung có nhãn **Confirmed** là quyết định đã chốt; **Draft/Proposed/Prototype/TBD** không được tự nâng cấp.
 3. Nếu tính năng phụ thuộc vào một quyết định chưa chốt, AI Agent phải nêu câu hỏi rõ ràng và chờ chủ dự án xác nhận.
 4. Không mở rộng MVP chỉ vì Tech Stack hoặc thư viện hỗ trợ sẵn.

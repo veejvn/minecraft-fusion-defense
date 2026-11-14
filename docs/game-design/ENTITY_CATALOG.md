@@ -5,11 +5,11 @@
 **Source file:** `docs/game-design/ENTITY_CATALOG.md`  
 **Status:** Draft v1.1 — approved roster and fusion combinations; numerical stats are prototype proposals.
 
-**Source:** [Entity Catalog — Notion](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951)  
+**Archival source:** [Entity Catalog — Notion](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951)
 **Confirmed decisions:** 02/11/2026  
 **Status key:** Confirmed = approved rules/roster/recipes; Proposed = unapproved draft concepts or prototype values; TBD = unspecified or awaiting confirmation. Combat/ability concepts below are Proposed; exact stats and targeting remain TBD.
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Scope and authoritative rules
 
@@ -33,12 +33,12 @@ Each Defender Definition must include: stable ID, display name, tier, role, HP, 
 
 ## 3. Fusion Defender catalog
 
-**Confirmed:** seven output names/input pairs and Tier 2; six existing IDs unchanged, Steel Guardian Entity ID TBD. **Proposed:** combat roles, attacks and Special Ability names.
+**Confirmed:** seven output names/input pairs and Tier 2; Steel Guardian ID, Crowd Control Guardian identity, Crushing Strike and Iron Bastion follow [PGD-01](../decisions/PGD-01-STEEL-GUARDIAN.md). Other combat roles, attacks and Special Ability names remain Proposed.
 
 | Entity ID | Name | Inputs | Tier | Combat role | Special Ability |
 | --- | --- | --- | --- | --- | --- |
 | `skeleton_sniper` | Skeleton Sniper | Skeleton + Skeleton | 2 | Long-range burst | Piercing Barrage |
-| `TBD` | Steel Guardian | Iron Golem + Iron Golem | 2 | TBD | TBD |
+| `steel_guardian` | Steel Guardian | Iron Golem + Iron Golem | 2 | Crowd Control Guardian | Iron Bastion |
 | `ice_golem` | Ice Golem | Snow Golem + Snow Golem | 2 | Ice Control | Absolute Zero |
 | `frost_guardian` | Frost Guardian | Iron Golem + Snow Golem | 2 | Tank / Control | Glacial Fortress |
 | `flame_fang` | Flame Fang | Blaze + Wolf | 2 | Melee Damage / Burn | Wildfire Rush |
@@ -96,7 +96,9 @@ Crystal Item từ Enemy death xuất hiện kể cả khi storage đầy (cap 5)
 | Defender | Ability ID |
 | --- | --- |
 | Snow Golem | `blizzard` |
-| Steel Guardian | `TBD` |
+| Steel Guardian | `iron_bastion` |
+
+Steel Guardian's normal attack is **Crushing Strike** (Confirmed name and interrupt-oriented melee identity). Its exact effects, targeting and numerical stats remain TBD.
 | Iron Golem | `earthquake` |
 | Skeleton | `arrow_storm` |
 | Wolf | `pack_frenzy` |

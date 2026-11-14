@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+`docs/` is the sole authoritative project documentation. Read [Documentation Policy](docs/DOCUMENTATION_POLICY.md), the relevant [Entity](docs/game-design/ENTITY_CATALOG.md), [Fusion](docs/game-design/FUSION_RECIPES.md), and [Ability](docs/game-design/ABILITY_CATALOG.md) catalogs, and [PGD-01 Steel Guardian](docs/decisions/PGD-01-STEEL-GUARDIAN.md). Historical Notion links are archival only. Draft, Proposed, Prototype, and TBD values remain unapproved; resolve conflicting gameplay decisions with the Owner.
+
 ## Project Structure & Module Organization
 
 This pnpm/Turborepo workspace has a Next.js app in `apps/web` and the Phaser runtime in `packages/game`. Keep React integration in `apps/web/components`; put game creation and scene code in `packages/game/src`. The other `packages/*` directories and root `tests/` are scaffolds. Unit tests currently live in `packages/game/tests`; browser tests and their isolated Vite fixture live in `apps/web/tests/e2e` and `apps/web/tests/fixtures`. Put web static files in `apps/web/public`. Product, architecture, and asset guidance is in `docs/`; execution reports belong in `docs/reports`.

@@ -6,13 +6,13 @@
 **Project:** Minecraft Fusion Defense  
 **Related document:** `GDD.md`
 
-**Source:** [Gameplay Mechanics — Notion](https://app.notion.com/p/40c62d2ce36e81eeaf62f611c5342660)  
+**Archival source:** [Gameplay Mechanics — Notion](https://app.notion.com/p/40c62d2ce36e81eeaf62f611c5342660)
 **Confirmed decisions:** 02/11/2026  
 **Decision status:** Confirmed = quyết định được chủ dự án xác nhận; ưu tiên baseline 03/11/2026 cho các điểm được thay thế; Proposed = đề xuất chưa được phê duyệt; TBD = chưa xác định. Trạng thái Draft của tài liệu không làm thay đổi các quyết định Confirmed.
 
 ---
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Overview
 
@@ -1236,7 +1236,7 @@ Gameplay Mechanics được xem là triển khai đúng khi đáp ứng các đi
 
 | Product Design / Coding Planning | TBD chưa được phê duyệt |
 | --- | --- |
-| Product Design | Initial unlocks/mapping và Fusion optional đã Confirmed; Achievement UI/tracking và Steel Guardian technical IDs/combat/Ability còn TBD |
+| Product Design | Initial unlocks/mapping và Fusion optional đã Confirmed; Achievement UI/tracking và Steel Guardian IDs/names/identity đã Confirmed; detailed combat/Ability mechanics còn TBD |
 | Coding Planning | HP/Damage/Attack Speed/Range/Move Speed/Summon Cost, Enemy behavior/targeting/collision |
 | Coding Planning | Wave composition/count/spawn timing/Wave Reward amounts; Energy Item amount/spawn rate/position distribution |
 | Coding Planning | Ability cost/cooldown/effects/area/commit/rollback; Pack Frenzy/Blizzard scope |

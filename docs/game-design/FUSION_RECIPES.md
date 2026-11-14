@@ -5,11 +5,11 @@
 **Source file:** `docs/game-design/FUSION_RECIPES.md`  
 **Status:** Draft v1.2 — core Fusion rules confirmed.
 
-**Source:** [Fusion Recipes — Notion](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41)  
+**Archival source:** [Fusion Recipes — Notion](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41)
 **Confirmed decisions:** 02/11/2026  
 **Status key:** Confirmed = approved core mechanics, seven recipes and Fusion output HP/status/readiness; Proposed = draft combat/ability concepts; TBD = pending animation/cooldown/UI and unapproved future recipes. Schema, event names and failure codes describe the draft implementation contract, not additional gameplay approvals.
 
-**Current decision baseline:** [MVP Decision Baseline — Confirmed Decisions (2026-11-03)](https://app.notion.com/p/40c62d2ce36e814fa972ec39a79a6773). Các quyết định được liệt kê thay thế mô tả cũ mâu thuẫn; các Draft/Proposed/Prototype/TBD không được baseline liệt kê vẫn chưa được phê duyệt. Lịch sử quyết định ngày 02/11/2026 được giữ trong metadata; quyết định 03/11/2026 ưu tiên khi có thay thế rõ ràng.
+**Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Purpose and scope
 
@@ -31,7 +31,7 @@ Fusion combines two valid living Defender instances by dragging Source onto Targ
 | Recipe ID | Input A | Input B | Output ID | Output name | Energy cost |
 | --- | --- | --- | --- | --- | --- |
 | `fusion_skeleton_sniper` | `skeleton` | `skeleton` | `skeleton_sniper` | Skeleton Sniper | 0 |
-| `TBD` | `iron_golem` | `iron_golem` | `TBD` | Steel Guardian | 0 |
+| `fusion_steel_guardian` | `iron_golem` | `iron_golem` | `steel_guardian` | Steel Guardian | 0 |
 | `fusion_ice_golem` | `snow_golem` | `snow_golem` | `ice_golem` | Ice Golem | 0 |
 | `fusion_frost_guardian` | `iron_golem` | `snow_golem` | `frost_guardian` | Frost Guardian | 0 |
 | `fusion_flame_fang` | `blaze` | `wolf` | `flame_fang` | Flame Fang | 0 |
@@ -64,7 +64,7 @@ Zombie Golem and Frost Creeper were replaced by Frost Guardian and Flame Fang be
 | Blaze + Wolf → Flame Fang | Automatically when both Blaze and Wolf unlock |
 
 
-**Steel Guardian TBD:** Recipe technical ID, Entity technical ID, combat role/attack identity, HP/Damage/Attack Speed/Range/targeting và Special Ability ID/name/effects/cost/cooldown chưa được phê duyệt. `TBD` trong bảng là placeholder, không là runtime ID.
+**Steel Guardian — [PGD-01](../decisions/PGD-01-STEEL-GUARDIAN.md):** Recipe/Entity/Ability IDs, Crowd Control Guardian identity, Crushing Strike and Iron Bastion are Confirmed. Attack and Ability effects, HP/Damage/Attack Speed/Range/targeting, Power Crystal cost and cooldown applicability remain TBD.
 
 ## 4. Recipe identities and trade-offs
 
@@ -177,7 +177,7 @@ Normalize the input pair (for example, lexicographically sorted IDs) and reject 
 
 ## 11. Pending design decisions
 
-**Product Design Confirmed:** initial unlocks/mapping và Fusion optional đã chốt; Steel Guardian combat/Ability và technical IDs vẫn TBD.
+**Product Design Confirmed:** initial unlocks/mapping và Fusion optional đã chốt; Steel Guardian IDs, names and design identity follow PGD-01. Detailed combat and Ability mechanics remain TBD.
 
 **Coding Planning TBD:** Fusion interaction cooldown (if any), animation duration, discovery UI, detailed concurrency/event generation edge cases. Output HP initialization/status inheritance/attack readiness are Confirmed, not pending.
 
