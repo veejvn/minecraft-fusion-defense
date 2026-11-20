@@ -54,12 +54,17 @@ export class EventQueue<P> {
   restore(snapshot: QueueSnapshot<P>): void {
     if (!Number.isSafeInteger(snapshot.nextSequence) || snapshot.nextSequence < 0 ||
       !Number.isSafeInteger(snapshot.nextId) || snapshot.nextId < 0 ||
-      snapshot.events.length > QUEUE_CAPACITY) throw new RangeError('Invalid queue snapshot');
+      !Array.isArray(snapshot.events) || snapshot.events.length > QUEUE_CAPACITY) {
+      throw new RangeError('Invalid queue snapshot');
+    }
     const ids = new Set<string>();
     const sequences = new Set<number>();
     for (const event of snapshot.events) {
       this.validate(event.scheduledTick, event.causalDepth);
-      if (typeof event.id !== 'string' || !event.id || ids.has(event.id) ||
+      const idNumber = typeof event.id === 'string' ? Number(event.id.slice(6)) : NaN;
+      if (event.causalDepth > MAX_CAUSAL_DEPTH ||
+        !Number.isSafeInteger(idNumber) || idNumber < 0 || idNumber >= snapshot.nextId ||
+        event.id !== `event_${idNumber}` || ids.has(event.id) ||
         !Number.isSafeInteger(event.insertionSequence) || event.insertionSequence < 0 ||
         event.insertionSequence >= snapshot.nextSequence || sequences.has(event.insertionSequence)) {
         throw new RangeError('Invalid event identity or sequence');
@@ -81,6 +86,7 @@ export class EventQueue<P> {
   }
 
   enqueue(input: EventInput<P>, tick: number): SimulationEvent<P> {
+    if (!Number.isSafeInteger(tick) || tick < 0) throw new RangeError('Invalid current tick');
     this.validate(input.scheduledTick, input.causalDepth);
     if (input.causalDepth > MAX_CAUSAL_DEPTH) throw this.failure('CAUSAL_DEPTH', tick, null, input.causalDepth);
     if (this.size >= QUEUE_CAPACITY) throw this.failure('QUEUE_OVERFLOW', tick, null, input.causalDepth);

@@ -7,14 +7,17 @@ export class SimulationClock {
   readonly tickDurationMs: number;
   private accumulatorMs = 0;
   private paused = false;
+  private readonly maxCatchUpTicks: number;
   tick = 0;
 
-  constructor(private readonly config: ClockConfig) {
+  constructor(config: ClockConfig) {
     if (!Number.isFinite(config.ticksPerSecond) || config.ticksPerSecond <= 0 ||
       !Number.isSafeInteger(config.maxCatchUpTicks) || config.maxCatchUpTicks <= 0) {
       throw new RangeError('Clock requires a positive tick rate and catch-up bound');
     }
     this.tickDurationMs = 1000 / config.ticksPerSecond;
+    if (!Number.isFinite(this.tickDurationMs)) throw new RangeError('Tick duration is out of range');
+    this.maxCatchUpTicks = config.maxCatchUpTicks;
   }
 
   setPaused(paused: boolean): void {
@@ -26,7 +29,7 @@ export class SimulationClock {
     if (this.paused) return 0;
     this.accumulatorMs += elapsedMs;
     let executed = 0;
-    while (this.accumulatorMs + Number.EPSILON >= this.tickDurationMs && executed < this.config.maxCatchUpTicks) {
+    while (!this.paused && this.accumulatorMs >= this.tickDurationMs && executed < this.maxCatchUpTicks) {
       this.accumulatorMs -= this.tickDurationMs;
       onTick(++this.tick);
       executed++;

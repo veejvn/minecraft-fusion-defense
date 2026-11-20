@@ -1,9 +1,14 @@
 import { EVENTS_PER_TICK, type TransactionEngine, type TransactionOptions, type TransactionResult } from '../core/transaction';
 
 export class EventScheduler<S, P, R> {
+  private lastTick = -1;
+
   constructor(private readonly engine: TransactionEngine<S, P, R>) {}
 
   runTick(tick: number, options: TransactionOptions = {}): TransactionResult[] {
+    if (!Number.isSafeInteger(tick) || tick < 0) throw new RangeError('Invalid scheduler tick');
+    if (tick <= this.lastTick) return [];
+    this.lastTick = tick;
     const results: TransactionResult[] = [];
     let remaining = EVENTS_PER_TICK;
     while (remaining > 0 && this.engine.peekDue(tick)) {
