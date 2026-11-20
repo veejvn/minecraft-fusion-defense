@@ -21,7 +21,7 @@ Counts are from conversation summaries, **not** 538 individually source-verified
 - [Source Register](SOURCE_REGISTER.md)
 - [G01](systems/G01.md), [G02](systems/G02.md), [G03](systems/G03.md), [G04](systems/G04.md), [G05](systems/G05.md), [G06](systems/G06.md), [G07](systems/G07.md), [G08](systems/G08.md), [G09](systems/G09.md)
 - [Technical Contract](contracts/G09-TECHNICAL-CONTRACT.md)
-- [Final Audit](audits/G09-FINAL-AUDIT.md)
+- [G09 Decision Register](registers/G09-DECISION-REGISTER.md)
 - [GAP Register](audits/GAP_REGISTER.md)
 
 ## Verification labels
