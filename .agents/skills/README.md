@@ -1,6 +1,6 @@
 # Minecraft Fusion Defense — Skills Usage Guide
 
-**Scope:** Agent-facing guide for skills in `.agents/skills/`. This README is a routing and precedence guide, **not a new gameplay decision**, and does not modify or supersede the content of any `SKILL.md`.
+**Scope:** Agent-facing guide for skills in `.agents/skills/`. This README routes skill usage and does not create gameplay decisions. Three `minecraft-*` Project Skills are maintained for this project; all other skills are general-purpose and remain unchanged.
 
 ## 1. Authority and conflict resolution
 
@@ -45,13 +45,13 @@ The repository currently contains **18 skill directories**:
 
 **Skills are task-specific.** Do not apply all 18 indiscriminately. Read the relevant `SKILL.md` and any referenced material needed for the task. Do not invent or install missing skills without authorization.
 
-## 3. Known stale statements in project skills
+## 3. Historical conflicts now addressed in maintained Project Skills
 
-The following are **known compatibility warnings**, not edits to skill content:
+The three maintained Project Skills have been aligned with the repository-approved MVP as of this update. The following are **historical compatibility notes**; recheck current authoritative sources if future decisions change:
 
-- `minecraft-gameplay-rules/SKILL.md` and this README's historical predecessor say the Ability resource name is unresolved or suggest `Ability Resource`. The current approved resource name is **Power Crystal**; follow current `docs/product/GAMEPLAY_MECHANICS.md` and G09 contracts.
-- `minecraft-fusion-system/SKILL.md` presents **six historical GDD recipes**, including Zombie Golem and Frost Creeper. Do **not** treat that table as the current approved MVP recipe registry. Consult `docs/game-design/FUSION_RECIPES.md`, `docs/game-design/ENTITY_CATALOG.md`, `docs/decisions/PGD-01-STEEL-GUARDIAN.md` and relevant Owner decisions.
-- `minecraft-gameplay-testing/SKILL.md` likewise references tests for six historical recipes. Generate test expectations from **approved current data**, not the historical examples.
+- Earlier versions of `minecraft-gameplay-rules/SKILL.md` and this README said the Ability resource name was unresolved or suggested `Ability Resource`. The current approved resource name is **Power Crystal**; follow current `docs/product/GAMEPLAY_MECHANICS.md` and G09 contracts.
+- Earlier versions of `minecraft-fusion-system/SKILL.md` presented **six historical GDD recipes**, including Zombie Golem and Frost Creeper. Do **not** treat that table as the current approved MVP recipe registry. Consult `docs/game-design/FUSION_RECIPES.md`, `docs/game-design/ENTITY_CATALOG.md`, `docs/decisions/PGD-01-STEEL-GUARDIAN.md` and relevant Owner decisions.
+- Earlier versions of `minecraft-gameplay-testing/SKILL.md` likewise referenced tests for six historical recipes. Generate test expectations from **approved current data**, not the historical examples.
 - Generic `tower-defense`, `game-ai`, `phaser-arcade-physics`, `level-design`, and `prototype-fast` examples must not add targeting priorities, tower upgrades, Enemy behavior, physics, levels, balance values or branching workflows without task authorization.
 - Generic `phaser-core` and performance examples using frame delta or 60 FPS are **not** authorization to tie gameplay time to render frames or set a fixed tick rate.
 - Generic `save-systems` autosave/checkpoint examples must not override G02–G05 timing, storage, snapshot, or recovery requirements.
@@ -77,7 +77,9 @@ For `docs/development/T-04-CORE-SIMULATION-IMPLEMENTATION-PLAN.md`:
 
 ## 5. Skill maintenance policy
 
-- Treat each `SKILL.md` as an installed skill artifact; **do not edit any `SKILL.md`** under this task.
+- The Owner authorizes maintenance of exactly three project-specific skill files: `minecraft-gameplay-rules/SKILL.md`, `minecraft-fusion-system/SKILL.md`, and `minecraft-gameplay-testing/SKILL.md`, to align with approved current design.
+- **Do not modify the other 15 general-purpose skills**, including their `SKILL.md`, reference files or scripts. These are reusable external/general skills; apply current approved project rules instead of rewriting them.
+- Changes to the three Project Skills must be source-grounded and must not promote Draft/Proposed/TBD concepts to approved rules.
 - This README may document skill selection, precedence, and compatibility warnings. It must not silently change game rules.
 - Do not copy skill files into new paths or add unrelated assets/dependencies.
 - When a skill appears stale, identify its exact statement and the current approved source. If a material conflict remains unresolved, ask the Owner.
