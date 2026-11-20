@@ -1,50 +1,83 @@
-# Minecraft Fusion Defense — Project Skills
+# Minecraft Fusion Defense — Skills Usage Guide
 
-Bộ ba Project Skills dành cho AI coding agents, được biên soạn từ `GDD.md` và các quyết định gameplay đã xác nhận trong project conversation.
+**Scope:** Agent-facing guide for skills in `.agents/skills/`. This README is a routing and precedence guide, **not a new gameplay decision**, and does not modify or supersede the content of any `SKILL.md`.
 
-## Cấu trúc
+## 1. Authority and conflict resolution
 
-```text
-.agents/
-└── skills/
-    ├── minecraft-gameplay-rules/
-    │   └── SKILL.md
-    ├── minecraft-fusion-system/
-    │   └── SKILL.md
-    └── minecraft-gameplay-testing/
-        └── SKILL.md
-```
+Before using any skill, read the current task, `AGENTS.md`, `docs/DOCUMENTATION_POLICY.md`, and the applicable approved design/technical contracts.
 
-## Vai trò
+Use the following precedence **for implementation decisions**:
 
-| Skill | Dùng khi |
+1. **Explicit current Owner-approved task scope and decisions** (including a plan that accurately records them); a plan does not authorize inventing new rules or overriding an unrelated confirmed Owner decision.
+2. **Current authoritative repository documentation under `docs/`**, including newer explicit Owner decisions, approved catalogs, and relevant technical contracts. Follow the documentation policy to resolve authority and supersession; a newer timestamp alone is not proof of approval.
+3. **Skill instructions and reference examples**, as technical guidance only where compatible with items 1–2.
+4. **Existing code/tests**, as evidence of current implementation, not automatic authority over gameplay rules.
+5. General engine/genre conventions and examples are illustrative, not approved game behavior.
+
+If a skill contradicts a confirmed decision or the current approved implementation plan, **follow the approved decision/plan within its scope** and record the discrepancy in the agent's chat report. **Do not edit the skill** or silently rewrite project rules. If two confirmed Owner decisions genuinely conflict, or the plan itself contradicts an authoritative approved rule, stop only the affected implementation and ask the Owner; do not automatically treat every plan as superior to every document.
+
+Draft, Proposed, Prototype, TBD and example values never become approved defaults by appearing in a skill. Do not use archival Notion pages as an independent current source of truth.
+
+## 2. Installed skill catalog and routing
+
+The repository currently contains **18 skill directories**:
+
+| Skill | Use when relevant |
 |---|---|
-| `minecraft-gameplay-rules` | Thay đổi hoặc rà soát bất kỳ luật gameplay nào; xử lý tài nguyên, Enemy, Defender, targeting, Wave, Victory/Defeat. |
-| `minecraft-fusion-system` | Xây dựng hoặc sửa Fusion, recipe lookup, drag-and-drop, validation, Grid mutation và Fusion result. |
-| `minecraft-gameplay-testing` | Viết/chạy unit, integration và E2E tests cho gameplay. |
+| `minecraft-gameplay-rules` | Cross-system gameplay constraints; check against current catalogs and Owner decisions |
+| `minecraft-fusion-system` | Fusion input validation, recipes, placement and atomic mutations |
+| `minecraft-gameplay-testing` | Vitest/Playwright gameplay tests, deterministic and regression coverage |
+| `phaser-core` | Phaser scenes, lifecycle, rendering and engine integration |
+| `phaser-arcade-physics` | Arcade bodies/collisions **only when approved gameplay needs this physics system** |
+| `tower-defense` | General genre architecture; do not import generic tower/targeting/upgrade rules |
+| `performance-optimization` | Profiling and measurement; never replace approved event budgets with generic FPS heuristics |
+| `save-systems` | Serialization/persistence patterns, subordinate to G02–G05 checkpoint/recovery contracts |
+| `prototype-fast` | Explicitly authorized prototype/spike work, not default production task workflow |
+| `game-ai` | Enemy AI and movement when in scope; do not invent pathfinding or Enemy behaviors |
+| `input-systems` | Approved battlefield input and command validation |
+| `level-design` | Level/wave layout when authorized; no new levels/waves by default |
+| `game-ui-ux` | UI/HUD interaction and accessibility within the approved product scope |
+| `game-feel` | Presentation feedback after gameplay behavior is approved |
+| `audio-design` | Audio implementation only when requested; audio is not a mandatory MVP blocker |
+| `create-game-assets` | Authorized art/asset production, technical fit and provenance |
+| `procedural-gen` | Seeded randomness/generation when approved; not permission for procedural levels |
+| `shader-programming` | Approved shader/effect tasks, not default core-simulation work |
 
-## Cài đặt vào repository
+**Skills are task-specific.** Do not apply all 18 indiscriminately. Read the relevant `SKILL.md` and any referenced material needed for the task. Do not invent or install missing skills without authorization.
 
-Giải nén/copy thư mục `.agents/` trong gói này vào root repository của game. Nếu repository đã có `.agents/skills/`, chỉ cần copy ba thư mục skill vào đó; không ghi đè các skill hiện có.
+## 3. Known stale statements in project skills
 
-Các file có thể được dùng trực tiếp bởi agent hỗ trợ định dạng Agent Skills. Với công cụ chỉ tìm skill trong thư mục khác, cần cấu hình/copy theo quy ước của công cụ đó.
+The following are **known compatibility warnings**, not edits to skill content:
 
-## Quy tắc về nguồn sự thật
+- `minecraft-gameplay-rules/SKILL.md` and this README's historical predecessor say the Ability resource name is unresolved or suggest `Ability Resource`. The current approved resource name is **Power Crystal**; follow current `docs/product/GAMEPLAY_MECHANICS.md` and G09 contracts.
+- `minecraft-fusion-system/SKILL.md` presents **six historical GDD recipes**, including Zombie Golem and Frost Creeper. Do **not** treat that table as the current approved MVP recipe registry. Consult `docs/game-design/FUSION_RECIPES.md`, `docs/game-design/ENTITY_CATALOG.md`, `docs/decisions/PGD-01-STEEL-GUARDIAN.md` and relevant Owner decisions.
+- `minecraft-gameplay-testing/SKILL.md` likewise references tests for six historical recipes. Generate test expectations from **approved current data**, not the historical examples.
+- Generic `tower-defense`, `game-ai`, `phaser-arcade-physics`, `level-design`, and `prototype-fast` examples must not add targeting priorities, tower upgrades, Enemy behavior, physics, levels, balance values or branching workflows without task authorization.
+- Generic `phaser-core` and performance examples using frame delta or 60 FPS are **not** authorization to tie gameplay time to render frames or set a fixed tick rate.
+- Generic `save-systems` autosave/checkpoint examples must not override G02–G05 timing, storage, snapshot, or recovery requirements.
 
-1. Quyết định gameplay được project owner xác nhận.
-2. GDD và tài liệu thiết kế chi tiết không bị quyết định mới ghi đè.
-3. Code/tests hiện tại là bằng chứng implementation, không tự động là thiết kế đúng.
-4. Không tự suy diễn luật còn thiếu. Báo xung đột và hỏi khi cần quyết định có ảnh hưởng gameplay.
+When source provenance is still pending, implement only sufficiently specified and testable approved portions; do not claim overall Design Complete or Implementation Verified without evidence.
 
-## Các điểm cố ý để mở
+## 4. T-04 Core Simulation skill selection
 
-- Tên chính thức thay thế `Plant Food` chưa được chọn. Skills dùng `Ability Resource` làm thuật ngữ trung lập trong code/tài liệu kỹ thuật.
-- Quy tắc target priority chi tiết chưa được tái hiện đầy đủ trong nguồn hiện có. Không tự đặt nearest/first/strongest/random làm luật.
-- Chưa có mapping được xác nhận cho biết từng Enemy cụ thể sẽ attack hay ignore Defender.
-- Các thông số cân bằng, Fusion costs, cooldowns và nguồn cung Ability Resource cần lấy từ tài liệu được duyệt hoặc quyết định mới.
-- GDD có mâu thuẫn giữa roster Defender ban đầu và Fusion recipes (Zombie/Creeper là input recipe nhưng không có trong roster triệu hồi ban đầu). Skills yêu cầu flag thay vì tự sửa.
+For `docs/development/T-04-CORE-SIMULATION-IMPLEMENTATION-PLAN.md`:
 
-## Nguồn
+**Read/apply as relevant:** `minecraft-gameplay-testing`, `phaser-core`, `performance-optimization`, and `minecraft-gameplay-rules` for cross-system invariants. `save-systems` may inform snapshot interfaces, but **full checkpoint storage/recovery is outside T-04**. `tower-defense` is optional architecture background; it must not introduce gameplay.
 
-- `GDD.md` — Draft v1.0, đặc biệt các phần Battlefield, Entities, Fusion, Ability/Resource, Wave, Level Completion, Technical Direction, MVP Scope và Open Design Decisions.
-- Các quyết định gameplay đã xác nhận trong project conversation: Enemy-specific attack/ignore behavior; Energy Items xuất hiện ngẫu nhiên trên chiến trường; yêu cầu đổi tên tài nguyên kích hoạt Ability.
+**Approved T-04 specifics:**
+
+- Configurable tick rate and fixed simulation timestep; rendering is independent, catch-up bounded.
+- Unified Event Queue ordered by original Scheduled Tick + Insertion Sequence, with deferred FIFO.
+- Maximum **250 executed events per tick**, **4,096 queued events**, causal depth **32**.
+- Atomic speculative transactions, no partial commits; defer transactions that cannot fit remaining tick budget; transactions requiring more than 250 executed events fail-stop and signal Recovery.
+- Transactional state, RNG, IDs, and sequence allocation; deterministic regression tests.
+- Do not implement full G03–G05 recovery, Defender gameplay, Fusion, abilities, new balance or UI as part of T-04.
+
+**Execution workflow for T-04:** Work on the **local `main` working tree** only. Do not create/switch branches, merge the earlier experimental `feature/t-04-core-simulation` branch, commit or push unless separately authorized. Preserve local changes and report tests and blockers in chat. Do not create GitHub audit reports.
+
+## 5. Skill maintenance policy
+
+- Treat each `SKILL.md` as an installed skill artifact; **do not edit any `SKILL.md`** under this task.
+- This README may document skill selection, precedence, and compatibility warnings. It must not silently change game rules.
+- Do not copy skill files into new paths or add unrelated assets/dependencies.
+- When a skill appears stale, identify its exact statement and the current approved source. If a material conflict remains unresolved, ask the Owner.
