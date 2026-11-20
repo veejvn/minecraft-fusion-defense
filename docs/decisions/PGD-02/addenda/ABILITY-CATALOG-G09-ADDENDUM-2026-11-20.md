@@ -3,7 +3,7 @@
 **Authorization:** PGD-02.DOC-11 A (2026-11-20): create an additive Ability Catalog addendum, without overwriting existing documents.  
 **Status:** DOCUMENTATION ADDENDUM — G09 conversation-derived rules, **Confirmed — Source Pending Verification** for individual original approvals. **Not** independently Source Verified, not Implementation Verified, not a new Owner gameplay decision.  
 **Baseline preserved:** [Ability Catalog Draft v1.0](../../../game-design/ABILITY_CATALOG.md).  
-**Preparation:** [DOC-10 Sync Proposal](../proposals/DOCSYNC-ABILITY-STEEL-GUARDIAN-PROPOSAL-2026-11-20.md).
+**Preparation:** DOC-10 Sync Proposal (historical preparation record; removed from main).
 
 ## Reading and authority
 
