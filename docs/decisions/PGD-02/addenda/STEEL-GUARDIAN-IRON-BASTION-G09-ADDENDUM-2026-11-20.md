@@ -4,7 +4,7 @@
 **Status:** DOCUMENTATION ADDENDUM — later G09 conversation-derived details, **Confirmed — Source Pending Verification** for original individual approvals. Not a new Owner gameplay approval or implementation verification.  
 **Historical baseline preserved:** [PGD-01 Steel Guardian](../../PGD-01-STEEL-GUARDIAN.md).  
 **Companion:** [Ability Catalog G09 Addendum](ABILITY-CATALOG-G09-ADDENDUM-2026-11-20.md).  
-**Proposal:** [DOC-10 Sync Proposal](../proposals/DOCSYNC-ABILITY-STEEL-GUARDIAN-PROPOSAL-2026-11-20.md).
+**Proposal:** DOC-10 Sync Proposal (historical preparation record; removed from main).
 
 ## PGD-01 directly confirmed identity (repository evidence)
 
