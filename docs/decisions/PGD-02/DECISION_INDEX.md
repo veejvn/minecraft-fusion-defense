@@ -38,3 +38,8 @@ G09 is **DESIGN REVIEW — PENDING EVIDENCE**, not Design Complete.
 
 - [G09 individual decision register — CR1–CR25, GR1–GR10, TC1–TC50, FR1–FR25](registers/G09-DECISION-REGISTER.md): **110 reported decision IDs**, with option letters only where recovered. Every row is marked **Source Pending Verification**; this is not proof of 110 independently verified original approvals.
 - **Unindexed:** 428 reported decisions (G01–G08: 199; G09 General: 13; G09 ability-specific: 216). Original decision IDs and message-level evidence must be recovered before expanding the index. The total 538 is still conversation-reported.
+
+## Ability-specific design transcription
+
+- [G09 MVP Special Ability Register — 12 abilities](registers/G09-ABILITY-REGISTER.md): structured ability rules and lifecycle details transcribed from the conversation summary. **This does not recover the original 216 ability-specific decision IDs**; the 216 remain unindexed at individual-decision level and pending primary-source verification.
+- **Coverage distinction:** 110 individually indexed G09 CR/GR/TC/FR IDs, plus 12 ability-level specification sections. The reported 538 total and 428 not-yet-ID-indexed decisions remain unchanged.
