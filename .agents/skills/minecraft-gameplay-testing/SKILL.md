@@ -24,7 +24,7 @@ Before writing tests, apply `minecraft-gameplay-rules` and, for Fusion-specific 
 
 ## Test design principles
 
-1. **Rule traceability**: every gameplay assertion should map to a GDD section, approved catalog, confirmed owner decision, or documented bug fix.
+1. **Rule traceability**: every gameplay assertion must map to current approved repository catalogs/contracts, confirmed Owner decisions or documented bug fixes; historical GDD examples alone do not approve behavior.
 2. **No invented expected values**: do not assert guessed HP, damage, costs, cooldowns, spawn intervals, or targeting priorities.
 3. **Determinism**: inject seeded/random sources, clocks, and schedulers where possible. Tests for random Energy Item positions should verify allowed behavior and invariants, not a particular random coordinate.
 4. **State over pixels**: unit tests should assert domain state; Playwright should assert player-visible outcomes and critical interactions.
@@ -60,8 +60,7 @@ Before writing tests, apply `minecraft-gameplay-rules` and, for Fusion-specific 
 ### Resources and Abilities
 
 - Energy is used to summon Defender.
-- Ability Resource is a separate resource used to activate abilities.
-- The in-game name replacing `Plant Food` is pending approval. Prefer internal test names such as `abilityResource`; avoid hardcoding the old name into UI assertions.
+- **Power Crystal** is the approved separate resource for Special Abilities. Do not assert historical `Plant Food` / placeholder `Ability Resource` as current names.
 - An Ability has its own resource cost when defined by approved data.
 - Ability activation must not spend Energy unless an approved rule explicitly says so.
 - Ability generation/reward rules and cooldown values must be sourced from approved data; do not assume GDD example sources are final decisions.
@@ -71,10 +70,10 @@ Before writing tests, apply `minecraft-gameplay-rules` and, for Fusion-specific 
 - Source is dragged onto Target.
 - Successful Fusion creates the result at Target's original Grid cell.
 - Both input Defender are removed on success.
-- Invalid Fusion must not consume inputs or resources.
-- Test the six initial recipes listed in `GDD.md` unless a newer approved recipe catalog supersedes them.
-- Check the approved directionality policy before asserting that A→B and B→A are equivalent.
-- Flag the GDD roster discrepancy: Zombie and Creeper are Fusion inputs but are absent from the initial summonable Defender roster.
+- Invalid Fusion must not consume inputs or resources; valid Fusion also costs **0 Energy and 0 Power Crystal**.
+- Test all **seven approved MVP recipes** in `docs/game-design/FUSION_RECIPES.md`, including Steel Guardian, Frost Guardian and Flame Fang.
+- Confirm order-independent recipe matching (A+B and B+A), while Target determines output placement.
+- Zombie is not an MVP Fusion input; Creeper is outside the repository-approved MVP roster. Do not assert historical Zombie Golem/Frost Creeper as approved.
 
 ### Waves and terminal states
 
@@ -127,15 +126,15 @@ Do not force all of these tests into a single E2E scenario. Use focused scenario
 
 ### Fusion
 
-- All initial approved recipe pairs resolve to their expected outputs.
+- All seven approved MVP recipe pairs resolve in either input order; output starts at full own Max HP, inherits no statuses and may attack immediately if a valid target exists.
 - Target-cell placement is asserted with Source and Target in different cells.
 - Invalid pair, insufficient configured cost, stale entity, same instance, and competing requests do not partially mutate state.
 - Resource balances and entity counts are asserted before and after each attempt.
 
 ### Abilities
 
-- Insufficient Ability Resource blocks activation.
-- Successful activation consumes the configured Ability Resource amount exactly once.
+- Insufficient Power Crystal blocks activation when the approved cost requires it.
+- Successful activation consumes the approved Power Crystal amount according to the current transaction contract; do not infer unresolved timing.
 - Ability effect is applied to the intended scope from approved Ability data.
 - Ability activation does not consume Energy by accident.
 - Do not assert cooldown duration until it is configured.
@@ -184,7 +183,7 @@ For each test task, report:
 - Use randomness without a controllable seam in deterministic tests.
 - Assert that every Enemy attacks or ignores Defender.
 - Assert an unapproved targeting priority.
-- Hardcode an unapproved replacement name for Plant Food.
+- Reintroduce historical Plant Food / Ability Resource as the current Power Crystal resource name.
 - Add Base Health or multi-leak tests to the MVP.
 - Treat a successful animation as proof that domain state is correct.
 - Claim full coverage based only on a passing happy-path E2E test.
