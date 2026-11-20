@@ -20,7 +20,7 @@
 | G07-REPO-03 | [Game Engine Architecture](../../../architecture/GAME_ENGINE_ARCHITECTURE.md), around lines 77 and 89 | Same-tick terminal resolution via insertion sequence, no fixed Victory/Defeat priority. | **Repository text inspected**, not original Owner chat |
 | G07-REPO-04 | [Documentation Status](../../../DOCUMENTATION_STATUS.md), around lines 200, 259 and 320 | Reports old blanket Defeat priority superseded by first resolved terminal event. | **Repository text inspected**, not original Owner chat |
 | G07-SUMMARY-01 | [PGD-02 G07](../systems/G07.md) | Conversation-derived G07 summary reports **Defeat Priority**. | **Secondary conversation summary**; original message missing |
-| G07-FR21/22 | [G09 Final Audit](G09-FINAL-AUDIT.md) | FR21 C: seek original G07 approval; FR22 A: hold GAP-01 Pending Evidence. | **Conversation-derived decisions**, original approval links not recovered |
+| G07-FR21/22 | [G09 Decision Register](../registers/G09-DECISION-REGISTER.md) | FR21 C: seek original G07 approval; FR22 A: hold GAP-01 Pending Evidence. | **Conversation-derived decisions**, original approval links not recovered |
 
 ### Assessment
 
