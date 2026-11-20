@@ -26,7 +26,7 @@ Before coding, also apply the `minecraft-gameplay-rules` Project Skill. That ski
 1. Receive Source and Target identities from the input layer.
 2. Confirm both entities still exist and are valid Grid occupants.
 3. Resolve a recipe for the pair according to the approved recipe data.
-4. Validate any recipe-specific requirements, including Energy cost only if the recipe defines one.
+4. Validate approved recipe, Tier, unlock, entity state and Grid requirements. Fusion costs **0 Energy and 0 Power Crystal**.
 5. If every validation succeeds, remove both input Defender from their original Grid cells/entities.
 6. Create exactly one Fusion Defender at the Target's original Grid coordinate.
 7. Update authoritative gameplay state atomically so no intermediate duplicate/empty state leaks to other systems.
@@ -41,27 +41,27 @@ Before coding, also apply the `minecraft-gameplay-rules` Project Skill. That ski
 - Return a structured failure reason suitable for UI feedback and tests.
 - Invalid drop feedback must be clear but must not alter authoritative gameplay state.
 
-## Initial recipes from GDD
+## Current approved MVP recipes
 
-Treat this table as the initial GDD recipe list, not permission to invent additional recipes. The project owner or a newer approved `FUSION_RECIPES.md` may revise it.
+Consult `docs/game-design/FUSION_RECIPES.md` for stable IDs, unlocks and superseding decisions. Seven Tier-1 + Tier-1 -> Tier-2 recipes are currently approved:
 
 | Input A | Input B | Result |
 |---|---|---|
 | Skeleton | Skeleton | Skeleton Sniper |
+| Iron Golem | Iron Golem | Steel Guardian |
 | Snow Golem | Snow Golem | Ice Golem |
-| Zombie | Iron Golem | Zombie Golem |
-| Creeper | Snow Golem | Frost Creeper |
+| Iron Golem | Snow Golem | Frost Guardian |
+| Blaze | Wolf | Flame Fang |
 | Blaze | Skeleton | Inferno Archer |
 | Wolf | Wolf | Alpha Wolf |
 
-Important: The GDD's initial Defender roster lists Snow Golem, Iron Golem, Skeleton, Wolf, and Blaze; Zombie and Creeper appear as Fusion inputs even though they are not in that initial Defender roster. Do not “fix” this inconsistency by adding Zombie/Creeper as summonable Defender or removing recipes. Flag it and check the approved catalogs / owner decision.
+Historical GDD Zombie Golem and Frost Creeper recipes are **not** approved MVP recipes. Zombie is an Enemy; Creeper is outside the repository-approved MVP roster. Do not promote later experimental Fusion concepts into MVP without explicit scope approval.
 
 ## Recipe direction and pair matching
 
 - Same-type recipes use two instances of the same type.
 - Cross-type recipes must follow the approved recipe definition.
-- The GDD examples are written as Input A / Input B, but do not infer that drag direction changes the recipe unless the recipe schema explicitly defines directional behavior.
-- If a recipe is intended to be symmetric, encode or normalize it explicitly. If directionality is not specified, ask before making a gameplay-significant assumption.
+- Confirmed MVP recipe matching is order-independent. Drag direction still determines which instance is Target and therefore the output cell.
 - Never match recipes using display names if stable IDs are available.
 - Prevent accidental duplicate recipes and ambiguous pair resolution at data-validation time.
 
@@ -73,7 +73,7 @@ Inspect the existing repository types before introducing new ones. A conceptual 
 - input Defender IDs;
 - output Fusion Defender ID;
 - Fusion Tier;
-- optional Energy cost (only when approved);
+- no Fusion Energy/Power Crystal cost in the approved MVP;
 - optional directional/symmetric matching policy if required by design;
 - optional unlock/availability metadata only if in approved scope.
 
@@ -104,7 +104,6 @@ type FusionFailureReason =
   | 'source-not-on-grid'
   | 'target-not-on-grid'
   | 'no-recipe'
-  | 'insufficient-energy'
   | 'invalid-entity-state';
 
 type FusionResult =
@@ -124,8 +123,8 @@ This is a design suggestion, not a mandate to duplicate an existing project API.
 
 ## Atomicity and identity rules
 
-- Validate all preconditions before mutating the Grid or resource balance.
-- Apply resource deduction and Grid/entity replacement as one logical transaction.
+- Validate all preconditions before mutating the Grid; Fusion never changes Energy or Power Crystal.
+- Apply Grid/entity replacement atomically, without Fusion resource deduction.
 - Ensure Source and Target are distinct entity instances, even for same-type Fusion.
 - Use stable entity IDs; do not confuse a Defender type ID with an instance ID.
 - Preserve the Target cell captured at the start of a valid attempt. Do not read a potentially changed sprite position after animation begins.
@@ -134,10 +133,10 @@ This is a design suggestion, not a mandate to duplicate an existing project API.
 
 ## Fusion tiers
 
-- The GDD describes multi-tier Fusion and MVP support for Fusion Tier 1 and Tier 2.
+- The Fusion engine has no fixed Tier ceiling. The current MVP approves only seven Tier-1 + Tier-1 -> Tier-2 recipes.
 - Each output's tier must come from approved catalog/recipe data.
 - Do not infer that every Fusion result can itself be fused, or invent Tier 3 recipes.
-- Do not infer stat inheritance or additive stat formulas. Fusion Defender has its own stats, role, and Ability as defined in approved data.
+- Fusion output begins at **100% of its own Max HP**, inherits no positive/negative statuses, may attack immediately if a valid target exists, and never adds input stats. Other unapproved combat/Ability values remain TBD.
 
 ## Required tests
 
@@ -150,8 +149,8 @@ At minimum, cover:
 5. Result occupies the Target's original cell when Source and Target are in different cells.
 6. Source's original cell becomes available after success.
 7. Both inputs are removed exactly once.
-8. Missing recipe leaves both inputs and Energy unchanged.
-9. Insufficient Energy (only for a recipe with an approved cost) leaves both inputs and resources unchanged.
+8. Missing recipe leaves both inputs and resources unchanged.
+9. Valid Fusion succeeds with zero Energy and zero Power Crystal and never deducts either resource.
 10. Source equals Target is rejected.
 11. Missing, stale, dead, or otherwise invalid entities are rejected safely.
 12. Two competing attempts cannot fuse the same entity twice.
@@ -162,9 +161,9 @@ Use Vitest for unit/domain tests. Use Playwright for the user-visible drag/drop 
 
 ## Implementation workflow
 
-1. Read `GDD.md`, `FUSION_RECIPES.md`, `ENTITY_CATALOG.md`, `GAMEPLAY_MECHANICS.md`, and relevant architecture/data documents if present.
+1. Read `docs/DOCUMENTATION_POLICY.md`, `docs/game-design/FUSION_RECIPES.md`, `docs/game-design/ENTITY_CATALOG.md`, `docs/product/GAMEPLAY_MECHANICS.md` and relevant Owner decisions. `GDD.md` is historical context.
 2. Inspect current recipe schemas, Grid ownership, Entity lifecycle, drag/drop implementation, and test conventions.
-3. Report conflicts (especially Zombie/Creeper roster mismatch, recipe direction, and unresolved costs) before deciding them.
+3. Follow the approved seven recipes, order-independent matching and free Fusion rules; report only genuinely unresolved conflicts.
 4. Define or update typed recipe data and validation.
 5. Implement pure matching/validation first.
 6. Implement atomic state mutation and target-cell placement.
@@ -177,8 +176,8 @@ Use Vitest for unit/domain tests. Use Playwright for the user-visible drag/drop 
 
 - Change the result placement from Target cell to Source cell or a free/nearest cell.
 - Consume one or both inputs on an invalid Fusion attempt.
-- Deduct Energy when validation fails.
+- Deduct Energy or Power Crystal for Fusion, even when validation succeeds.
 - Invent Fusion recipes, output stats, Energy costs, unlock rules, or tier progression.
 - Treat animation completion as the authority for committing Fusion.
 - Couple domain logic to Phaser sprites or React component state.
-- silently resolve the Zombie/Creeper roster discrepancy.
+- Reintroduce historical Zombie Golem/Frost Creeper as approved MVP recipes.
