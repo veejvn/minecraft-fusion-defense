@@ -4,7 +4,7 @@
 **Status:** TEST DESIGN ONLY — ALL NOT RUN  
 **Authorization:** PGD-02.DOC-14 A; new file only; no overwrites.  
 **Original baseline:** [83-case Test Specification](G01-G09-TEST-SPECIFICATION-2026-11-20.md)  
-**Audit:** [G09 Test Coverage Audit](../audits/G09-TEST-COVERAGE-AUDIT-2026-11-20.md)  
+**Audit:** 83-case coverage audit (historical baseline report removed from main)  
 **Decision evidence:** [G09 Decision Register](../registers/G09-DECISION-REGISTER.md), [Technical Contract](../contracts/G09-TECHNICAL-CONTRACT.md); original approvals **Source Pending Verification**.
 
 ## Accounting and methodology
