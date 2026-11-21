@@ -1,8 +1,8 @@
 # T-07 — Enemy Movement, Combat & Targeting: Implementation Plan v1.0
 
 **Project:** Minecraft Fusion Defense  
-**Status:** **IMPLEMENTED AT `7b7c37d` — 19/20 GATES LOCAL PASS, AC-20 REMOTE CI PENDING PUSH (D-25–D-38 = A; Production Combat Data Remains TBD)**  
-**Scope:** Headless `packages/game` Enemy spawn hook, lane movement, Enemy–Defender interaction, Defender targeting/attack, HP/damage/death, Base breach → Defeat notification; see [T-07 Final Acceptance Report](../reports/T-07-FINAL-ACCEPTANCE.md).  
+**Status:** **OWNER-ACCEPTED TECHNICALLY (2026-11-21) — 20/20 GATES PASS (Headless Scope; Production Combat Data Remains TBD)**  
+**Scope:** Headless `packages/game` Enemy spawn hook, lane movement, Enemy–Defender interaction, Defender targeting/attack, HP/damage/death, Base breach → Defeat notification; see [T-07 Final Acceptance Report](../reports/T-07-FINAL-ACCEPTANCE.md) and CI run `44877738893`.  
 **Dependency:** [T-05 acceptance](../reports/T-05-FINAL-ACCEPTANCE.md), [T-06 acceptance](../reports/T-06-FINAL-ACCEPTANCE.md), T-04 simulation contracts.  
 **Authority:** [Documentation Policy](../DOCUMENTATION_POLICY.md); [Gameplay Mechanics](../product/GAMEPLAY_MECHANICS.md) §6–§7, §12, §14.4; [Entity Catalog](../game-design/ENTITY_CATALOG.md); [Game Balancing](../game-design/GAME_BALANCING.md) §4–§6, §15; [Game Engine Architecture](../architecture/GAME_ENGINE_ARCHITECTURE.md); PGD-02 G06/G07 and the [G07 terminal-priority Owner decision](../decisions/PGD-02/owner-decisions/G07-TERMINAL-PRIORITY-OWNER-2026-11-20.md).
 
@@ -58,7 +58,7 @@ All **14 decisions D-25 through D-38** are approved as **Option A**:
 | **T-07.5 — Defender targeting & attack** | Strategies, range, cooldown, damage, Enemy death → reward hook | Per-strategy tests, tie-breaks, overkill/multi-hit same tick |
 | **T-07.6 — Regression & evidence** | Full T-04/T-05/T-06 regression, typecheck, build, acceptance report | Gate matrix with evidence and CI result |
 
-## 5. Acceptance gates — 20 gates (19/20 local PASS, AC-20 remote CI pending push — see [Acceptance Report](../reports/T-07-FINAL-ACCEPTANCE.md))
+## 5. Acceptance gates — 20 gates (20/20 PASS — see [Acceptance Report](../reports/T-07-FINAL-ACCEPTANCE.md))
 
 | Gate | Requirement |
 | --- | --- |

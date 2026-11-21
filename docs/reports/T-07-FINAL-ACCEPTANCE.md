@@ -2,14 +2,14 @@
 
 **Project:** Minecraft Fusion Defense  
 **Date:** 2026-11-21  
-**Review status:** **19/20 GATES LOCAL PASS; AC-20 LOCAL PASS / REMOTE CI PENDING PUSH (Headless Scope; Production Combat Data Remains TBD)**  
+**Review status:** **OWNER-ACCEPTED TECHNICALLY — 20/20 GATES PASS (Headless Scope; Production Combat Data Remains TBD)**  
 **Scope:** Headless `packages/game` Enemy spawn hook (`spawn-enemy`), lane movement, `STOP_AND_ATTACK` / `IGNORE_DEFENDER` interaction, 6 Defender targeting strategies, drift-free attack cooldowns, HP/damage/death, Enemy-death reward hook, Defender cell release preserving Items, Base breach → Defeat notification, and additive `TransactionEngine.executePhase()`.  
-**Implementation commit:** [`7b7c37d7bab41c33e1c4eb4936d89abf4dc263f2`](https://github.com/veejvn/minecraft-fusion-defense/commit/7b7c37d7bab41c33e1c4eb4936d89abf4dc263f2) (committed locally on `main`, not yet pushed to GitHub).  
-**CI evidence:** Local `pnpm --filter @mfd/game test`, `pnpm --filter @mfd/game-data test`, `pnpm typecheck`, and `pnpm build` all **PASS** on `7b7c37d`; remote GitHub Actions CI run is **PENDING** push of `7b7c37d` (`gh run list` latest run `44875361175` is for prior commit `593d2a5`).
+**Implementation commit:** [`7b7c37d7bab41c33e1c4eb4936d89abf4dc263f2`](https://github.com/veejvn/minecraft-fusion-defense/commit/7b7c37d7bab41c33e1c4eb4936d89abf4dc263f2) (pushed to `main` via [`6b0ee0b1fd420947e5d0f2c7eafcb9293abc5b24`](https://github.com/veejvn/minecraft-fusion-defense/commit/6b0ee0b1fd420947e5d0f2c7eafcb9293abc5b24)).  
+**CI evidence:** [GitHub Actions run 44877738893](https://github.com/veejvn/minecraft-fusion-defense/actions/runs/44877738893) — completed **success** on commit `6b0ee0b` (Install dependencies, Game Unit Tests, Game Data Unit Tests, Workspace TypeScript Checks, Workspace Production Build all **success**).
 
 ## 1. Executive summary
 
-Technical review against [T-07 Plan v1.0](../development/T-07-ENEMY-MOVEMENT-COMBAT-TARGETING-IMPLEMENTATION-PLAN.md) confirms that commit `7b7c37d` implements all **14 Owner-approved decisions (D-25–D-38 = A)** and passes **AC-01–AC-19** plus the local checks of **AC-20** within the headless test-fixture boundary.
+Technical review against [T-07 Plan v1.0](../development/T-07-ENEMY-MOVEMENT-COMBAT-TARGETING-IMPLEMENTATION-PLAN.md), local checks, and remote GitHub Actions CI run `44877738893` confirm that commit `7b7c37d` implements all **14 Owner-approved decisions (D-25–D-38 = A)** and passes all **20 acceptance gates (AC-01–AC-20)** within the headless test-fixture boundary.
 
 Because production combat values (HP, Damage, Attack Speed, Attack Range, Move Speed, per-Enemy interaction behavior, per-Defender targeting strategy, `spawnOffsetX`, status-effect stacking, and `SPECIAL` / `HIGHEST_THREAT` semantics) remain **TBD**, runtime validation fails closed on missing or unsupported fields and tests use explicit test-only fixtures in `battle-combat.test.ts`. No production balance defaults were invented.
 
@@ -53,20 +53,20 @@ No changes were made to `apps/web`, `packages/game/src/index.ts`, `packages/game
 | **AC-17** — Failed transaction rolls back positions, HP, cooldowns, entities, counters and staged events | **PASS** | `TransactionEngine.executePhase()` clones `state`, `queue`, and `rng` into staging. Tested for `QUEUE_OVERFLOW` rollback in `battle-combat.test.ts` (L235–245) and `simulation-foundation.test.ts` (L285–309). |
 | **AC-18** — Identical config, seed and inputs replay identically | **PASS** | Deterministic phase + queue ordering + snapshot detachment. Tested in `battle-combat.test.ts` (L55–71, L375–390). |
 | **AC-19** — T-04/T-05/T-06 regressions and queue/budget limits preserved | **PASS** | `executePhase()` returns `executed: 0` without consuming the 250-events/tick budget; all existing T-04 (29/29), T-05 (12/12), and T-06 (21/21) tests pass. |
-| **AC-20** — Game/Game Data tests, typecheck, build and real remote CI pass | **LOCAL PASS / REMOTE CI PENDING** | All local checks pass on `7b7c37d`; remote GitHub Actions CI run for `7b7c37d` has not yet been triggered because `7b7c37d` is unpushed on local `main`. |
+| **AC-20** — Game/Game Data tests, typecheck, build and real remote CI pass | **PASS** | Local checks on `7b7c37d` and remote GitHub Actions CI run `44877738893` on `6b0ee0b` both pass across all workspace steps. |
 
 ## 4. Verification commands and evidence
 
-Local checks executed on `7b7c37d`:
+Local checks executed on `7b7c37d` and remote CI on `6b0ee0b`:
 
 - `pnpm --filter @mfd/game test` → **PASS** (`6` test files, `85/85` tests: `lifecycle-adapter.test.ts` 7, `create-game.test.ts` 4, `battle-combat.test.ts` 12, `battle-runtime.test.ts` 12, `battle-resources.test.ts` 21, `simulation-foundation.test.ts` 29)
 - `pnpm --filter @mfd/game-data test` → **PASS** (`1` test file, `25/25` tests: `validation.test.ts`)
 - `pnpm typecheck` → **PASS** (`3/3` packages: `@mfd/game-data`, `@mfd/game`, `@mfd/web`)
 - `pnpm build` → **PASS** (`@mfd/web` Next.js production build, uncached)
-- Remote CI: `gh run list` shows no run yet for `7b7c37d` (latest remote CI run `44875361175` passed on `593d2a5`).
+- Remote CI: [GitHub Actions run 44877738893](https://github.com/veejvn/minecraft-fusion-defense/actions/runs/44877738893) on `6b0ee0b` (`Workspace Checks` job `136766065972`) completed **success** (Game Unit Tests, Game Data Unit Tests, Workspace TypeScript Checks, Workspace Production Build).
 
 ## 5. Non-blocking observations and remaining boundaries
 
-1. **Remote CI gate (`AC-20`):** Push `7b7c37d` (and this documentation update if desired) to GitHub `main` and verify the resulting workflow run succeeds before closing `AC-20` as remote-CI verified.
+1. **Final status:** **T-07 OWNER-ACCEPTED (TECHNICAL)**, **20/20 acceptance gates PASS**, remote CI **SUCCESS** (`44877738893`).
 2. **Production data still TBD:** Exact stats/targeting for 5 Base + 7 Fusion Defenders, stats/behaviors for Zombie/Husk/Vindicator/Pillager, `spawnOffsetX`, status-effect stacking, and `SPECIAL` / `HIGHEST_THREAT` definitions remain unapproved.
 3. **Downstream boundary:** T-08 (Fusion) and T-09 (5 Waves & Victory) remain pending separate Owner plans and coding authorizations.
