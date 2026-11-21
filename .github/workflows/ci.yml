@@ -34,6 +34,9 @@ jobs:
       - name: Game Unit Tests
         run: pnpm --filter @mfd/game test
 
+      - name: Game Data Unit Tests
+        run: pnpm --filter @mfd/game-data test
+
       - name: Workspace TypeScript Checks
         run: pnpm typecheck
 
