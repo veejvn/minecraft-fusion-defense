@@ -130,10 +130,10 @@ Energy/Crystal caps, passive Energy, Enemy rewards, Item lifetimes và Fusion ou
 
 ## 8. Tài liệu tham chiếu
 
-- [GDD — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81e4af03d52a246e9a7a)
-- [Gameplay Mechanics — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81eeaf62f611c5342660)
-- [Entity Catalog — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951)
-- [Fusion Recipes — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41)
-- [Ability Catalog — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81968c6cecad6e88290c)
-- [Level Design — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81079f43ecfa6388d6ca)
-- [Game Balancing — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81f6b406c7a1b62087d0)
+- [GDD — Minecraft Fusion Defense](GDD.md)
+- [Gameplay Mechanics — Minecraft Fusion Defense](GAMEPLAY_MECHANICS.md)
+- [Entity Catalog — Minecraft Fusion Defense](../game-design/ENTITY_CATALOG.md)
+- [Fusion Recipes — Minecraft Fusion Defense](../game-design/FUSION_RECIPES.md)
+- [Ability Catalog — Minecraft Fusion Defense](../game-design/ABILITY_CATALOG.md)
+- [Level Design — Minecraft Fusion Defense](../game-design/LEVEL_DESIGN.md)
+- [Game Balancing — Minecraft Fusion Defense](../game-design/GAME_BALANCING.md)
