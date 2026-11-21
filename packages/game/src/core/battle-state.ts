@@ -1,10 +1,12 @@
 import { BATTLEFIELD_COLUMNS, BATTLEFIELD_ROWS, cellIndex, isLane } from '../battlefield/grid';
 import type { EntityDefinition, EntityId, RuntimeEntity } from '../entities/runtime-entity';
+import type { ResourceState } from './battle-resources';
 
 export interface BattleState {
   readonly occupancy: (EntityId | null)[];
   readonly entities: Map<EntityId, RuntimeEntity>;
   nextEntityId: EntityId;
+  readonly resources?: ResourceState;
 }
 
 export type BattleCommand =
