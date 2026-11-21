@@ -116,10 +116,10 @@ AI Agent phải hỏi chủ dự án khi một quyết định chưa chốt ản
 
 ## 10. Tài liệu liên quan
 
-- [Technical Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81b6893ac6d59454f8be)
-- [Game Engine Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81368230c8786623a06b)
-- [Entity Catalog — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951)
-- [Fusion Recipes — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41)
-- [Ability Catalog — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81968c6cecad6e88290c)
-- [Level Design — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81079f43ecfa6388d6ca)
-- [Game Balancing — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81f6b406c7a1b62087d0)
+- [Technical Architecture — Minecraft Fusion Defense](TECHNICAL_ARCHITECTURE.md)
+- [Game Engine Architecture — Minecraft Fusion Defense](GAME_ENGINE_ARCHITECTURE.md)
+- [Entity Catalog — Minecraft Fusion Defense](../game-design/ENTITY_CATALOG.md)
+- [Fusion Recipes — Minecraft Fusion Defense](../game-design/FUSION_RECIPES.md)
+- [Ability Catalog — Minecraft Fusion Defense](../game-design/ABILITY_CATALOG.md)
+- [Level Design — Minecraft Fusion Defense](../game-design/LEVEL_DESIGN.md)
+- [Game Balancing — Minecraft Fusion Defense](../game-design/GAME_BALANCING.md)
