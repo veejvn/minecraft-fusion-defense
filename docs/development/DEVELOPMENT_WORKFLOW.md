@@ -69,4 +69,4 @@ Never promote `Draft`, `Proposed`, `Prototype` or `TBD` to `Confirmed` without O
 
 - [AI Agent Guidelines](AI_AGENT_GUIDELINES.md)
 - [MVP Scope](../product/MVP_SCOPE.md)
-- [Documentation Status](../DOCUMENTATION_STATUS.md)
+- [Documentation Policy](../DOCUMENTATION_POLICY.md)

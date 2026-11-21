@@ -97,4 +97,4 @@ Preserve Confirmed MVP gameplay and the [Documentation Policy](../DOCUMENTATION_
 
 - [MVP Scope — Minecraft Fusion Defense](MVP_SCOPE.md)
 - [Development Workflow — Minecraft Fusion Defense](../development/DEVELOPMENT_WORKFLOW.md)
-- [Tình trạng tài liệu — Minecraft Fusion Defense](../DOCUMENTATION_STATUS.md)
+- [Documentation Policy](../DOCUMENTATION_POLICY.md)

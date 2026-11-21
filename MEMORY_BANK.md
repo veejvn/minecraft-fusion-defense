@@ -74,7 +74,7 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
   - Chưa chạy trong phiên: `pnpm build`, `@mfd/web` Playwright E2E/production tests.
 - **Thay đổi file:**
   - Khởi tạo `MEMORY_BANK.md` theo yêu cầu Owner.
-  - Xóa `docs/DOCUMENTATION_STATUS.md` theo yêu cầu Owner (lưu ý: còn một số liên kết tham chiếu tới file này trong `README.md`, `ROADMAP.md`, `DEVELOPMENT_WORKFLOW.md`, `AI_AGENT_GUIDELINES.md`, `TECHNICAL_ARCHITECTURE.md` và hồ sơ `PGD-02/`).
+  - Xóa `docs/DOCUMENTATION_STATUS.md` và dọn các liên kết tham chiếu trong 5 file tài liệu hoạt động (`README.md`, `ROADMAP.md`, `DEVELOPMENT_WORKFLOW.md`, `AI_AGENT_GUIDELINES.md`, `TECHNICAL_ARCHITECTURE.md`) chuyển sang `docs/DOCUMENTATION_POLICY.md`; giữ nguyên các hồ sơ lịch sử `docs/decisions/PGD-02/`.
 
 ---
 

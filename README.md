@@ -50,7 +50,7 @@ Không có backend trong phạm vi MVP hiện tại. Chi tiết cấu trúc pack
 - [Technical Architecture](docs/architecture/TECHNICAL_ARCHITECTURE.md)
 - [Development Workflow](docs/development/DEVELOPMENT_WORKFLOW.md)
 - [Testing Strategy](docs/development/TESTING_STRATEGY.md)
-- [Documentation Status](docs/DOCUMENTATION_STATUS.md)
+- [Documentation Policy](docs/DOCUMENTATION_POLICY.md)
 
 The repository `docs/` directory is authoritative. A historical `Synced` label does not imply Owner approval.
 

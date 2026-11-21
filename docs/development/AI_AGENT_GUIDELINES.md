@@ -71,7 +71,6 @@ Giúp AI Agent triển khai MVP nhất quán với tài liệu repository đã p
 - Không dùng `git reset`, `git clean`, `git commit`, `git push` khi chưa được yêu cầu rõ ràng.
 - Không tự sửa GDD hoặc tài liệu nguồn để hợp thức hóa lựa chọn trong code.
 - Khi sync Notion → Local, so sánh nội dung trước; nếu khác biệt, báo Diff và xin phê duyệt trước khi merge.
-- Khi thay đổi tài liệu, cập nhật `docs/DOCUMENTATION_STATUS.md` theo kết quả thực tế; chỉ tuyên bố Synced sau khi đối chiếu đầy đủ hai nguồn.
 - Không tuyên bố đã cập nhật Notion, Local hay chạy test nếu chưa thực hiện và xác minh.
 
 ## 8. Kiểm thử và báo cáo
@@ -101,7 +100,7 @@ Không tự chọn phương án mặc định khi người dùng chưa phản h�
 | Kiến trúc ứng dụng | Technical Architecture |
 | Phaser Game Systems | Game Engine Architecture |
 | Data Models/Validation | Data Architecture |
-| Đồng bộ và kiểm kê | Documentation Status |
+| Thẩm quyền tài liệu | Documentation Policy |
 
 ## 11. Tài liệu tham chiếu
 
@@ -109,4 +108,4 @@ Không tự chọn phương án mặc định khi người dùng chưa phản h�
 - [Technical Architecture — Minecraft Fusion Defense](../architecture/TECHNICAL_ARCHITECTURE.md)
 - [Game Engine Architecture — Minecraft Fusion Defense](../architecture/GAME_ENGINE_ARCHITECTURE.md)
 - [GDD — Minecraft Fusion Defense](../product/GDD.md)
-- [Tình trạng tài liệu — Minecraft Fusion Defense](../DOCUMENTATION_STATUS.md)
+- [Documentation Policy](../DOCUMENTATION_POLICY.md)
