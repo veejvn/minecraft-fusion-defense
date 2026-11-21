@@ -1,14 +1,14 @@
 # T-05 — Battlefield & Runtime Integration Implementation Plan
 
-**Status:** OWNER-APPROVED PLAN (2026-11-21) — CODING NOT AUTHORIZED / IMPLEMENTATION NOT VERIFIED  
+**Status:** OWNER-APPROVED PLAN (2026-11-21); **IMPLEMENTED AND OWNER-ACCEPTED TECHNICALLY (2026-11-21)** — see [T-05 Final Acceptance](../reports/T-05-FINAL-ACCEPTANCE.md)  
 **Target:** `packages/game`, local `main` when the Owner later explicitly authorizes coding.  
-**Type:** Implementation plan and acceptance contract, not a coding report or evidence of passing tests.
+**Type:** Original implementation plan and acceptance contract; subsequent implementation and CI evidence are recorded in the [final acceptance report](../reports/T-05-FINAL-ACCEPTANCE.md).
 
 ## 1. Goal
 
 Build a deterministic, headless battlefield foundation for the Confirmed Grassland **5 rows × 9 columns**. Integrate Defender cell occupancy, Defender/Enemy runtime entity identity, transactional Battle State, a deterministic entity ID counter and internal command/test boundaries with the already implemented T-04 simulation primitives.
 
-This work must not silently create new gameplay rules, balance defaults or production definitions. The Owner will request a Codex prompt separately when coding is authorized.
+This work must not silently create new gameplay rules, balance defaults or production definitions. **Historical planning note:** At initial plan approval, the Codex prompt and coding authorization were pending. The Owner subsequently authorized coding, and later accepted the implementation; see the linked final acceptance report.
 
 ## 2. Approved decisions
 
@@ -95,7 +95,7 @@ Repository Markdown under `docs/` is authoritative. Preserve Confirmed gameplay 
 | AC-13 | Phaser Host, Hello Scene and `createGame()` behavior unchanged |
 | AC-14 | Game tests, Game Data tests, workspace typecheck and production build pass; report CI only after real run |
 
-A gate is not PASS until implementation evidence exists. T-05 does not deliver production gameplay, browser playability, canonical persistence snapshots or recovery.
+**Post-implementation status:** All 14 gates were accepted as PASS by the Owner on 2026-11-21, supported by implementation commit `3ee3d30fe455624ae52f35e00cb31744ce6639f6` and successful GitHub Actions run `44846418049`. See [final acceptance](../reports/T-05-FINAL-ACCEPTANCE.md). T-05 does not deliver production gameplay, browser playability, canonical persistence snapshots or recovery.
 
 ## 6. Expected file touchpoints (not mandatory structure)
 
@@ -123,4 +123,4 @@ The Owner reviews changes and decides whether to commit/push. A later, specific 
 
 The Owner-approved dependency sequence is documented in `docs/product/ROADMAP.md`. The separate CI improvement adds `pnpm --filter @mfd/game-data test` to `.github/workflows/ci.yml`. Those documentation/CI changes do not authorize T-05 coding or certify its implementation.
 
-**Final approval boundary:** The Owner approved this plan and D-01=A, D-02=A, D-03=A on 2026-11-21, and requested publication of documentation to GitHub. The Codex coding prompt is deferred until the Owner requests coding.
+**Historical plan approval:** The Owner approved this plan and D-01=A, D-02=A, D-03=A on 2026-11-21. **Subsequent record:** Coding was explicitly authorized, implementation was committed as `3ee3d30`, GitHub CI passed, and the Owner accepted T-05 technically on 2026-11-21. [Acceptance report](../reports/T-05-FINAL-ACCEPTANCE.md). **No T-06 coding authorization is implied.**
