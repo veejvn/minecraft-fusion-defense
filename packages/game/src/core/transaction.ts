@@ -11,6 +11,15 @@ export interface TransactionContext<S, P, R> {
 
 export type EventHandler<S, P, R> = (context: TransactionContext<S, P, R>) => void;
 
+export interface PhaseContext<S, P, R> {
+  state: S;
+  rng: R;
+  tick: number;
+  enqueue(input: EventInput<P>): SimulationEvent<P>;
+}
+
+export type PhaseHandler<S, P, R> = (context: PhaseContext<S, P, R>) => void;
+
 export type TransactionResult =
   | { status: 'APPLIED'; executed: number }
   | { status: 'DEFERRED'; executed: 0 }
@@ -71,27 +80,62 @@ export class TransactionEngine<S, P, R> {
     const first = this.queue.peekDue(tick);
     if (!first) return { status: 'SKIPPED', executed: 0 };
     if (remainingBudget === 0) return { status: 'DEFERRED', executed: 0 };
+    return this.runStaged(tick, first.id, first.causalDepth, options, 1, ({ state, rng, stageQueue, enqueue }) => {
+      // Commit the handler and its enqueues together. The scheduler selects the
+      // next event from the committed queue, including any newly due events.
+      stageQueue.takeDue(tick);
+      this.handler({ state, rng, event: structuredClone(first), enqueue });
+    });
+  }
+
+  /** Run a per-tick simulation phase in the same atomic transaction boundary as event execution. */
+  executePhase(tick: number, handler: PhaseHandler<S, P, R>, options: TransactionOptions = {}): TransactionResult {
+    if (this.executing) throw new Error('Nested transaction execution is unsupported');
+    if (this.stopped) return { status: 'FAILED', executed: 0, diagnostic: this.failureDiagnostic! };
+    if (!Number.isSafeInteger(tick) || tick < 0) {
+      return this.fail(new RangeError('Invalid tick'), tick, null, null, options);
+    }
+    return this.runStaged(tick, null, null, options, 0, ({ state, rng, enqueue }) => {
+      handler({ state, rng, tick, enqueue });
+    });
+  }
+
+  private runStaged(
+    tick: number,
+    eventId: string | null,
+    depth: number | null,
+    options: TransactionOptions,
+    executed: number,
+    work: (stage: {
+      state: S;
+      rng: R;
+      stageQueue: EventQueue<P>;
+      enqueue: (input: EventInput<P>) => SimulationEvent<P>;
+    }) => void,
+  ): TransactionResult {
     const stageState = structuredClone(this.state);
     const stageQueue = new EventQueue(this.queue.snapshot());
     const stageRng = structuredClone(this.rng);
     this.executing = true;
     try {
-      // Commit the handler and its enqueues together. The scheduler selects the
-      // next event from the committed queue, including any newly due events.
-      stageQueue.takeDue(tick);
       let active = true;
       let enqueueFailure: { error: unknown } | undefined;
       try {
-        this.handler({ state: stageState, rng: stageRng, event: structuredClone(first), enqueue: input => {
-          if (!active) throw new Error('Transaction handler has already returned');
-          if (enqueueFailure) throw enqueueFailure.error;
-          try {
-            return stageQueue.enqueue(input, tick);
-          } catch (error) {
-            enqueueFailure = { error };
-            throw error;
-          }
-        } });
+        work({
+          state: stageState,
+          rng: stageRng,
+          stageQueue,
+          enqueue: input => {
+            if (!active) throw new Error('Transaction handler has already returned');
+            if (enqueueFailure) throw enqueueFailure.error;
+            try {
+              return stageQueue.enqueue(input, tick);
+            } catch (error) {
+              enqueueFailure = { error };
+              throw error;
+            }
+          },
+        });
       } catch (error) {
         throw enqueueFailure ? enqueueFailure.error : error;
       } finally {
@@ -102,9 +146,9 @@ export class TransactionEngine<S, P, R> {
       this.state = committed.state;
       this.queue = stageQueue;
       this.rng = committed.rng;
-      return { status: 'APPLIED', executed: 1 };
+      return { status: 'APPLIED', executed };
     } catch (error) {
-      return this.fail(error, tick, first.id, first.causalDepth, options);
+      return this.fail(error, tick, eventId, depth, options);
     } finally {
       this.executing = false;
     }

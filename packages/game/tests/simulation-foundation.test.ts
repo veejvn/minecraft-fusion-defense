@@ -267,4 +267,44 @@ describe('T-04 deterministic foundation', () => {
     expect(clock.advance(25, tick => seen.push(tick))).toBe(1);
     expect(seen).toEqual([1, 2, 3]);
   });
+
+  it('commits executePhase atomically without consuming the per-tick scheduler budget', () => {
+    const runtime = engine();
+    const scheduler = new EventScheduler(runtime);
+    expect(runtime.executePhase(1, ({ state, rng, tick, enqueue }) => {
+      state.seen.push(tick * 100);
+      rng.cursor += 5;
+      enqueue({ scheduledTick: tick, causalDepth: 0, payload: { value: 1 } });
+    })).toEqual({ status: 'APPLIED', executed: 0 });
+    for (let i = 2; i <= 250; i++) {
+      runtime.enqueue({ scheduledTick: 1, causalDepth: 0, payload: { value: i } }, 0);
+    }
+    expect(scheduler.runTick(1)).toHaveLength(250);
+    expect(runtime.snapshot().rng.cursor).toBe(255);
+    expect(runtime.snapshot().state.seen[0]).toBe(100);
+  });
+
+  it('rolls back executePhase on handler errors, queue overflow, nested calls and invalid ticks', () => {
+    const runtime = engine();
+    expect(() => runtime.executePhase(1, () => {
+      runtime.executePhase(1, () => {});
+    })).not.toThrow();
+    expect(runtime.failed).toBe(true);
+    expect(runtime.executePhase(2, () => {})).toMatchObject({ status: 'FAILED', executed: 0 });
+
+    const overflow = engine();
+    for (let i = 0; i < 4096; i++) overflow.enqueue({ scheduledTick: 5, causalDepth: 0, payload: { value: i } }, 0);
+    const before = overflow.snapshot();
+    expect(overflow.executePhase(1, ({ state, rng, enqueue }) => {
+      state.seen.push(999);
+      rng.cursor = 42;
+      enqueue({ scheduledTick: 1, causalDepth: 0, payload: { value: 1 } });
+    })).toMatchObject({ status: 'FAILED', diagnostic: { code: 'QUEUE_OVERFLOW', tick: 1 } });
+    expect(overflow.snapshot()).toEqual(before);
+
+    const invalid = engine();
+    expect(invalid.executePhase(-1, () => {})).toMatchObject({
+      status: 'FAILED', diagnostic: { code: 'CONTRACT_ERROR', tick: -1 },
+    });
+  });
 });
