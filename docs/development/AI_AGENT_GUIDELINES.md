@@ -105,8 +105,8 @@ Không tự chọn phương án mặc định khi người dùng chưa phản h�
 
 ## 11. Tài liệu tham chiếu
 
-- [MVP Scope — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb)
-- [Technical Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81b6893ac6d59454f8be)
-- [Game Engine Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81368230c8786623a06b)
-- [GDD — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81e4af03d52a246e9a7a)
-- [Tình trạng tài liệu — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d)
+- [MVP Scope — Minecraft Fusion Defense](../product/MVP_SCOPE.md)
+- [Technical Architecture — Minecraft Fusion Defense](../architecture/TECHNICAL_ARCHITECTURE.md)
+- [Game Engine Architecture — Minecraft Fusion Defense](../architecture/GAME_ENGINE_ARCHITECTURE.md)
+- [GDD — Minecraft Fusion Defense](../product/GDD.md)
+- [Tình trạng tài liệu — Minecraft Fusion Defense](../DOCUMENTATION_STATUS.md)
