@@ -1,12 +1,24 @@
+import {
+  applyDamagePipeline,
+  resolveCombatDeaths,
+  resolvePostMoveProjectileCrossings,
+  type MovedEnemyStep,
+} from '../abilities/ability-engine';
+import type { AbilitySession } from '../abilities/ability-session';
+import {
+  getDefenderAttackSpeedMultiplier,
+  getDefenderDamageModifiers,
+  getEnemySpeedModifiers,
+  isUnitDisabled,
+} from '../abilities/ability-state';
 import { BATTLEFIELD_COLUMNS, cellIndex, type Cell } from '../battlefield/grid';
-import { applyBattleCommand, type BattleState } from '../core/battle-state';
+import type { BattleState } from '../core/battle-state';
 import { count } from '../core/resource-session';
 import type { EntityId } from '../entities/runtime-entity';
 import type { CombatSession, DefenderCombatDefinition } from './combat-session';
 import {
   computeDamage,
   computeMoveSpeed,
-  unregisterCombatEntity,
   type CombatEntityState,
   type CombatState,
 } from './combat-state';
@@ -22,6 +34,7 @@ export interface CombatPhaseContext {
   readonly battle: BattleState;
   readonly combat: CombatState;
   readonly session: CombatSession;
+  readonly abilitySession?: AbilitySession;
   readonly tick: number;
   readonly enqueueReward: (enemy: {
     readonly id: EntityId;
@@ -39,12 +52,14 @@ export function nextAttackDeadline(
   rate: number,
   state: CombatEntityState,
 ): number {
-  if (state.nextAttackTick === null || tick > state.nextAttackTick) {
+  const speedChanged = state.lastAttackSpeed !== undefined && state.lastAttackSpeed !== attackSpeed;
+  if (state.nextAttackTick === null || tick > state.nextAttackTick || speedChanged) {
     state.attackAnchorTick = tick;
     state.attackCount = 1;
   } else {
     state.attackCount = count(state.attackCount + 1);
   }
+  state.lastAttackSpeed = attackSpeed;
   const rawOffset = (state.attackCount * rate) / attackSpeed;
   if (!Number.isFinite(rawOffset) || rawOffset <= 0) throw new RangeError('Invalid attack deadline');
   const offset = count(Math.max(1, Math.ceil(rawOffset)));
@@ -132,10 +147,6 @@ function isBetterTarget(
   return a.id < b.id;
 }
 
-function addDamageIntent(intents: Map<EntityId, number>, targetId: EntityId, amount: number): void {
-  intents.set(targetId, (intents.get(targetId) ?? 0) + amount);
-}
-
 /**
  * Compute start-of-tick movement and attack intents simultaneously, apply together,
  * then resolve deaths and base breaches in ascending EntityId order.
@@ -151,21 +162,42 @@ export function runCombatPhase(ctx: CombatPhaseContext): void {
     })
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
-  const damageIntents = new Map<EntityId, number>();
-  const movementIntents = new Map<EntityId, { x: number; movedTicks: number; moveAnchorX: number }>();
+  const damageIntents: Array<{ targetId: EntityId; amount: number }> = [];
+  const movementIntents = new Map<
+    EntityId,
+    { x: number; movedTicks: number; moveAnchorX: number; speed: number }
+  >();
   const attackUpdates = new Map<EntityId, { attackSpeed: number }>();
   const targetUpdates = new Map<EntityId, EntityId | null>();
 
   for (const id of livingIds) {
     const entity = battle.entities.get(id)!;
     const cState = combat.entities.get(id)!;
+    if (isUnitDisabled(battle.abilities, id)) {
+      targetUpdates.set(id, null);
+      if (entity.kind === 'enemy') {
+        cState.moveAnchorX = entity.position;
+        cState.movedTicks = 0;
+      }
+      continue;
+    }
+
     if (entity.kind === 'defender') {
       const def = session.defendersById[entity.definitionId];
       const targetId = selectDefenderTarget(battle, combat, session, id, entity.cell, def);
       targetUpdates.set(id, targetId);
       if (targetId !== null && (cState.nextAttackTick === null || tick >= cState.nextAttackTick)) {
-        addDamageIntent(damageIntents, targetId, computeDamage(def.damage));
-        attackUpdates.set(id, { attackSpeed: def.attackSpeed });
+        const effectiveDamage = computeDamage(
+          def.damage,
+          getDefenderDamageModifiers(battle.abilities, id),
+        );
+        const effectiveAttackSpeed =
+          def.attackSpeed * getDefenderAttackSpeedMultiplier(battle.abilities, id);
+        if (!Number.isFinite(effectiveAttackSpeed) || effectiveAttackSpeed <= 0) {
+          throw new RangeError('Invalid effective attack speed');
+        }
+        damageIntents.push({ targetId, amount: effectiveDamage });
+        attackUpdates.set(id, { attackSpeed: effectiveAttackSpeed });
       }
       continue;
     }
@@ -178,23 +210,34 @@ export function runCombatPhase(ctx: CombatPhaseContext): void {
     if (blocker && blocker.inRange) {
       targetUpdates.set(id, blocker.id);
       if (cState.nextAttackTick === null || tick >= cState.nextAttackTick) {
-        addDamageIntent(damageIntents, blocker.id, computeDamage(def.damage!));
+        damageIntents.push({ targetId: blocker.id, amount: computeDamage(def.damage!) });
         attackUpdates.set(id, { attackSpeed: def.attackSpeed! });
       }
       continue;
     }
 
     targetUpdates.set(id, null);
-    const speed = computeMoveSpeed(def.moveSpeed);
-    const nextMovedTicks = count((cState.movedTicks ?? 0) + 1);
-    const anchor = cState.moveAnchorX ?? entity.position;
+    const speed = computeMoveSpeed(def.moveSpeed, getEnemySpeedModifiers(battle.abilities, id));
+    const speedChanged = cState.lastMoveSpeed !== undefined && cState.lastMoveSpeed !== speed;
+    const anchor = speedChanged ? entity.position : (cState.moveAnchorX ?? entity.position);
+    const prevMovedTicks = speedChanged ? 0 : (cState.movedTicks ?? 0);
+    if (speed === 0) {
+      movementIntents.set(id, {
+        x: entity.position,
+        moveAnchorX: entity.position,
+        movedTicks: 0,
+        speed,
+      });
+      continue;
+    }
+    const nextMovedTicks = count(prevMovedTicks + 1);
     const rawX = anchor - (nextMovedTicks * speed) / session.rate;
     if (!Number.isFinite(rawX)) throw new RangeError('Non-finite enemy position');
 
     if (blocker && rawX < blocker.stopX) {
-      movementIntents.set(id, { x: blocker.stopX, moveAnchorX: blocker.stopX, movedTicks: 0 });
+      movementIntents.set(id, { x: blocker.stopX, moveAnchorX: blocker.stopX, movedTicks: 0, speed });
     } else {
-      movementIntents.set(id, { x: rawX, moveAnchorX: anchor, movedTicks: nextMovedTicks });
+      movementIntents.set(id, { x: rawX, moveAnchorX: anchor, movedTicks: nextMovedTicks, speed });
     }
   }
 
@@ -202,35 +245,36 @@ export function runCombatPhase(ctx: CombatPhaseContext): void {
   for (const [id, { attackSpeed }] of attackUpdates) {
     nextAttackDeadline(tick, attackSpeed, session.rate, combat.entities.get(id)!);
   }
+  const movedEnemies: MovedEnemyStep[] = [];
   for (const [id, move] of movementIntents) {
     const enemy = battle.entities.get(id)!;
     if (enemy.kind !== 'enemy') continue;
+    const oldX = enemy.position;
     const cState = combat.entities.get(id)!;
     cState.moveAnchorX = move.moveAnchorX;
     cState.movedTicks = move.movedTicks;
+    cState.lastMoveSpeed = move.speed;
     battle.entities.set(id, { ...enemy, position: move.x });
-  }
-  for (const [targetId, damage] of damageIntents) {
-    const cState = combat.entities.get(targetId)!;
-    const nextHp = cState.hp - damage;
-    if (!Number.isFinite(nextHp)) throw new RangeError('Non-finite HP');
-    cState.hp = nextHp;
-  }
-
-  for (const id of livingIds) {
-    const cState = combat.entities.get(id);
-    if (!cState || cState.hp > 0) continue;
-    const entity = battle.entities.get(id)!;
-    if (entity.kind === 'enemy') {
-      const rewardInfo = { id, definitionId: entity.definitionId, lane: entity.lane, position: entity.position };
-      applyBattleCommand(battle, { type: 'remove', id });
-      unregisterCombatEntity(combat, id);
-      ctx.enqueueReward(rewardInfo);
-    } else {
-      applyBattleCommand(battle, { type: 'remove', id });
-      unregisterCombatEntity(combat, id);
+    if (move.x < oldX) {
+      movedEnemies.push({ id, lane: enemy.lane, oldX, newX: move.x });
     }
   }
+  if (battle.abilities && movedEnemies.length > 0) {
+    resolvePostMoveProjectileCrossings(
+      { battle, combat, session, abilitySession: ctx.abilitySession },
+      movedEnemies,
+    );
+  }
+  for (const intent of damageIntents) {
+    applyDamagePipeline(
+      { battle, combat, session },
+      intent.targetId,
+      intent.amount,
+      { damageType: 'physical' },
+    );
+  }
+
+  resolveCombatDeaths(battle, combat, ctx.enqueueReward);
 
   for (const id of livingIds) {
     const entity = battle.entities.get(id);

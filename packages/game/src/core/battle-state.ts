@@ -1,4 +1,5 @@
 import { BATTLEFIELD_COLUMNS, BATTLEFIELD_ROWS, cellIndex, isLane } from '../battlefield/grid';
+import type { AbilityState } from '../abilities/ability-state';
 import type { CombatState } from '../combat/combat-state';
 import type { EntityDefinition, EntityId, RuntimeEntity } from '../entities/runtime-entity';
 import type { FusionState } from '../fusion/fusion-state';
@@ -13,6 +14,7 @@ export interface BattleState {
   readonly combat?: CombatState;
   readonly fusion?: FusionState;
   readonly waves?: WaveState;
+  readonly abilities?: AbilityState;
 }
 
 export type BattleCommand =

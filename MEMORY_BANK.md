@@ -1,7 +1,7 @@
 # MEMORY_BANK — Minecraft Fusion Defense
 
-**Cập nhật lần cuối:** 2026-11-21T16:46:00+07:00  
-**Nhánh Git hiện tại:** `main` (commit `3378dd7` + Kế hoạch T-10 Approved v1.0 tại working tree)
+**Cập nhật lần cuối:** 2026-11-21T17:42:00+07:00  
+**Nhánh Git hiện tại:** `main` (commit `ddd6d4f` + code/test/nghiệm thu T-10 tại working tree)
 
 ---
 
@@ -53,7 +53,7 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 | **T-07** | Enemy movement, combat, targeting | **Owner-accepted kỹ thuật (20/20 gates PASS):** Code tại `7b7c37d` (push via `6b0ee0b`), CI run `44877738893` **success**; báo cáo nghiệm thu `docs/reports/T-07-FINAL-ACCEPTANCE.md` và đã cập nhật `ROADMAP.md`. Combat stats/behaviors vẫn `TBD` (dùng test fixtures). |
 | **T-08** | Fusion mechanics | **Đã code & commit local tại `061d2ee`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** `docs/reports/T-08-FINAL-ACCEPTANCE.md`; 110/110 game tests (25 tests `battle-fusion.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa push lên GitHub nên AC-20 remote CI đang pending. Chỉ số combat của 7 Fusion Defenders vẫn `TBD` (dùng test fixtures). |
 | **T-09** | Grassland 5 Waves, Victory/Defeat | **Đã code & commit local tại `3378dd7`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** `docs/reports/T-09-FINAL-ACCEPTANCE.md`; 126/126 game tests (16 tests `battle-waves.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa push lên GitHub nên AC-20 remote CI đang pending. Dữ liệu Wave 1–5 và reward vẫn `TBD` (dùng test fixtures). |
-| **T-10** | Special abilities | **Approved v1.0 kế hoạch tại `docs/development/T-10-SPECIAL-ABILITIES-IMPLEMENTATION-PLAN.md`:** Owner đã chốt 10 quyết định kỹ thuật (`D-59`–`D-68 = A`), 6 implementation slices (`T-10.1`–`T-10.6`), và 20 cổng nghiệm thu (`AC-01`–`AC-20`); sẵn sàng triển khai code. |
+| **T-10** | Special abilities | **Đã code local, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ commit/push CI:** Kế hoạch v1.0 tại `ddd6d4f`, báo cáo nghiệm thu `docs/reports/T-10-FINAL-ACCEPTANCE.md`; 148/148 game tests (22 tests `battle-abilities.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa commit/push lên GitHub nên AC-20 remote CI đang pending. Thông số balance Ability sản xuất vẫn `Draft/TBD` (dùng test fixtures). |
 | **T-11** | Save & Resume, persistent progression | Chưa bắt đầu. |
 | **T-12** | UI, assets và playable integration | Chưa bắt đầu (có thể làm song song từng phần khi interface ổn định). |
 | **T-13** | MVP QA & local acceptance | Chưa bắt đầu. |
@@ -82,13 +82,14 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
   - Lập kế hoạch T-07 v1.0 (`D-25`–`D-38 = A`), triển khai T-07 trong `packages/game` (commit `7b7c37d`), đẩy lên `main` (`6b0ee0b`) và đóng 20/20 gates PASS trong `docs/reports/T-07-FINAL-ACCEPTANCE.md` + `ROADMAP.md` sau khi CI run `44877738893` thành công.
   - Lập kế hoạch T-08 v1.0 (`D-39`–`D-48 = A`, commit `9751435` cho Draft v0.1), điều phối 4 subagents triển khai & kiểm toán độc lập T-08 (`packages/game/src/fusion/*`, `battle-state.ts`, `battle-runtime.ts`, `battle-fusion.test.ts`), và lập báo cáo nghiệm thu `docs/reports/T-08-FINAL-ACCEPTANCE.md` + đồng bộ `ROADMAP.md` (commit local `061d2ee`, chưa push).
   - Lập kế hoạch T-09 v1.0 (`D-49`–`D-58 = A`, commit `e276e21`), điều phối 4 subagents triển khai & kiểm toán độc lập T-09 (`packages/game/src/waves/*`, `battle-state.ts`, `battle-runtime.ts`, `battle-waves.test.ts`), và lập báo cáo nghiệm thu `docs/reports/T-09-FINAL-ACCEPTANCE.md` + đồng bộ `ROADMAP.md` (commit local `3378dd7`, chưa push).
-  - Rà soát `docs/game-design/ABILITY_CATALOG.md`, `docs/decisions/PGD-01-STEEL-GUARDIAN.md`, `docs/decisions/PGD-02/systems/G08.md`, `G09.md`, `docs/decisions/PGD-02/contracts/G09-TECHNICAL-CONTRACT.md` và các phụ lục G09; lập và nâng cấp kế hoạch **T-10 Approved v1.0** tại `docs/development/T-10-SPECIAL-ABILITIES-IMPLEMENTATION-PLAN.md` sau khi Owner chốt `D-59`–`D-68 = A`.
+  - Rà soát `docs/game-design/ABILITY_CATALOG.md`, `docs/decisions/PGD-01-STEEL-GUARDIAN.md`, `docs/decisions/PGD-02/systems/G08.md`, `G09.md`, `docs/decisions/PGD-02/contracts/G09-TECHNICAL-CONTRACT.md` và các phụ lục G09; lập và nâng cấp kế hoạch **T-10 Approved v1.0** tại `docs/development/T-10-SPECIAL-ABILITIES-IMPLEMENTATION-PLAN.md` (commit `ddd6d4f`).
+  - Điều phối 4 subagents triển khai & kiểm toán độc lập **T-10** (`packages/game/src/abilities/*`, tích hợp `battle-state.ts`, `combat-*`, `fusion-engine.ts`, `battle-runtime.ts`, `packages/game/tests/battle-abilities.test.ts`), chạy kiểm chứng (`148/148` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck`, `pnpm build` PASS) và lập báo cáo nghiệm thu `docs/reports/T-10-FINAL-ACCEPTANCE.md` + đồng bộ `docs/product/ROADMAP.md` (đang ở working tree local, chưa commit/push).
 
 ---
 
 ## 5. Kế hoạch cho phiên làm việc tiếp theo (Next Session Plan)
 
-1. **Triển khai T-10 (Special Abilities):**
-   - Điều phối subagents triển khai `packages/game/src/abilities/*`, tích hợp với `combat-engine.ts`, `fusion-engine.ts`, `battle-state.ts`, `battle-runtime.ts` và viết bộ test `packages/game/tests/battle-abilities.test.ts` theo đúng kế hoạch **Approved v1.0** (`D-59`–`D-68 = A`, 20 cổng `AC-01`–`AC-20`).
-2. **Đóng cổng AC-20 cho T-08 & T-09:**
-   - Khi Owner cho phép push lên GitHub `main`, kiểm tra workflow CI thực tế để đóng `AC-20` của T-08 (`061d2ee`) và T-09 (`3378dd7`) sang **PASS** hoàn toàn.
+1. **Đóng cổng AC-20 cho T-08, T-09 & T-10:**
+   - Sau khi commit code/báo cáo T-10 và push cùng T-08 (`061d2ee`) & T-09 (`3378dd7`) lên GitHub `main`, kiểm tra workflow CI thực tế để đóng `AC-20` sang **PASS** hoàn toàn.
+2. **Chuyển sang T-11 (Save & Resume, Persistent Progression):**
+   - Rà soát `docs/decisions/PGD-02/` (`G02–G05` checkpoint/recovery, persistence contracts), `docs/product/GAMEPLAY_MECHANICS.md`, `docs/product/ROADMAP.md` và skill `save-systems` để lập kế hoạch **T-11 Draft v0.1** trình Owner duyệt.

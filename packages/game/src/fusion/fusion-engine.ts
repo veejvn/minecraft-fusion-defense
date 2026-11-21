@@ -1,3 +1,4 @@
+import { cleanupEntityAbilityState } from '../abilities/ability-engine';
 import { cellIndex, type Cell } from '../battlefield/grid';
 import type { CombatSession } from '../combat/combat-session';
 import { registerCombatEntity, unregisterCombatEntity } from '../combat/combat-state';
@@ -83,6 +84,8 @@ export function applyFusionCommand(
     unregisterCombatEntity(battle.combat, command.sourceId);
     unregisterCombatEntity(battle.combat, command.targetId);
   }
+  cleanupEntityAbilityState(battle, command.sourceId, 'fusion');
+  cleanupEntityAbilityState(battle, command.targetId, 'fusion');
 
   const outputEntityId = battle.nextEntityId;
   applyBattleCommand(battle, {

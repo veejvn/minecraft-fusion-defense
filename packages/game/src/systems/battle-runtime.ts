@@ -1,3 +1,11 @@
+import {
+  applyAbilityCommand,
+  cleanupEntityAbilityState,
+  stepAbilityTickPhase,
+  type AbilityRewardEnemy,
+} from '../abilities/ability-engine';
+import { validateAbilitySession, type AbilitySessionInput } from '../abilities/ability-session';
+import { createAbilityState, type AbilityCommand } from '../abilities/ability-state';
 import { runCombatPhase } from '../combat/combat-engine';
 import { validateCombatSession, type CombatSessionInput } from '../combat/combat-session';
 import {
@@ -23,7 +31,27 @@ import { applyWaveEvent, checkWaveCompletion, isBattleTerminal, type WaveEventCo
 import { validateWaveSession, waveDeadline, type WaveSessionInput } from '../waves/wave-session';
 import { createWaveState, type WaveEvent } from '../waves/wave-state';
 
-type BattleEvent = BattleCommand | ResourceEvent | CombatCommand | FusionCommand | WaveEvent;
+type BattleEvent = BattleCommand | ResourceEvent | CombatCommand | FusionCommand | WaveEvent | AbilityCommand;
+
+function enqueueEnemyReward(
+  state: BattleState,
+  enqueue: (input: { payload: BattleEvent; scheduledTick: number; causalDepth: number }) => unknown,
+  tick: number,
+  enemy: AbilityRewardEnemy,
+): void {
+  if (!state.resources) return;
+  enqueue({
+    payload: {
+      type: 'enemy-reward',
+      sourceId: enemy.id,
+      definitionId: enemy.definitionId,
+      lane: enemy.lane,
+      position: enemy.position,
+    },
+    scheduledTick: tick,
+    causalDepth: 0,
+  });
+}
 
 /** Internal headless runtime. Consumers query detached snapshots. */
 export class BattleRuntime {
@@ -35,6 +63,7 @@ export class BattleRuntime {
   private readonly hasCombat: boolean;
   private readonly hasFusion: boolean;
   private readonly hasWaves: boolean;
+  private readonly hasAbilities: boolean;
 
   constructor(
     config: ClockConfig,
@@ -42,6 +71,7 @@ export class BattleRuntime {
     combatInput?: CombatSessionInput,
     fusionInput?: FusionSessionInput,
     waveInput?: WaveSessionInput,
+    abilityInput?: AbilitySessionInput,
   ) {
     this.clock = new SimulationClock(config);
     const session = resourceInput === undefined ? undefined : validateResourceSession(resourceInput, config.ticksPerSecond);
@@ -54,12 +84,17 @@ export class BattleRuntime {
     const waveSession = waveInput === undefined
       ? undefined
       : validateWaveSession(waveInput, config.ticksPerSecond, combatSession, session);
+    const abilitySession = abilityInput === undefined
+      ? undefined
+      : validateAbilitySession(abilityInput, config.ticksPerSecond, combatSession, session);
     this.hasCombat = combatSession !== undefined;
     this.hasFusion = fusionSession !== undefined;
     this.hasWaves = waveSession !== undefined;
+    this.hasAbilities = abilitySession !== undefined;
     this.combatSession = combatSession;
     this.fusionSession = fusionSession;
     this.waveSession = waveSession;
+    this.abilitySession = abilitySession;
     const initial = createBattleState();
     const initialState: BattleState = {
       ...initial,
@@ -67,6 +102,7 @@ export class BattleRuntime {
       ...(combatSession ? { combat: createCombatState() } : {}),
       ...(fusionSession ? { fusion: createFusionState() } : {}),
       ...(waveSession ? { waves: createWaveState() } : {}),
+      ...(abilitySession ? { abilities: createAbilityState() } : {}),
     };
     this.engine = new TransactionEngine<BattleState, BattleEvent, ResourceRng | null>({
       state: initialState,
@@ -84,6 +120,7 @@ export class BattleRuntime {
       if (command.type === 'remove') {
         applyBattleCommand(state, command);
         if (state.combat) unregisterCombatEntity(state.combat, command.id);
+        if (state.abilities) cleanupEntityAbilityState(state, command.id, 'death');
         if (state.waves && waveSession) checkWaveCompletion(this.waveContext(state, rng, this.clock.tick, enqueue));
         return;
       }
@@ -95,6 +132,21 @@ export class BattleRuntime {
       if (command.type === 'fuse') {
         if (!state.fusion || !fusionSession) throw new Error('Fusion session unavailable');
         applyFusionCommand(state, fusionSession, combatSession, command, event.id);
+        return;
+      }
+      if (command.type === 'activate-ability') {
+        if (!state.abilities || !abilitySession || !state.combat || !combatSession) {
+          throw new Error('Ability session unavailable');
+        }
+        applyAbilityCommand(
+          { battle: state, combat: state.combat, session: combatSession, abilitySession },
+          command,
+          event.id,
+          enemy => enqueueEnemyReward(state, enqueue, this.clock.tick, enemy),
+        );
+        if (state.waves && waveSession && !isBattleTerminal(state)) {
+          checkWaveCompletion(this.waveContext(state, rng, this.clock.tick, enqueue));
+        }
         return;
       }
       if (command.type === 'wave-start' || command.type === 'wave-spawn') {
@@ -143,6 +195,7 @@ export class BattleRuntime {
   private readonly combatSession: ReturnType<typeof validateCombatSession> | undefined;
   private readonly fusionSession: ReturnType<typeof validateFusionSession> | undefined;
   private readonly waveSession: ReturnType<typeof validateWaveSession> | undefined;
+  private readonly abilitySession: ReturnType<typeof validateAbilitySession> | undefined;
 
   private waveContext(
     state: BattleState,
@@ -177,8 +230,18 @@ export class BattleRuntime {
     this.terminal = true;
   }
 
-  enqueue(command: BattleCommand | ResourceCommand | CombatCommand | FusionCommand | WaveEvent, scheduledTick: number) {
-    if (this.terminal || (this.paused && (command.type === 'collect' || command.type === 'claim' || command.type === 'fuse'))) {
+  enqueue(
+    command: BattleCommand | ResourceCommand | CombatCommand | FusionCommand | WaveEvent | AbilityCommand,
+    scheduledTick: number,
+  ) {
+    if (
+      this.terminal ||
+      (this.paused &&
+        (command.type === 'collect' ||
+          command.type === 'claim' ||
+          command.type === 'fuse' ||
+          command.type === 'activate-ability'))
+    ) {
       return { status: 'REJECTED', reason: this.terminal ? 'terminal' : 'paused' } as const;
     }
     return this.engine.enqueue({ payload: command, scheduledTick, causalDepth: 0 }, this.clock.tick);
@@ -195,26 +258,25 @@ export class BattleRuntime {
       if (this.combatSession && !this.terminal && !this.engine.failed) {
         this.engine.executePhase(tick, ({ state, rng, enqueue }) => {
           if (!state.combat) return;
+          const enqueueReward = (enemy: AbilityRewardEnemy) => enqueueEnemyReward(state, enqueue, tick, enemy);
+          if (state.abilities && this.abilitySession) {
+            stepAbilityTickPhase(
+              {
+                battle: state,
+                combat: state.combat,
+                session: this.combatSession!,
+                abilitySession: this.abilitySession,
+              },
+              enqueueReward,
+            );
+          }
           runCombatPhase({
             battle: state,
             combat: state.combat,
             session: this.combatSession!,
+            abilitySession: this.abilitySession,
             tick,
-            enqueueReward: enemy => {
-              if (state.resources) {
-                enqueue({
-                  payload: {
-                    type: 'enemy-reward',
-                    sourceId: enemy.id,
-                    definitionId: enemy.definitionId,
-                    lane: enemy.lane,
-                    position: enemy.position,
-                  },
-                  scheduledTick: tick,
-                  causalDepth: 0,
-                });
-              }
-            },
+            enqueueReward,
             enqueueDefeat: () => {
               enqueue({ payload: { type: 'terminal', result: 'defeat' }, scheduledTick: tick, causalDepth: 0 });
             },
@@ -247,6 +309,7 @@ export class BattleRuntime {
       ...(this.hasCombat && state.combat ? { combat: state.combat } : {}),
       ...(this.hasFusion && state.fusion ? { fusion: state.fusion } : {}),
       ...(this.hasWaves && state.waves ? { waves: state.waves } : {}),
+      ...(this.hasAbilities && state.abilities ? { abilities: state.abilities } : {}),
     };
   }
 }

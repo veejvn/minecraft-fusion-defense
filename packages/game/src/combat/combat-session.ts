@@ -28,6 +28,10 @@ export interface DefenderCombatDefinition {
   readonly attackSpeed: number;
   readonly attackRange: number;
   readonly targeting: TargetingStrategy;
+  readonly armor?: number;
+  readonly fireResistancePct?: number;
+  readonly freezeImmune?: boolean;
+  readonly freezeResistancePct?: number;
 }
 
 export interface EnemyCombatDefinition {
@@ -38,6 +42,10 @@ export interface EnemyCombatDefinition {
   readonly damage?: number;
   readonly attackSpeed?: number;
   readonly attackRange?: number;
+  readonly armor?: number;
+  readonly fireResistancePct?: number;
+  readonly freezeImmune?: boolean;
+  readonly freezeResistancePct?: number;
 }
 
 export interface CombatSessionInput {
@@ -58,6 +66,34 @@ function nonNegativeFinite(value: unknown, label: string): number {
     throw new RangeError(`Expected nonnegative finite ${label}`);
   }
   return value;
+}
+
+function unitInterval(value: unknown, label: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
+    throw new RangeError(`Expected finite percentage in [0, 1] for ${label}`);
+  }
+  return value;
+}
+
+function validateMitigationFields(
+  entity: {
+    readonly armor?: number;
+    readonly fireResistancePct?: number;
+    readonly freezeImmune?: boolean;
+    readonly freezeResistancePct?: number;
+  },
+  label: string,
+): void {
+  if (entity.armor !== undefined) nonNegativeFinite(entity.armor, `${label} armor`);
+  if (entity.fireResistancePct !== undefined) {
+    unitInterval(entity.fireResistancePct, `${label} fireResistancePct`);
+  }
+  if (entity.freezeResistancePct !== undefined) {
+    unitInterval(entity.freezeResistancePct, `${label} freezeResistancePct`);
+  }
+  if (entity.freezeImmune !== undefined && typeof entity.freezeImmune !== 'boolean') {
+    throw new TypeError(`Expected boolean ${label} freezeImmune`);
+  }
 }
 
 function indexUniqueIds<T extends { readonly id: string }>(entries: unknown, label: string): Record<string, T> {
@@ -101,6 +137,7 @@ export function validateCombatSession(
     if (!TARGETING_STRATEGIES.has(defender.targeting)) {
       throw new TypeError(`Unsupported targeting strategy: ${String(defender.targeting)}`);
     }
+    validateMitigationFields(defender, 'defender');
     deadline(1 / defender.attackSpeed, rate);
   }
 
@@ -110,6 +147,7 @@ export function validateCombatSession(
     if (!ENEMY_BEHAVIORS.has(enemy.behavior)) {
       throw new TypeError(`Unsupported enemy behavior: ${String(enemy.behavior)}`);
     }
+    validateMitigationFields(enemy, 'enemy');
     if (enemy.behavior === 'STOP_AND_ATTACK') {
       nonNegativeFinite(enemy.damage, 'enemy damage');
       positiveFinite(enemy.attackSpeed, 'enemy attackSpeed');

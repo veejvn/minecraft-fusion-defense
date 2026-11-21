@@ -15,6 +15,8 @@ export interface CombatEntityState {
   targetId: EntityId | null;
   moveAnchorX?: number;
   movedTicks?: number;
+  lastMoveSpeed?: number;
+  lastAttackSpeed?: number;
 }
 
 export interface CombatState {
