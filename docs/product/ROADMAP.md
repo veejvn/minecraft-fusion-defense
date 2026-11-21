@@ -82,7 +82,7 @@ Preserve Confirmed MVP gameplay and the [Documentation Policy](../DOCUMENTATION_
 
 ## 4. MVP Completion Criteria
 
-Đối chiếu với [MVP Scope — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb) và [Testing Strategy — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81dea9f1ffc88723a885). Không tuyên bố hoàn thành nếu gameplay, tests hoặc thông số chính thức chưa được kiểm chứng.
+Đối chiếu với [MVP Scope — Minecraft Fusion Defense](MVP_SCOPE.md) và [Testing Strategy — Minecraft Fusion Defense](../development/TESTING_STRATEGY.md). Không tuyên bố hoàn thành nếu gameplay, tests hoặc thông số chính thức chưa được kiểm chứng.
 
 ## 5. Open Decisions
 
@@ -94,6 +94,6 @@ Preserve Confirmed MVP gameplay and the [Documentation Policy](../DOCUMENTATION_
 
 ## 6. Tham chiếu
 
-- [MVP Scope — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb)
-- [Development Workflow — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81ccb23dea79a85f7123)
-- [Tình trạng tài liệu — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d)
+- [MVP Scope — Minecraft Fusion Defense](MVP_SCOPE.md)
+- [Development Workflow — Minecraft Fusion Defense](../development/DEVELOPMENT_WORKFLOW.md)
+- [Tình trạng tài liệu — Minecraft Fusion Defense](../DOCUMENTATION_STATUS.md)
