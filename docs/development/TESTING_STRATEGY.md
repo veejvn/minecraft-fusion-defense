@@ -85,7 +85,7 @@ Manual và core automated tests là yêu cầu Confirmed; checklist/cases không
 
 ## 8. Tài liệu tham chiếu
 
-- [Gameplay Mechanics — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81eeaf62f611c5342660)
-- [Game Engine Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81368230c8786623a06b)
-- [Data Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81619d14d2fa505e163b)
-- [AI Agent Guidelines — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e8178b14edef36999a832)
+- [Gameplay Mechanics — Minecraft Fusion Defense](../product/GAMEPLAY_MECHANICS.md)
+- [Game Engine Architecture — Minecraft Fusion Defense](../architecture/GAME_ENGINE_ARCHITECTURE.md)
+- [Data Architecture — Minecraft Fusion Defense](../architecture/DATA_ARCHITECTURE.md)
+- [AI Agent Guidelines — Minecraft Fusion Defense](AI_AGENT_GUIDELINES.md)
