@@ -6,7 +6,7 @@
 
 ## 1. Mục tiêu
 
-Lập các nhóm công việc để đi từ tài liệu thiết kế đến MVP Desktop Web chơi được. **Đây là Roadmap Proposed**, không phải thứ tự Sprint, deadline hoặc cam kết phát hành.
+Lập các nhóm công việc để đi từ tài liệu thiết kế đến MVP Desktop Web chơi được. **Workstream categories remain Proposed; the technical dependency sequence in §3A is Owner-approved.** This is not a sprint schedule, deadline or release commitment.
 
 ## 2. Phạm vi MVP đã xác nhận
 
@@ -31,7 +31,7 @@ Lập các nhóm công việc để đi từ tài liệu thiết kế đến MVP
 
 **Confirmed:** manual playthrough toàn bộ Grassland 5 Waves và automated tests cho core gameplay (Fusion, resources, combat, Victory/Defeat, Save & Resume). Coverage, cases/harness/fixtures, browser/OS matrix và CI gates vẫn Coding Planning TBD.
 
-## 3. Workstreams (Proposed, chưa chốt thứ tự)
+## 3. Workstreams (categories; execution sequence approved in §3A)
 
 | Workstream | Kết quả mong đợi | Điều kiện / phụ thuộc |
 | --- | --- | --- |
@@ -44,7 +44,41 @@ Lập các nhóm công việc để đi từ tài liệu thiết kế đến MVP
 | QA & Local acceptance | Manual playthrough + core automated tests, measured performance, Local-only internal testing | Test details TBD; không có online deployment requirement |
 | Persistence & progression | Save/Resume, persistent Victory-based unlocks, Achievements/Collection | Storage/schema/tracking TBD; unlock mapping Confirmed |
 
-Các workstreams có thể thực hiện song song hoặc chia nhỏ sau khi chủ dự án xác nhận kế hoạch; không tự gán ngày, mức ưu tiên hoặc người phụ trách.
+Các workstreams có thể thực hiện song song hoặc chia nhỏ theo dependency gates tại §3A; không tự gán ngày, mức ưu tiên hoặc người phụ trách.
+
+## 3A. Owner-approved technical execution sequence (2026-11-21)
+
+**Status: OWNER-APPROVED PLANNING SEQUENCE, NOT IMPLEMENTATION APPROVAL.** This section supersedes the earlier "workstreams have no agreed order" statement for technical dependency planning only. The workstreams above remain useful categories; this is not a sprint schedule, release commitment, or authorization to implement T-05 gameplay code. T-05 implementation requires the Owner's separate coding instruction. No new MVP gameplay content is approved here.
+
+| Task | Planned deliverable | Dependency / approval gate |
+| --- | --- | --- |
+| T-02 | Phaser/React host foundation | Existing implementation; retain prior acceptance evidence |
+| T-03 | Game Data foundation | Existing implementation; production definitions still subject to approval |
+| T-04 | Core simulation foundation | Owner-accepted; preserve existing contracts |
+| CI improvement | Add `@mfd/game-data` Vitest step to workspace CI | Independent documentation/tooling change; CI success requires an actual run |
+| **T-05** | **Battlefield 5×9, Defender occupancy, Entity Registry, deterministic IDs, headless runtime integration** | T-02–T-04; Owner-approved T-05 plan; separate authorization before coding |
+| T-06 | Summon, placement, Energy/Power Crystal resources | T-05 and approved gameplay values |
+| T-07 | Enemy movement, combat, targeting | T-05 and approved combat definitions |
+| T-08 | Fusion mechanics | T-05, transactional entity operations and approved recipes |
+| T-09 | Grassland five waves, victory/defeat | T-06–T-07; approved wave data; use the newer Owner G07 terminal decision |
+| T-10 | Special abilities | T-07 and explicitly approved executable ability/effect contracts |
+| T-11 | Save & Resume, progression | Stable runtime snapshot contract and terminal/progression semantics |
+| T-12 | UI, assets and playable integration | Incremental parallel work allowed once its interfaces are approved |
+| T-13 | MVP QA and local acceptance | Integrated required gameplay, automated checks and manual 5-wave playthrough |
+
+Dependencies are minimum planning gates, not a claim that all implementation decisions are closed. T-06/T-07/T-08 may be partially parallel after T-05 contracts stabilize. T-12 may progress incrementally. The Owner must approve each task's actual scope before coding.
+
+### T-05 approved design choices and execution boundary
+
+- **D-01 A:** Deterministic entity ID counter stored in transactional Battle State; rollback must not consume IDs.
+- **D-02 A:** Headless-first TypeScript runtime; do not change Phaser Hello Scene or React Host.
+- **D-03 A:** Internal test/runtime commands only; do not expose a new public React/Phaser command API.
+- Full plan and fourteen acceptance gates: [T-05 Battlefield & Runtime Integration Implementation Plan](../development/T-05-BATTLEFIELD-RUNTIME-INTEGRATION-IMPLEMENTATION-PLAN.md).
+- T-05 is **OWNER-APPROVED PLAN / NOT YET CODED**. Do not infer completion or CI PASS from the plan.
+
+### Planning constraints
+
+Preserve Confirmed MVP gameplay and the [Documentation Policy](../DOCUMENTATION_POLICY.md). Draft, Proposed, Prototype and TBD game values remain unapproved. In particular, do not bypass Game Data runtime validation to invent production Ability effects. G07 terminal priority for future implementation follows the explicit [2026-11-20 Owner decision](../decisions/PGD-02/owner-decisions/G07-TERMINAL-PRIORITY-OWNER-2026-11-20.md): first valid resolved terminal event wins; historical source provenance remains separately pending. Full G03–G05 checkpoint/recovery and persistence are not part of T-05.
 
 ## 4. MVP Completion Criteria
 
@@ -52,8 +86,8 @@ Các workstreams có thể thực hiện song song hoặc chia nhỏ sau khi ch�
 
 ## 5. Open Decisions
 
-- Thứ tự triển khai, milestones, timeline và release date: **TBD**.
-- Ưu tiên các workstreams và phân công: **TBD**.
+- Thứ tự phụ thuộc kỹ thuật T-05–T-13: **Owner-approved 2026-11-21 (§3A)**; milestones, timeline và release date: **TBD**.
+- Phụ thuộc kỹ thuật đã được duyệt (§3A); ưu tiên sprint và phân công: **TBD**.
 - Gameplay balance, Wave Composition, Ability Costs và Cooldowns: **TBD**.
 - Tiêu chí release, CI/CD, hosting và performance benchmark: **TBD**.
 - Các ý tưởng ngoài MVP không tự đưa vào Roadmap.
