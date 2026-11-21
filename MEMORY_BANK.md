@@ -50,7 +50,7 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 | **T-04** | Core simulation foundation | Đã nghiệm thu (`SimulationClock`, `TransactionEngine`, `EventQueue`, `EventScheduler`). |
 | **T-05** | Battlefield 5×9, occupancy, Entity Registry, `BattleRuntime` | **Owner-accepted kỹ thuật** tại `3ee3d30` (`docs/reports/T-05-FINAL-ACCEPTANCE.md`). |
 | **T-06** | Summon, Placement & Resources (Energy, Crystal, RNG, Pending Wave Rewards) | **Owner-accepted kỹ thuật (26/26 gates PASS):** Commit `147e8bd` (+ bổ sung test `battle-resources.test.ts` 21 tests), CI run `44850790552` **success**; báo cáo nghiệm thu `docs/reports/T-06-FINAL-ACCEPTANCE.md` và đã cập nhật `ROADMAP.md`. Production data (summon cost/cooldown, Energy item rate/amount/distribution, Wave 1–5 reward) vẫn giữ `TBD`. |
-| **T-07** | Enemy movement, combat, targeting | **Plan v1.0 đã được Owner duyệt (`D-25`–`D-38 = A`, 20 acceptance gates) / chưa ủy quyền code:** `docs/development/T-07-ENEMY-MOVEMENT-COMBAT-TARGETING-IMPLEMENTATION-PLAN.md`, đã đồng bộ `ROADMAP.md`. Combat stats/behaviors vẫn `TBD` (dùng test fixtures). |
+| **T-07** | Enemy movement, combat, targeting | **Đã code tại `7b7c37d`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ remote CI:** `docs/reports/T-07-FINAL-ACCEPTANCE.md`; 85/85 game tests, 25/25 game-data tests, typecheck & build PASS; chưa push lên GitHub nên AC-20 remote CI đang pending. Combat stats/behaviors vẫn `TBD` (dùng test fixtures). |
 | **T-08** | Fusion mechanics | Chưa bắt đầu (phụ thuộc T-05 và recipes được duyệt). |
 | **T-09** | Grassland 5 Waves, Victory/Defeat | Chưa bắt đầu (phụ thuộc T-06–T-07, Wave data và G07 terminal priority). |
 | **T-10** | Special abilities | Chưa bắt đầu (phụ thuộc T-07 và executable ability/effect contracts). |
@@ -68,24 +68,25 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
   - Đọc mã nguồn T-06 vừa commit tại `147e8bd`: `packages/game/src/core/battle-resources.ts`, `resource-rng.ts`, `resource-session.ts`, `packages/game/src/systems/battle-runtime.ts`, `packages/game/tests/battle-resources.test.ts`.
   - Phát hiện khoảng lệch giữa tài liệu và code: tài liệu T-06/Roadmap vẫn ghi trạng thái `NOT AUTHORIZED` / `26/26 gates PENDING`, trong khi code và test cho T-06 đã được commit lên `main` (`147e8bd`).
 - **Kết quả kiểm chứng đã chạy trong phiên:**
-  - `pnpm --filter @mfd/game test`: **PASS** — 5 test files, **71/71 tests** (`lifecycle-adapter.test.ts` 7, `create-game.test.ts` 4, `battle-runtime.test.ts` 12, `battle-resources.test.ts` 21, `simulation-foundation.test.ts` 27).
+  - `pnpm --filter @mfd/game test`: **PASS** — 6 test files, **85/85 tests** (`lifecycle-adapter.test.ts` 7, `create-game.test.ts` 4, `battle-combat.test.ts` 12, `battle-runtime.test.ts` 12, `battle-resources.test.ts` 21, `simulation-foundation.test.ts` 29).
   - `pnpm --filter @mfd/game-data test`: **PASS** — 1 test file, **25/25 tests** (`validation.test.ts`).
   - `pnpm typecheck`: **PASS** — 3/3 packages (`@mfd/game-data`, `@mfd/game`, `@mfd/web`).
   - `pnpm build`: **PASS** — `@mfd/web` Next.js production build (`0 cached`).
-  - Remote CI (`gh run list`): run `44850790552` trên commit `147e8bd` và run `44872044295` trên `68d5142` đều đạt **success** (bổ sung test mới ở `battle-resources.test.ts` và các cập nhật tài liệu đang ở working tree local, chưa commit/push).
-  - Chưa chạy trong phiên: `@mfd/web` Playwright E2E/production tests (`apps/web` không thay đổi trong T-06).
+  - Remote CI (`gh run list`): run `44875361175` trên `593d2a5` đạt **success**; commit T-07 `7b7c37d` mới commit local trên `main`, chưa push nên chưa có remote CI run cho `7b7c37d`.
+  - Chưa chạy trong phiên: `@mfd/web` Playwright E2E/production tests (`apps/web` không thay đổi trong T-06/T-07).
 - **Thay đổi file:**
-  - Khởi tạo `MEMORY_BANK.md` theo yêu cầu Owner (commit `93e429e`, sau đó cập nhật tiếp trong phiên).
-  - Xóa `docs/DOCUMENTATION_STATUS.md` và dọn các liên kết tham chiếu trong 5 file tài liệu hoạt động (`README.md`, `ROADMAP.md`, `DEVELOPMENT_WORKFLOW.md`, `AI_AGENT_GUIDELINES.md`, `TECHNICAL_ARCHITECTURE.md`) (commit `68d5142`).
-  - Rà soát & nghiệm thu T-06 (**26/26 gates PASS**): bổ sung test `BattleRuntime` empty `claim` + dual `terminal` trong `packages/game/tests/battle-resources.test.ts`, lập `docs/reports/T-06-FINAL-ACCEPTANCE.md`, và cập nhật trạng thái `OWNER-ACCEPTED` trong `docs/product/ROADMAP.md` và `docs/development/T-06-SUMMON-PLACEMENT-RESOURCES-IMPLEMENTATION-PLAN.md` (commit `87507f0`).
-  - Lập kế hoạch T-07 (`docs/development/T-07-ENEMY-MOVEMENT-COMBAT-TARGETING-IMPLEMENTATION-PLAN.md`) và nâng lên **Plan v1.0 (Owner-approved `D-25`–`D-38 = A`, 20 gates)**, đồng bộ trạng thái trong `docs/product/ROADMAP.md`.
-  - Cập nhật đồng bộ đội hình Enemy MVP từ `Spider` sang `Vindicator` (reward khi chết giữ `150 Energy / 1 Power Crystal`; Spider chuyển sang định hướng Defender tương lai, ngoài MVP) trên toàn bộ `docs/` và `.agents/skills/minecraft-gameplay-rules/SKILL.md`.
+  - Khởi tạo `MEMORY_BANK.md` theo yêu cầu Owner (commit `93e429e`, cập nhật tiếp trong phiên).
+  - Xóa `docs/DOCUMENTATION_STATUS.md` và dọn liên kết trong 5 tài liệu hoạt động (commit `68d5142`).
+  - Nghiệm thu T-06 (`docs/reports/T-06-FINAL-ACCEPTANCE.md`, commit `87507f0`).
+  - Cập nhật đồng bộ đội hình Enemy MVP từ `Spider` sang `Vindicator` (reward `150/1`; Spider chuyển sang định hướng Defender tương lai, ngoài MVP) trên `docs/` và `.agents/skills/minecraft-gameplay-rules/SKILL.md` (commit `593d2a5`).
+  - Lập kế hoạch T-07 v1.0 (`D-25`–`D-38 = A`), triển khai T-07 trong `packages/game` (commit `7b7c37d`), và lập báo cáo nghiệm thu `docs/reports/T-07-FINAL-ACCEPTANCE.md` + đồng bộ `ROADMAP.md` (đang ở working tree local, chưa commit/push).
 
 ---
 
 ## 5. Kế hoạch cho phiên làm việc tiếp theo (Next Session Plan)
 
-1. **Triển khai T-07 (khi Owner ủy quyền coding):**
-   - Thực hiện theo 6 slices (`T-07.1`–`T-07.6`) và 20 acceptance gates trong `docs/development/T-07-ENEMY-MOVEMENT-COMBAT-TARGETING-IMPLEMENTATION-PLAN.md`: mở rộng cộng thêm `TransactionEngine.executePhase`, `BattleRuntime`, combat session validation, movement/targeting/combat/death/breach và unit tests với test-only fixtures.
-2. **Chuẩn bị song song cho T-08 (Fusion) hoặc chốt Balance:**
-   - Lập kế hoạch kỹ thuật cho T-08 (Fusion mechanics) và/hoặc rà soát các thông số combat/behavior còn `TBD` trong `ENTITY_CATALOG.md` và `GAME_BALANCING.md`.
+1. **Đóng cổng AC-20 cho T-07:**
+   - Sau khi push `7b7c37d` (và báo cáo nghiệm thu) lên GitHub `main`, kiểm tra kết quả workflow CI thực tế để đóng `AC-20` sang **PASS** hoàn toàn.
+2. **Chuyển sang T-08 (Fusion Mechanics):**
+   - Lập kế hoạch kỹ thuật (Implementation Plan v1.0) cho **T-08 (Fusion)**: kéo thả Source → Target không giới hạn lane/khoảng cách, 0 Energy/Power Crystal, tra cứu Recipe data-driven bất kể thứ tự input, output tại Target Cell với 100% own Max HP / xóa status kế thừa / attack-ready ngay lập tức, đồng bộ với `CombatState` và `ResourceState` (auto-collect Crystal nếu có).
+   - Đồng thời chốt hoặc tách fixture cho các thông số `TBD` còn lại nếu cần cho T-09 (5 Waves & Victory).
