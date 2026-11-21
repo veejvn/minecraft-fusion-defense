@@ -61,7 +61,7 @@ Không tự chọn phương án mặc định khi việc triển khai phụ thu�
 
 ## 8. Tài liệu tham chiếu
 
-- [Technical Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81b6893ac6d59454f8be)
-- [Game Engine Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81368230c8786623a06b)
-- [Data Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81619d14d2fa505e163b)
-- [AI Agent Guidelines — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e8178b14edef36999a832)
+- [Technical Architecture — Minecraft Fusion Defense](TECHNICAL_ARCHITECTURE.md)
+- [Game Engine Architecture — Minecraft Fusion Defense](GAME_ENGINE_ARCHITECTURE.md)
+- [Data Architecture — Minecraft Fusion Defense](DATA_ARCHITECTURE.md)
+- [AI Agent Guidelines — Minecraft Fusion Defense](../development/AI_AGENT_GUIDELINES.md)
