@@ -46,6 +46,6 @@
 
 ## 6. Tham chiếu
 
-- [Entity Catalog — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951)
-- [Level Design — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81079f43ecfa6388d6ca)
-- [Game Engine Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81368230c8786623a06b)
+- [Entity Catalog — Minecraft Fusion Defense](../game-design/ENTITY_CATALOG.md)
+- [Level Design — Minecraft Fusion Defense](../game-design/LEVEL_DESIGN.md)
+- [Game Engine Architecture — Minecraft Fusion Defense](../architecture/GAME_ENGINE_ARCHITECTURE.md)
