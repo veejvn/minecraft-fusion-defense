@@ -19,8 +19,11 @@ import { EventScheduler } from '../events/event-scheduler';
 import { applyFusionCommand } from '../fusion/fusion-engine';
 import { validateFusionSession, type FusionSessionInput } from '../fusion/fusion-session';
 import { createFusionState, type FusionCommand } from '../fusion/fusion-state';
+import { applyWaveEvent, checkWaveCompletion, isBattleTerminal, type WaveEventContext } from '../waves/wave-engine';
+import { validateWaveSession, waveDeadline, type WaveSessionInput } from '../waves/wave-session';
+import { createWaveState, type WaveEvent } from '../waves/wave-state';
 
-type BattleEvent = BattleCommand | ResourceEvent | CombatCommand | FusionCommand;
+type BattleEvent = BattleCommand | ResourceEvent | CombatCommand | FusionCommand | WaveEvent;
 
 /** Internal headless runtime. Consumers query detached snapshots. */
 export class BattleRuntime {
@@ -31,12 +34,14 @@ export class BattleRuntime {
   private terminal = false;
   private readonly hasCombat: boolean;
   private readonly hasFusion: boolean;
+  private readonly hasWaves: boolean;
 
   constructor(
     config: ClockConfig,
     resourceInput?: ResourceSessionInput,
     combatInput?: CombatSessionInput,
     fusionInput?: FusionSessionInput,
+    waveInput?: WaveSessionInput,
   ) {
     this.clock = new SimulationClock(config);
     const session = resourceInput === undefined ? undefined : validateResourceSession(resourceInput, config.ticksPerSecond);
@@ -46,21 +51,29 @@ export class BattleRuntime {
     const fusionSession = fusionInput === undefined
       ? undefined
       : validateFusionSession(fusionInput, session, combatSession);
+    const waveSession = waveInput === undefined
+      ? undefined
+      : validateWaveSession(waveInput, config.ticksPerSecond, combatSession, session);
     this.hasCombat = combatSession !== undefined;
     this.hasFusion = fusionSession !== undefined;
+    this.hasWaves = waveSession !== undefined;
+    this.combatSession = combatSession;
+    this.fusionSession = fusionSession;
+    this.waveSession = waveSession;
     const initial = createBattleState();
     const initialState: BattleState = {
       ...initial,
       ...(session ? { resources: createResourceState() } : {}),
       ...(combatSession ? { combat: createCombatState() } : {}),
       ...(fusionSession ? { fusion: createFusionState() } : {}),
+      ...(waveSession ? { waves: createWaveState() } : {}),
     };
     this.engine = new TransactionEngine<BattleState, BattleEvent, ResourceRng | null>({
       state: initialState,
       queue: new EventQueue<BattleEvent>().snapshot(),
-      rng: session ? { seed: session.seed } : null,
+      rng: session ? { seed: session.seed } : waveSession?.seed !== undefined ? { seed: waveSession.seed } : null,
     }, ({ state, event, rng, enqueue }) => {
-      if (state.resources?.terminal || state.combat?.terminal) return;
+      if (isBattleTerminal(state)) return;
       const command = event.payload;
       if (command.type === 'add') {
         const id = state.nextEntityId;
@@ -71,6 +84,7 @@ export class BattleRuntime {
       if (command.type === 'remove') {
         applyBattleCommand(state, command);
         if (state.combat) unregisterCombatEntity(state.combat, command.id);
+        if (state.waves && waveSession) checkWaveCompletion(this.waveContext(state, rng, this.clock.tick, enqueue));
         return;
       }
       if (command.type === 'spawn-enemy') {
@@ -83,11 +97,14 @@ export class BattleRuntime {
         applyFusionCommand(state, fusionSession, combatSession, command, event.id);
         return;
       }
+      if (command.type === 'wave-start' || command.type === 'wave-spawn') {
+        if (!state.waves || !waveSession || !combatSession) throw new Error('Wave session unavailable');
+        applyWaveEvent(this.waveContext(state, rng, this.clock.tick, enqueue), command);
+        return;
+      }
       if (command.type === 'terminal' && !state.resources) {
         if (command.result !== 'victory' && command.result !== 'defeat') throw new TypeError('Invalid terminal result');
-        if (!state.combat) throw new Error('Combat state unavailable');
-        state.combat.terminal = command.result;
-        this.terminal = true;
+        this.markTerminal(state, command.result);
         return;
       }
       if (!state.resources || !session || !rng) throw new Error('Resource session unavailable');
@@ -101,24 +118,66 @@ export class BattleRuntime {
         registerCombatEntity(state, combatSession, state.nextEntityId - 1n);
       }
       if (state.resources.terminal) {
-        if (state.combat) state.combat.terminal = state.resources.terminal;
-        this.terminal = true;
+        this.markTerminal(state, state.resources.terminal);
       }
     });
     this.scheduler = new EventScheduler(this.engine);
-    if (session) {
-      this.engine.enqueue({ payload: { type: 'initialize' }, scheduledTick: 0, causalDepth: 0 }, 0);
+    if (session || waveSession) {
+      if (session) {
+        this.engine.enqueue({ payload: { type: 'initialize' }, scheduledTick: 0, causalDepth: 0 }, 0);
+      }
+      if (waveSession) {
+        this.engine.enqueue({
+          payload: { type: 'wave-start', waveIndex: 0 },
+          scheduledTick: waveDeadline(waveSession.waves[0].initialDelaySeconds, config.ticksPerSecond, 0),
+          causalDepth: 0,
+        }, 0);
+      }
       this.scheduler.runTick(0);
-      if (this.engine.failed) throw new Error('Resource session initialization failed');
+      if (this.engine.failed) {
+        throw new Error(session ? 'Resource session initialization failed' : 'Wave session initialization failed');
+      }
     }
-    this.combatSession = combatSession;
-    this.fusionSession = fusionSession;
   }
 
   private readonly combatSession: ReturnType<typeof validateCombatSession> | undefined;
   private readonly fusionSession: ReturnType<typeof validateFusionSession> | undefined;
+  private readonly waveSession: ReturnType<typeof validateWaveSession> | undefined;
 
-  enqueue(command: BattleCommand | ResourceCommand | CombatCommand | FusionCommand, scheduledTick: number) {
+  private waveContext(
+    state: BattleState,
+    rng: ResourceRng | null,
+    tick: number,
+    enqueue: (input: { payload: BattleEvent; scheduledTick: number; causalDepth: number }) => unknown,
+  ): WaveEventContext {
+    return {
+      battle: state,
+      waves: state.waves!,
+      session: this.waveSession!,
+      combatSession: this.combatSession!,
+      rng,
+      tick,
+      scheduleWave: (waveEvent, scheduledTick) => enqueue({ payload: waveEvent, scheduledTick, causalDepth: 0 }),
+      enqueueWaveReward: (waveId, scheduledTick) => enqueue({
+        payload: { type: 'wave-reward', sourceId: waveId },
+        scheduledTick,
+        causalDepth: 0,
+      }),
+      enqueueVictory: scheduledTick => enqueue({
+        payload: { type: 'terminal', result: 'victory' },
+        scheduledTick,
+        causalDepth: 0,
+      }),
+    };
+  }
+
+  private markTerminal(state: BattleState, result: 'victory' | 'defeat'): void {
+    if (state.combat) state.combat.terminal = result;
+    if (state.waves) state.waves.terminal = result;
+    this.terminal = true;
+  }
+
+  enqueue(command: BattleCommand | ResourceCommand | CombatCommand | FusionCommand | WaveEvent, scheduledTick: number) {
     if (this.terminal || (this.paused && (command.type === 'collect' || command.type === 'claim' || command.type === 'fuse'))) {
       return { status: 'REJECTED', reason: this.terminal ? 'terminal' : 'paused' } as const;
     }
@@ -134,7 +193,7 @@ export class BattleRuntime {
     if (this.engine.failed || this.terminal) return 0;
     return this.clock.advance(elapsedMs, tick => {
       if (this.combatSession && !this.terminal && !this.engine.failed) {
-        this.engine.executePhase(tick, ({ state, enqueue }) => {
+        this.engine.executePhase(tick, ({ state, rng, enqueue }) => {
           if (!state.combat) return;
           runCombatPhase({
             battle: state,
@@ -160,6 +219,9 @@ export class BattleRuntime {
               enqueue({ payload: { type: 'terminal', result: 'defeat' }, scheduledTick: tick, causalDepth: 0 });
             },
           });
+          if (state.waves && this.waveSession && this.combatSession && !isBattleTerminal(state)) {
+            checkWaveCompletion(this.waveContext(state, rng, tick, enqueue));
+          }
         });
         if (this.engine.failed || this.terminal) {
           this.setPaused(true);
@@ -181,8 +243,10 @@ export class BattleRuntime {
       queue,
       failure: this.engine.failureDiagnostic,
       ...(state.resources ? { resources: state.resources, rng } : {}),
+      ...(!state.resources && this.hasWaves && rng !== null ? { rng } : {}),
       ...(this.hasCombat && state.combat ? { combat: state.combat } : {}),
       ...(this.hasFusion && state.fusion ? { fusion: state.fusion } : {}),
+      ...(this.hasWaves && state.waves ? { waves: state.waves } : {}),
     };
   }
 }

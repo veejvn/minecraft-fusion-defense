@@ -1,8 +1,8 @@
 # T-09 — Grassland Five Waves, Victory & Defeat: Implementation Plan v1.0
 
 **Project:** Minecraft Fusion Defense  
-**Status:** **OWNER-APPROVED PLAN v1.0 (2026-11-21) — D-49–D-58 = A APPROVED; 20 ACCEPTANCE GATES PENDING; CODING NOT YET AUTHORIZED**  
-**Scope:** Headless `packages/game` 5-Wave session validation, Spawn Group scheduling and lane selection (`fixed`, `sequential`, `random`), Wave progression and completion, T-06 Wave Reward triggering, Wave 5 Victory detection, G07 simultaneous Victory/Defeat arbitration, and Pause/Terminal Wave timer guards.  
+**Status:** **IMPLEMENTED LOCALLY — 19/20 GATES LOCAL PASS, AC-20 REMOTE CI PENDING COMMIT & PUSH (D-49–D-58 = A; Wave 1–5 Production Data Remains TBD)**  
+**Scope:** Headless `packages/game` 5-Wave session validation, Spawn Group scheduling and lane selection (`fixed`, `sequential`, `random`), Wave progression and completion, T-06 Wave Reward triggering, Wave 5 Victory detection, G07 simultaneous Victory/Defeat arbitration, and Pause/Terminal Wave timer guards; see [T-09 Final Acceptance Report](../reports/T-09-FINAL-ACCEPTANCE.md).  
 **Dependency:** [T-05 acceptance](../reports/T-05-FINAL-ACCEPTANCE.md), [T-06 acceptance](../reports/T-06-FINAL-ACCEPTANCE.md), [T-07 acceptance](../reports/T-07-FINAL-ACCEPTANCE.md), [T-08 acceptance](../reports/T-08-FINAL-ACCEPTANCE.md), T-04 simulation contracts.  
 **Authority:** [Documentation Policy](../DOCUMENTATION_POLICY.md); [Gameplay Mechanics](../product/GAMEPLAY_MECHANICS.md) §9–§10, §12, §14.5, §15; [Level Design](../game-design/LEVEL_DESIGN.md) §5–§13; [Game Balancing](../game-design/GAME_BALANCING.md) §8, §10, §15-F; [PGD-02 G07 Terminal Priority Owner Decision (2026-11-20)](../decisions/PGD-02/owner-decisions/G07-TERMINAL-PRIORITY-OWNER-2026-11-20.md).
 
@@ -56,7 +56,7 @@ All **10 decisions D-49 through D-58** are approved as **Option A**:
 | **T-09.4 — Victory, Defeat & G07 arbitration** | Wave 5 completion → `terminal: victory`, simultaneous Victory/Defeat queue resolution, Pending Wave Reward cancellation, post-terminal spawn cancellation | Full 5-wave Victory playthrough test, Breach Defeat test, and G07 same-tick tie-break tests |
 | **T-09.5 — Pause, Rollback & Regression** | Pause/Resume during active spawns & wave delays, `QUEUE_OVERFLOW`/contract rollback, deterministic replay, T-04–T-08 regressions | Pause/Resume, rollback, replay, and full 110+ test regression suite |
 
-## 5. Approved acceptance gates — 20 gates (PENDING implementation)
+## 5. Acceptance gates — 20 gates (19/20 local PASS, AC-20 remote CI pending commit & push — see [Acceptance Report](../reports/T-09-FINAL-ACCEPTANCE.md))
 
 | Gate | Requirement |
 | --- | --- |

@@ -2,6 +2,7 @@ import { BATTLEFIELD_COLUMNS, BATTLEFIELD_ROWS, cellIndex, isLane } from '../bat
 import type { CombatState } from '../combat/combat-state';
 import type { EntityDefinition, EntityId, RuntimeEntity } from '../entities/runtime-entity';
 import type { FusionState } from '../fusion/fusion-state';
+import type { WaveState } from '../waves/wave-state';
 import type { ResourceState } from './battle-resources';
 
 export interface BattleState {
@@ -11,6 +12,7 @@ export interface BattleState {
   readonly resources?: ResourceState;
   readonly combat?: CombatState;
   readonly fusion?: FusionState;
+  readonly waves?: WaveState;
 }
 
 export type BattleCommand =

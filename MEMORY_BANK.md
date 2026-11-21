@@ -52,7 +52,7 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 | **T-06** | Summon, Placement & Resources (Energy, Crystal, RNG, Pending Wave Rewards) | **Owner-accepted kỹ thuật (26/26 gates PASS):** Commit `147e8bd` (+ bổ sung test `battle-resources.test.ts` 21 tests), CI run `44850790552` **success**; báo cáo nghiệm thu `docs/reports/T-06-FINAL-ACCEPTANCE.md` và đã cập nhật `ROADMAP.md`. Production data (summon cost/cooldown, Energy item rate/amount/distribution, Wave 1–5 reward) vẫn giữ `TBD`. |
 | **T-07** | Enemy movement, combat, targeting | **Owner-accepted kỹ thuật (20/20 gates PASS):** Code tại `7b7c37d` (push via `6b0ee0b`), CI run `44877738893` **success**; báo cáo nghiệm thu `docs/reports/T-07-FINAL-ACCEPTANCE.md` và đã cập nhật `ROADMAP.md`. Combat stats/behaviors vẫn `TBD` (dùng test fixtures). |
 | **T-08** | Fusion mechanics | **Đã code & commit local tại `061d2ee`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** `docs/reports/T-08-FINAL-ACCEPTANCE.md`; 110/110 game tests (25 tests `battle-fusion.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa push lên GitHub nên AC-20 remote CI đang pending. Chỉ số combat của 7 Fusion Defenders vẫn `TBD` (dùng test fixtures). |
-| **T-09** | Grassland 5 Waves, Victory/Defeat | **Plan v1.0 đã được Owner duyệt (`D-49`–`D-58 = A`, 20 acceptance gates) / chưa ủy quyền code:** `docs/development/T-09-GRASSLAND-WAVES-VICTORY-DEFEAT-IMPLEMENTATION-PLAN.md`, đã đồng bộ `ROADMAP.md`. Dữ liệu Wave 1–5 và reward vẫn `TBD` (dùng test fixtures). |
+| **T-09** | Grassland 5 Waves, Victory/Defeat | **Đã code local, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ commit/push CI:** `docs/reports/T-09-FINAL-ACCEPTANCE.md`; 126/126 game tests (16 tests `battle-waves.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa commit/push lên GitHub nên AC-20 remote CI đang pending. Dữ liệu Wave 1–5 và reward vẫn `TBD` (dùng test fixtures). |
 | **T-10** | Special abilities | Chưa bắt đầu (phụ thuộc T-07 và executable ability/effect contracts). |
 | **T-11** | Save & Resume, persistent progression | Chưa bắt đầu. |
 | **T-12** | UI, assets và playable integration | Chưa bắt đầu (có thể làm song song từng phần khi interface ổn định). |
@@ -68,12 +68,12 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
   - Đọc mã nguồn T-06 vừa commit tại `147e8bd`: `packages/game/src/core/battle-resources.ts`, `resource-rng.ts`, `resource-session.ts`, `packages/game/src/systems/battle-runtime.ts`, `packages/game/tests/battle-resources.test.ts`.
   - Phát hiện khoảng lệch giữa tài liệu và code: tài liệu T-06/Roadmap vẫn ghi trạng thái `NOT AUTHORIZED` / `26/26 gates PENDING`, trong khi code và test cho T-06 đã được commit lên `main` (`147e8bd`).
 - **Kết quả kiểm chứng đã chạy trong phiên:**
-  - `pnpm --filter @mfd/game test`: **PASS** — 7 test files, **110/110 tests** (`lifecycle-adapter.test.ts` 7, `create-game.test.ts` 4, `battle-fusion.test.ts` 25, `battle-combat.test.ts` 12, `battle-runtime.test.ts` 12, `battle-resources.test.ts` 21, `simulation-foundation.test.ts` 29).
+  - `pnpm --filter @mfd/game test`: **PASS** — 8 test files, **126/126 tests** (`lifecycle-adapter.test.ts` 7, `create-game.test.ts` 4, `battle-fusion.test.ts` 25, `battle-combat.test.ts` 12, `battle-runtime.test.ts` 12, `battle-resources.test.ts` 21, `battle-waves.test.ts` 16, `simulation-foundation.test.ts` 29).
   - `pnpm --filter @mfd/game-data test`: **PASS** — 1 test file, **25/25 tests** (`validation.test.ts`).
   - `pnpm typecheck`: **PASS** — 3/3 packages (`@mfd/game-data`, `@mfd/game`, `@mfd/web`).
   - `pnpm build`: **PASS** — `@mfd/web` Next.js production build (`0 cached`).
-  - Remote CI (`gh run list`): run `44877738893` trên `6b0ee0b` (T-07) đạt **success**; code & báo cáo T-08 đang ở working tree local (chưa commit/push) nên chưa có remote CI run cho T-08.
-  - Chưa chạy trong phiên: `@mfd/web` Playwright E2E/production tests (`apps/web` không thay đổi trong T-06/T-07/T-08).
+  - Remote CI (`gh run list`): run `44877738893` trên `6b0ee0b` (T-07) đạt **success**; T-08 (`061d2ee`) và T-09 (working tree local) chưa push lên GitHub nên chưa có remote CI run.
+  - Chưa chạy trong phiên: `@mfd/web` Playwright E2E/production tests (`apps/web` không thay đổi trong T-06–T-09).
 - **Thay đổi file:**
   - Khởi tạo `MEMORY_BANK.md` theo yêu cầu Owner (commit `93e429e`, cập nhật tiếp trong phiên).
   - Xóa `docs/DOCUMENTATION_STATUS.md` và dọn liên kết trong 5 tài liệu hoạt động (commit `68d5142`).
@@ -81,13 +81,13 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
   - Cập nhật đồng bộ đội hình Enemy MVP từ `Spider` sang `Vindicator` (reward `150/1`; Spider chuyển sang định hướng Defender tương lai, ngoài MVP) trên `docs/` và `.agents/skills/minecraft-gameplay-rules/SKILL.md` (commit `593d2a5`).
   - Lập kế hoạch T-07 v1.0 (`D-25`–`D-38 = A`), triển khai T-07 trong `packages/game` (commit `7b7c37d`), đẩy lên `main` (`6b0ee0b`) và đóng 20/20 gates PASS trong `docs/reports/T-07-FINAL-ACCEPTANCE.md` + `ROADMAP.md` sau khi CI run `44877738893` thành công.
   - Lập kế hoạch T-08 v1.0 (`D-39`–`D-48 = A`, commit `9751435` cho Draft v0.1), điều phối 4 subagents triển khai & kiểm toán độc lập T-08 (`packages/game/src/fusion/*`, `battle-state.ts`, `battle-runtime.ts`, `battle-fusion.test.ts`), và lập báo cáo nghiệm thu `docs/reports/T-08-FINAL-ACCEPTANCE.md` + đồng bộ `ROADMAP.md` (commit local `061d2ee`, chưa push).
-  - Lập kế hoạch T-09 (`docs/development/T-09-GRASSLAND-WAVES-VICTORY-DEFEAT-IMPLEMENTATION-PLAN.md`) và nâng lên **Plan v1.0 (Owner-approved `D-49`–`D-58 = A`, 20 gates)**, đồng bộ trạng thái trong `docs/product/ROADMAP.md`.
+  - Lập kế hoạch T-09 v1.0 (`D-49`–`D-58 = A`, commit `e276e21`), điều phối 4 subagents triển khai & kiểm toán độc lập T-09 (`packages/game/src/waves/*`, `battle-state.ts`, `battle-runtime.ts`, `battle-waves.test.ts`), và lập báo cáo nghiệm thu `docs/reports/T-09-FINAL-ACCEPTANCE.md` + đồng bộ `ROADMAP.md` (đang ở working tree local, chưa commit/push).
 
 ---
 
 ## 5. Kế hoạch cho phiên làm việc tiếp theo (Next Session Plan)
 
-1. **Triển khai T-09 (khi Owner ủy quyền coding):**
-   - Thực hiện theo 5 slices (`T-09.1`–`T-09.5`) và 20 acceptance gates (`AC-01`–`AC-20`) trong `docs/development/T-09-GRASSLAND-WAVES-VICTORY-DEFEAT-IMPLEMENTATION-PLAN.md` với test-only fixtures.
-2. **Đóng cổng AC-20 cho T-08:**
-   - Sau khi push `061d2ee` lên GitHub `main`, kiểm tra workflow CI thực tế để đóng `AC-20` của T-08 sang **PASS** hoàn toàn.
+1. **Đóng cổng AC-20 cho T-08 & T-09:**
+   - Sau khi commit và push T-09 (cùng T-08 `061d2ee`) lên GitHub `main`, kiểm tra workflow CI thực tế để đóng `AC-20` của T-08 và T-09 sang **PASS** hoàn toàn.
+2. **Chuyển sang T-10 (Special Abilities):**
+   - Rà soát `docs/game-design/ABILITY_CATALOG.md`, `docs/decisions/PGD-01-STEEL-GUARDIAN.md`, `docs/decisions/PGD-02/contracts/G09-TECHNICAL-CONTRACT.md` và `G08.md`/`G09.md`, xác định các hợp đồng hiệu ứng/cost/cooldown cần Owner duyệt trước khi lập kế hoạch T-10.
