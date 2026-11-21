@@ -49,6 +49,6 @@ Pixel dimensions, atlas layout, source licensing/attribution policy và pipeline
 
 ## 6. Tham chiếu
 
-- [Technical Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81b6893ac6d59454f8be)
-- [Entity Catalog — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81828576cf3feaac1951)
-- [Ability Catalog — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81968c6cecad6e88290c)
+- [Technical Architecture — Minecraft Fusion Defense](../architecture/TECHNICAL_ARCHITECTURE.md)
+- [Entity Catalog — Minecraft Fusion Defense](../game-design/ENTITY_CATALOG.md)
+- [Ability Catalog — Minecraft Fusion Defense](../game-design/ABILITY_CATALOG.md)
