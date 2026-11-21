@@ -16,8 +16,11 @@ import { TransactionEngine } from '../core/transaction';
 import type { RuntimeEntity, EntityId } from '../entities/runtime-entity';
 import { EventQueue } from '../events/event-queue';
 import { EventScheduler } from '../events/event-scheduler';
+import { applyFusionCommand } from '../fusion/fusion-engine';
+import { validateFusionSession, type FusionSessionInput } from '../fusion/fusion-session';
+import { createFusionState, type FusionCommand } from '../fusion/fusion-state';
 
-type BattleEvent = BattleCommand | ResourceEvent | CombatCommand;
+type BattleEvent = BattleCommand | ResourceEvent | CombatCommand | FusionCommand;
 
 /** Internal headless runtime. Consumers query detached snapshots. */
 export class BattleRuntime {
@@ -27,19 +30,30 @@ export class BattleRuntime {
   private paused = false;
   private terminal = false;
   private readonly hasCombat: boolean;
+  private readonly hasFusion: boolean;
 
-  constructor(config: ClockConfig, resourceInput?: ResourceSessionInput, combatInput?: CombatSessionInput) {
+  constructor(
+    config: ClockConfig,
+    resourceInput?: ResourceSessionInput,
+    combatInput?: CombatSessionInput,
+    fusionInput?: FusionSessionInput,
+  ) {
     this.clock = new SimulationClock(config);
     const session = resourceInput === undefined ? undefined : validateResourceSession(resourceInput, config.ticksPerSecond);
     const combatSession = combatInput === undefined
       ? undefined
       : validateCombatSession(combatInput, config.ticksPerSecond, session);
+    const fusionSession = fusionInput === undefined
+      ? undefined
+      : validateFusionSession(fusionInput, session, combatSession);
     this.hasCombat = combatSession !== undefined;
+    this.hasFusion = fusionSession !== undefined;
     const initial = createBattleState();
     const initialState: BattleState = {
       ...initial,
       ...(session ? { resources: createResourceState() } : {}),
       ...(combatSession ? { combat: createCombatState() } : {}),
+      ...(fusionSession ? { fusion: createFusionState() } : {}),
     };
     this.engine = new TransactionEngine<BattleState, BattleEvent, ResourceRng | null>({
       state: initialState,
@@ -62,6 +76,11 @@ export class BattleRuntime {
       if (command.type === 'spawn-enemy') {
         if (!state.combat || !combatSession) throw new Error('Combat session unavailable');
         applyCombatCommand(state, combatSession, command, event.id);
+        return;
+      }
+      if (command.type === 'fuse') {
+        if (!state.fusion || !fusionSession) throw new Error('Fusion session unavailable');
+        applyFusionCommand(state, fusionSession, combatSession, command, event.id);
         return;
       }
       if (command.type === 'terminal' && !state.resources) {
@@ -93,12 +112,14 @@ export class BattleRuntime {
       if (this.engine.failed) throw new Error('Resource session initialization failed');
     }
     this.combatSession = combatSession;
+    this.fusionSession = fusionSession;
   }
 
   private readonly combatSession: ReturnType<typeof validateCombatSession> | undefined;
+  private readonly fusionSession: ReturnType<typeof validateFusionSession> | undefined;
 
-  enqueue(command: BattleCommand | ResourceCommand | CombatCommand, scheduledTick: number) {
-    if (this.terminal || (this.paused && (command.type === 'collect' || command.type === 'claim'))) {
+  enqueue(command: BattleCommand | ResourceCommand | CombatCommand | FusionCommand, scheduledTick: number) {
+    if (this.terminal || (this.paused && (command.type === 'collect' || command.type === 'claim' || command.type === 'fuse'))) {
       return { status: 'REJECTED', reason: this.terminal ? 'terminal' : 'paused' } as const;
     }
     return this.engine.enqueue({ payload: command, scheduledTick, causalDepth: 0 }, this.clock.tick);
@@ -161,6 +182,7 @@ export class BattleRuntime {
       failure: this.engine.failureDiagnostic,
       ...(state.resources ? { resources: state.resources, rng } : {}),
       ...(this.hasCombat && state.combat ? { combat: state.combat } : {}),
+      ...(this.hasFusion && state.fusion ? { fusion: state.fusion } : {}),
     };
   }
 }

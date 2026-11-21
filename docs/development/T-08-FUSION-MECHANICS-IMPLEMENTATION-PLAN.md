@@ -1,8 +1,8 @@
-# T-08 — Fusion Mechanics: Implementation Plan (Draft v0.1)
+# T-08 — Fusion Mechanics: Implementation Plan v1.0
 
 **Project:** Minecraft Fusion Defense  
-**Status:** **DRAFT v0.1 — PROPOSED; OWNER DECISIONS D-39–D-48 PENDING; CODING NOT AUTHORIZED**  
-**Scope:** Headless `packages/game` data-driven Fusion session validation, order-independent recipe lookup, unlock/enabled validation, atomic Source + Target Defender replacement at Target cell, zero resource cost, and integration with T-05 Grid/Entity Registry, T-06 Resources and T-07 Combat State.  
+**Status:** **IMPLEMENTED LOCALLY — 19/20 GATES LOCAL PASS, AC-20 REMOTE CI PENDING COMMIT & PUSH (D-39–D-48 = A; Fusion Defender Combat Stats Remain TBD)**  
+**Scope:** Headless `packages/game` data-driven Fusion session validation, order-independent recipe lookup, unlock/enabled validation, atomic Source + Target Defender replacement at Target cell, zero resource cost, and integration with T-05 Grid/Entity Registry, T-06 Resources and T-07 Combat State; see [T-08 Final Acceptance Report](../reports/T-08-FINAL-ACCEPTANCE.md).  
 **Dependency:** [T-05 acceptance](../reports/T-05-FINAL-ACCEPTANCE.md), [T-06 acceptance](../reports/T-06-FINAL-ACCEPTANCE.md), [T-07 acceptance](../reports/T-07-FINAL-ACCEPTANCE.md), T-04 simulation contracts.  
 **Authority:** [Documentation Policy](../DOCUMENTATION_POLICY.md); [Fusion Recipes](../game-design/FUSION_RECIPES.md); [Entity Catalog](../game-design/ENTITY_CATALOG.md) §2–§3; [Gameplay Mechanics](../product/GAMEPLAY_MECHANICS.md) §8, §14.3, §15; [Game Balancing](../game-design/GAME_BALANCING.md) §5; [PGD-01 Steel Guardian](../decisions/PGD-01-STEEL-GUARDIAN.md); PGD-02 G06/G07.
 
@@ -35,22 +35,24 @@ Extend the accepted T-05/T-06/T-07 headless runtime with deterministic, data-dri
 - **Pause & Terminal:** Fusion is rejected while Paused or after Victory/Defeat (Fusion Recipes §9–§10).
 - **Atomicity:** Invalid Fusion attempts must never consume, damage, move, or unlock/lock either input Defender, allocate a committed `EntityId`, or mutate grid occupancy or resources.
 
-## 3. Proposed technical decisions — PENDING OWNER APPROVAL
+## 3. Owner-approved technical decisions (2026-11-21)
 
-| ID | Topic | Options | Recommendation |
-| --- | --- | --- | --- |
-| **D-39** | Fusion command identity | **A:** `{ readonly type: 'fuse'; readonly sourceId: EntityId; readonly targetId: EntityId }` (identify Source and Target by runtime `EntityId` and verify live grid occupancy). **B:** Identify by `sourceCell` and `targetCell`. | **A** — prevents fusing a replacement unit if an input died and another was summoned on the same cell (Fusion Recipes §5.2, §9) |
-| **D-40** | Recipe lookup & pair normalization | **A:** Normalize input pair as `[inputA, inputB].sort().join('|')`; reject duplicate unordered pairs across recipes at session validation time; order-independent matching while Target determines output cell. **B:** Directional recipes. | **A** — matches confirmed order-independent MVP rule and `@mfd/game-data` bundle validation |
-| **D-41** | Tier handling in engine | **A:** Validate positive integer `tier` on Defender definitions and recipe input/output definitions; match strictly by validated recipe definitions without hardcoding `tier === 1` in the engine. **B:** Hardcode `tier === 1` for inputs. | **A** — required by confirmed "no fixed Tier ceiling" rule (GM §8.9) |
-| **D-42** | Recipe availability snapshot | **A:** Inject immutable per-battle recipe `unlocked` and `enabled` flags in `FusionSessionInput` (D-06/D-24 pattern); locked or disabled recipe rejects with `'recipe-unavailable'`. **B:** Compute persistent progression inside T-08. | **A** — keeps persistent progression in T-11 |
-| **D-43** | Pause & Terminal guards | **A:** `BattleRuntime.enqueue` rejects `'fuse'` immediately with `{ status: 'REJECTED', reason: 'paused' | 'terminal' }` when Paused or Terminal (matching T-06 `'collect'` / `'claim'`); handler also no-ops after terminal. | **A** — satisfies Fusion Recipes §10 ("Paused/Defeat/Victory states reject Fusion") |
-| **D-44** | Combat state integration | **A:** When `CombatState` is active, verify both Source and Target have `hp > 0`, unregister both input combat states, and register the new Fusion Defender with `hp = maxHp = outputDef.maxHp` and `nextAttackTick = null` (attack-ready on the next combat phase). | **A** — preserves confirmed 100% own Max HP, no inherited state, and immediate attack readiness |
-| **D-45** | Collectibles on Source & Target cells | **A:** Fusion leaves any Energy/Crystal Items on both Source and Target cells untouched (no deletion, no deadline reset, no Summon auto-collect). **B:** Auto-collect Crystal Items on Target cell. | **A** — auto-collect is a Summon rule (GM §5.2); Target cell already held a Defender |
-| **D-46** | Competing same-tick Fusion commands | **A:** Resolve in T-04 `EventQueue` `scheduledTick + insertionSequence` order; the first valid `fuse` consumes both inputs, and any later `fuse` referencing either consumed `EntityId` rejects deterministically with `'source-not-found'` or `'target-not-found'`. | **A** — single queue, no separate lock state needed in headless synchronous transactions |
-| **D-47** | Gameplay rejection vs contract error | **A:** Expected invalid attempts (`same-instance`, `source-not-found`, `target-not-found`, `invalid-source`, `invalid-target`, `entity-dead`, `no-recipe`, `recipe-unavailable`) record `fusion.outcome = { eventId, status: 'REJECTED', reason }` without mutating state or triggering T-04 fail-stop; true occupancy/registry corruption triggers fail-stop rollback. | **A** — consistent with T-06 D-23 and T-07 |
-| **D-48** | Session wiring on `BattleRuntime` | **A:** Optional 4th constructor parameter `fusionInput?: FusionSessionInput` on `BattleRuntime` (cross-validated against `resourceInput` and `combatInput` when present; omitted `fusionInput` leaves `snapshot()` unchanged for T-05/T-06/T-07 tests). | **A** — 100% backward-compatible with all 85 existing `@mfd/game` tests |
+All **10 decisions D-39 through D-48** are approved as **Option A**:
 
-## 4. Implementation slices (proposed)
+| ID | Topic | Approved choice |
+| --- | --- | --- |
+| **D-39** | Fusion command identity | **A:** `{ readonly type: 'fuse'; readonly sourceId: EntityId; readonly targetId: EntityId }` (identify Source and Target by runtime `EntityId` and verify live grid occupancy). |
+| **D-40** | Recipe lookup & pair normalization | **A:** Normalize input pair as `[inputA, inputB].sort().join('|')`; reject duplicate unordered pairs across recipes at session validation time; order-independent matching while Target determines output cell. |
+| **D-41** | Tier handling in engine | **A:** Validate positive integer `tier` on Defender definitions and recipe input/output definitions; match strictly by validated recipe definitions without hardcoding `tier === 1` in the engine. |
+| **D-42** | Recipe availability snapshot | **A:** Inject immutable per-battle recipe `unlocked` and `enabled` flags in `FusionSessionInput` (D-06/D-24 pattern); locked or disabled recipe rejects with `'recipe-unavailable'`. |
+| **D-43** | Pause & Terminal guards | **A:** `BattleRuntime.enqueue` rejects `'fuse'` immediately with `{ status: 'REJECTED', reason: 'paused' \| 'terminal' }` when Paused or Terminal (matching T-06 `'collect'` / `'claim'`); handler also no-ops after terminal. |
+| **D-44** | Combat state integration | **A:** When `CombatState` is active, verify both Source and Target have `hp > 0`, unregister both input combat states, and register the new Fusion Defender with `hp = maxHp = outputDef.maxHp` and `nextAttackTick = null` (attack-ready on the next combat phase). |
+| **D-45** | Collectibles on Source & Target cells | **A:** Fusion leaves any Energy/Crystal Items on both Source and Target cells untouched (no deletion, no deadline reset, no Summon auto-collect). |
+| **D-46** | Competing same-tick Fusion commands | **A:** Resolve in T-04 `EventQueue` `scheduledTick + insertionSequence` order; the first valid `fuse` consumes both inputs, and any later `fuse` referencing either consumed `EntityId` rejects deterministically with `'source-not-found'` or `'target-not-found'`. |
+| **D-47** | Gameplay rejection vs contract error | **A:** Expected invalid attempts (`same-instance`, `source-not-found`, `target-not-found`, `invalid-source`, `invalid-target`, `entity-dead`, `no-recipe`, `recipe-unavailable`) record `fusion.outcome = { eventId, status: 'REJECTED', reason }` without mutating state or triggering T-04 fail-stop; true occupancy/registry corruption triggers fail-stop rollback. |
+| **D-48** | Session wiring on `BattleRuntime` | **A:** Optional 4th constructor parameter `fusionInput?: FusionSessionInput` on `BattleRuntime` (cross-validated against `resourceInput` and `combatInput` when present; omitted `fusionInput` leaves `snapshot()` unchanged for T-05/T-06/T-07 tests). |
+
+## 4. Implementation slices (approved scope; coding awaits separate authorization)
 
 | Slice | Work | Exit evidence |
 | --- | --- | --- |
@@ -60,7 +62,7 @@ Extend the accepted T-05/T-06/T-07 headless runtime with deterministic, data-dri
 | **T-08.4 — Resource & Combat integration** | Zero Energy/Crystal check/deduction, 100% own Max HP, attack-ready cooldown reset, Enemy blocker/target interaction, Item preservation | Combat + resource integration tests |
 | **T-08.5 — Pause, Terminal, Concurrency & Rollback** | Pause/terminal rejection, competing same-tick `fuse` commands, transaction rollback, deterministic replay | Same-tick competition, rollback, replay, T-04/T-05/T-06/T-07 regression tests |
 
-## 5. Proposed acceptance gates — 20 gates (PENDING)
+## 5. Acceptance gates — 20 gates (19/20 local PASS, AC-20 remote CI pending commit & push — see [Acceptance Report](../reports/T-08-FINAL-ACCEPTANCE.md))
 
 | Gate | Requirement |
 | --- | --- |

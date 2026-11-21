@@ -1,6 +1,7 @@
 import { BATTLEFIELD_COLUMNS, BATTLEFIELD_ROWS, cellIndex, isLane } from '../battlefield/grid';
 import type { CombatState } from '../combat/combat-state';
 import type { EntityDefinition, EntityId, RuntimeEntity } from '../entities/runtime-entity';
+import type { FusionState } from '../fusion/fusion-state';
 import type { ResourceState } from './battle-resources';
 
 export interface BattleState {
@@ -9,6 +10,7 @@ export interface BattleState {
   nextEntityId: EntityId;
   readonly resources?: ResourceState;
   readonly combat?: CombatState;
+  readonly fusion?: FusionState;
 }
 
 export type BattleCommand =
