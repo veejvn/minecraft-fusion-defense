@@ -14,7 +14,7 @@
 
 - 5 Base Defenders: Snow Golem, Iron Golem, Skeleton, Wolf, Blaze.
 - 7 Fusion Defenders: Steel Guardian, Skeleton Sniper, Ice Golem, Frost Guardian, Flame Fang, Inferno Archer, Alpha Wolf.
-- 4 Enemies: Zombie, Husk, Spider, Pillager.
+- 4 Enemies: Zombie, Husk, Vindicator, Pillager.
 - Grassland battlefield, 5×9 Grid và visual effects cần thiết cho combat/Fusion/Abilities.
 
 ## 3. Hướng dẫn hình ảnh (Proposed)

@@ -133,7 +133,7 @@ Cần đánh giá qua Playtest: sức mạnh Output so với hai Inputs; khả n
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Zombie | TBD | TBD | TBD | TBD | TBD | 50 | 0 | TBD |
 | Husk | TBD | TBD | TBD | TBD | TBD | 100 | 0 | TBD |
-| Spider | TBD | TBD | TBD | TBD | TBD | 150 | 1 | TBD |
+| Vindicator | TBD | TBD | TBD | TBD | TBD | 150 | 1 | TBD |
 | Pillager | TBD | TBD | TBD | TBD | TBD | 200 | 1 | TBD |
 
 **Confirmed — 03/11/2026:** Energy reward cộng trực tiếp; mỗi Crystal reward tạo Item tại vị trí Enemy chết kể cả khi storage đầy. Item lifetime 10 giây Game Time, không collect trong Pause. Reward fields là integer không âm cấu hình riêng trong Enemy Definition.
@@ -281,7 +281,7 @@ Các thông số sau khi được xác nhận nên được quản lý qua Defin
 ## 14. Edge Cases và rủi ro Balance
 
 - Fusion có thể làm trống Source Cell ở Lane khác, tạo lỗ hổng phòng thủ.
-- Spider hoặc Enemy có hành vi đặc biệt có thể làm thay đổi giá trị Tank/Range; hành vi cụ thể vẫn TBD.
+- Vindicator hoặc Enemy có hành vi đặc biệt có thể làm thay đổi giá trị Tank/Range; hành vi cụ thể vẫn TBD.
 - Enemy tầm xa có thể thay đổi tương quan Defender, cần kiểm tra sau khi chốt hành vi Pillager.
 - Energy Item xuất hiện ngẫu nhiên có thể tạo khác biệt giữa các lượt chơi.
 - Wave Reward Power Crystal và Item Spawn có thể tạo lượng Ability Usage không đồng đều.
@@ -308,7 +308,7 @@ Các mục này là **rủi ro cần kiểm thử**, không phải cơ chế m�
 ### Nhóm C — Enemy
 
 8. HP, Damage, Attack Speed, Range, Move Speed của 4 Enemies? Death rewards đã Confirmed ở mục 6.
-9. Enemy Interaction Behavior chính thức của Zombie, Husk, Spider và Pillager?
+9. Enemy Interaction Behavior chính thức của Zombie, Husk, Vindicator và Pillager?
 
 ### Nhóm D — Resources
 

@@ -69,7 +69,7 @@ Other combat stats, exact attack rules and targeting strategies remain TBD; prot
 | --- | --- | --- | --- |
 | `zombie` | Zombie | Basic enemy | Stop-and-attack is a proposal, not yet locked |
 | `husk` | Husk | Durable/variant enemy | TBD |
-| `spider` | Spider | Fast/special movement | Ignore/jump behavior is illustrative, not confirmed |
+| `vindicator` | Vindicator | Fast/aggressive melee enemy (replaces Spider; Spider moved to future Defender roadmap, outside current MVP) | TBD |
 | `pillager` | Pillager | Ranged/special enemy | TBD |
 
 Each Enemy Definition must declare: HP, movement speed, damage, lane behavior, interaction behavior (`STOP_AND_ATTACK`, `IGNORE_DEFENDER`, or `SPECIAL`), attack range/cooldown if applicable, rewards, animations and assets. Do not hardcode one enemy interaction rule globally.
@@ -80,7 +80,7 @@ Each Enemy Definition must declare: HP, movement speed, damage, lane behavior, i
 | --- | --- | --- |
 | Zombie | 50 | 0 |
 | Husk | 100 | 0 |
-| Spider | 150 | 1 |
+| Vindicator | 150 | 1 |
 | Pillager | 200 | 1 |
 
 **Confirmed:** Crystal reward tạo Item tại vị trí Enemy chết, kể cả khi storage đã đầy; mỗi Crystal được thưởng tạo một collectible Item. Các reward là integer không âm được cấu hình riêng trong Enemy Definition.

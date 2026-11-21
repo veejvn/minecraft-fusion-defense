@@ -21,7 +21,7 @@ Tài liệu mô tả cấu trúc Level, bố cục chiến trường, tổ chứ
 | Enemy Spawn Side | Right | Confirmed |
 | Base / Defense Side | Left | Confirmed |
 | Số Waves | 5 | Confirmed |
-| Enemy Types | Zombie, Husk, Spider, Pillager | Confirmed |
+| Enemy Types | Zombie, Husk, Vindicator, Pillager | Confirmed |
 | Base Defenders | Snow Golem, Iron Golem, Skeleton, Wolf, Blaze | Confirmed |
 | Fusion Defenders | Skeleton Sniper, Ice Golem, Frost Guardian, Flame Fang, Inferno Archer, Alpha Wolf | Confirmed |
 | Điều kiện Victory | Hoàn thành 5 Waves và loại bỏ mọi Enemy còn lại | Confirmed |
@@ -76,7 +76,7 @@ R4  [ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
 
 1. **Wave 1 — Làm quen:** Nhấn mạnh đặt Defender và bảo vệ một vài Lane; dùng Zombie làm Enemy cơ bản.
 2. **Wave 2 — Phân bổ phòng thủ:** Mở rộng áp lực sang nhiều Lane; giới thiệu Husk hoặc tăng số Zombie.
-3. **Wave 3 — Phản ứng nhanh:** Giới thiệu Spider để kiểm tra khả năng ứng phó Enemy nhanh hoặc có hành vi đặc biệt.
+3. **Wave 3 — Phản ứng nhanh:** Giới thiệu Vindicator để kiểm tra khả năng ứng phó Enemy nhanh hoặc có hành vi áp lực cận chiến.
 4. **Wave 4 — Đối phó tầm xa:** Giới thiệu Pillager; khuyến khích phối hợp Tank, Ranged Defender và Special Ability.
 5. **Wave 5 — Tổng hợp:** Kết hợp các Enemy đã giới thiệu và tăng áp lực đa Lane; khuyến khích sử dụng Fusion hợp lý.
 
@@ -127,9 +127,9 @@ Không tự suy ra rằng mọi Enemy có thể đổi Lane; Enemy Behavior do E
 | --- | --- | --- | --- | --- |
 | 1 | Học phòng thủ cơ bản | Zombie | Nhẹ, ít Lane | Power Crystal: TBD |
 | 2 | Phân bổ Defender | Zombie, Husk | Enemy bền hơn | Power Crystal: TBD |
-| 3 | Ứng phó Enemy nhanh | Zombie, Spider | Tốc độ, nhiều Lane | Power Crystal: TBD |
-| 4 | Xử lý Enemy tầm xa | Husk, Spider, Pillager | Phối hợp tấn công | Power Crystal: TBD |
-| 5 | Kiểm tra toàn bộ cơ chế | Zombie, Husk, Spider, Pillager | Áp lực tổng hợp | Power Crystal: TBD |
+| 3 | Ứng phó Enemy nhanh | Zombie, Vindicator | Tốc độ, nhiều Lane | Power Crystal: TBD |
+| 4 | Xử lý Enemy tầm xa | Husk, Vindicator, Pillager | Phối hợp tấn công | Power Crystal: TBD |
+| 5 | Kiểm tra toàn bộ cơ chế | Zombie, Husk, Vindicator, Pillager | Áp lực tổng hợp | Power Crystal: TBD |
 
 **Tất cả thành phần trong bảng, trừ số lượng 5 Waves và danh sách 4 Enemy, là đề xuất.** Chưa xác nhận số Enemy, tỷ lệ Spawn, thời điểm Spawn, Lane, số Power Crystal thưởng hoặc thời lượng Wave.
 
@@ -307,7 +307,7 @@ Khi terminal result được resolve: dừng Spawn/Combat, khóa gameplay, hiể
 | Power Crystal implementation | Coding Planning TBD; initial 0/cap 5, random 30–60 giây, amount 1/lifetime 10 giây đã Confirmed |
 | Power Crystal Reward theo từng Wave | TBD |
 | Resource Caps | Confirmed: Energy Unlimited, Crystal cap 5; Pending Wave Reward manual partial claim |
-| Thứ tự giới thiệu Husk/Spider/Pillager | Draft, chưa xác nhận |
+| Thứ tự giới thiệu Husk/Vindicator/Pillager | Draft, chưa xác nhận |
 | Spawn Offset và Base Boundary tọa độ chính xác | TBD |
 | Background, Decoration, Tilemap, VFX/Audio | TBD |
 | Tutorial/Onboarding | Confirmed: basic English in-game instructions, không interactive tutorial; UI details TBD |

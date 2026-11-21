@@ -17,7 +17,7 @@ Pixel dimensions, atlas layout, source licensing/attribution policy và pipeline
 | Nhóm | Phạm vi MVP |
 | --- | --- |
 | Defender sprites | 5 Base + 7 Fusion Defenders |
-| Enemy sprites | Zombie, Husk, Spider, Pillager |
+| Enemy sprites | Zombie, Husk, Vindicator, Pillager |
 | Battlefield | Grassland, 5×9 Grid, background/tiles |
 | Effects | Combat, Fusion, 12 required Special Abilities (11 existing draft IDs; Steel Guardian `iron_bastion` (effects TBD)) |
 | UI assets | HUD, Energy, Power Crystal, controls |

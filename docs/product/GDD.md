@@ -239,7 +239,7 @@ Mỗi Enemy có các thuộc tính:
 | --- | --- | --- |
 | Zombie | 50 | 0 |
 | Husk | 100 | 0 |
-| Spider | 150 | 1 |
+| Vindicator | 150 | 1 |
 | Pillager | 200 | 1 |
 
 **Confirmed:** Crystal reward tạo Item tại vị trí Enemy chết, kể cả khi storage đã đầy; mỗi Crystal được thưởng tạo một collectible Item. Các reward là integer không âm được cấu hình riêng trong Enemy Definition.
@@ -252,7 +252,7 @@ HP, Damage, Move Speed, targeting và behavior vẫn TBD.
 | --- | --- |
 | Zombie | Enemy cơ bản, cân bằng |
 | Husk | Enemy có khả năng chịu đòn tốt |
-| Spider | Enemy di chuyển nhanh |
+| Vindicator | Enemy di chuyển nhanh / áp lực cận chiến (thay Spider; Spider chuyển sang định hướng Defender tương lai, ngoài MVP) |
 | Pillager | Enemy tấn công từ xa |
 
 **Confirmed:** MVP có 4 Enemy types trên. Mô tả gameplay identity là **Proposed**; hành vi tương tác được cấu hình riêng theo từng Enemy, không áp dụng một hành vi toàn cục. Thông số và hành vi chi tiết là **TBD** trong `ENTITY_CATALOG.md`.
@@ -384,7 +384,7 @@ Nguồn: Wave Rewards, Crystal Items từ Enemy death và random spawn độc l�
 | --- | --- | --- |
 | Zombie | 50 | 0 |
 | Husk | 100 | 0 |
-| Spider | 150 | 1 |
+| Vindicator | 150 | 1 |
 | Pillager | 200 | 1 |
 
 **Confirmed:** Crystal reward tạo Item tại vị trí Enemy chết, kể cả khi storage đã đầy; mỗi Crystal được thưởng tạo một collectible Item. Các reward là integer không âm được cấu hình riêng trong Enemy Definition.

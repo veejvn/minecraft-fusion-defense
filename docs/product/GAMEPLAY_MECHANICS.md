@@ -334,7 +334,7 @@ Nguồn: Wave Reward, Enemy death Crystal Items và random spawn độc lập.
 | --- | --- | --- |
 | Zombie | 50 | 0 |
 | Husk | 100 | 0 |
-| Spider | 150 | 1 |
+| Vindicator | 150 | 1 |
 | Pillager | 200 | 1 |
 
 **Confirmed:** Crystal reward tạo Item tại vị trí Enemy chết, kể cả khi storage đã đầy; mỗi Crystal được thưởng tạo một collectible Item. Các reward là integer không âm được cấu hình riêng trong Enemy Definition.
@@ -473,7 +473,7 @@ Các nhóm hành vi chính:
 **Proposed:** ví dụ định hướng, chưa xác nhận hành vi cụ thể:
 
 - Zombie có thể dừng lại và tấn công Defender.
-- Spider có thể bỏ qua một số Defender hoặc sử dụng hành vi di chuyển đặc biệt.
+- Một số Enemy trong tương lai có thể bỏ qua một số Defender hoặc sử dụng hành vi di chuyển đặc biệt.
 - Một số Enemy trong tương lai có thể phá hủy chướng ngại vật, nhảy qua Defender hoặc tấn công từ xa.
 
 Các ví dụ trên chỉ là định hướng thiết kế. Hành vi chính thức của từng Enemy phải được xác nhận trong `ENTITY_CATALOG.md`.
@@ -492,7 +492,7 @@ Khi Defeat là terminal event được resolve trước: chuyển Defeat, dừng
 | --- | --- | --- |
 | Zombie | 50 | 0 |
 | Husk | 100 | 0 |
-| Spider | 150 | 1 |
+| Vindicator | 150 | 1 |
 | Pillager | 200 | 1 |
 
 **Confirmed:** Crystal reward tạo Item tại vị trí Enemy chết, kể cả khi storage đã đầy; mỗi Crystal được thưởng tạo một collectible Item. Các reward là integer không âm được cấu hình riêng trong Enemy Definition.
@@ -902,7 +902,7 @@ Wave 1
   |
   +-- Group 2
         +-- Zombie x 2
-        +-- Spider x 1
+        +-- Vindicator x 1
 ```
 
 ### 9.4. Wave Progression

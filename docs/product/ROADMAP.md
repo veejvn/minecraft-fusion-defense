@@ -58,7 +58,7 @@ Các workstreams có thể thực hiện song song hoặc chia nhỏ theo depend
 | CI improvement | Add `@mfd/game-data` Vitest step to workspace CI | Implemented in `.github/workflows/ci.yml`; verified passing in CI runs `44846418049` and `44850790552` |
 | **T-05 — TECHNICALLY ACCEPTED** | **Battlefield 5×9, Defender occupancy, Entity Registry, deterministic IDs, headless runtime integration** | Implemented at `3ee3d30`; 14/14 acceptance gates Owner-accepted; [acceptance report](../reports/T-05-FINAL-ACCEPTANCE.md); [CI success](https://github.com/veejvn/minecraft-fusion-defense/actions/runs/44846418049) |
 | **T-06 — TECHNICALLY ACCEPTED** | **Summon, placement, Energy/Power Crystal resources, collectible lifecycle, deterministic random spawn and Pending Wave Rewards** | Implemented at `147e8bd` (+ test supplement); 26/26 acceptance gates Owner-accepted; [acceptance report](../reports/T-06-FINAL-ACCEPTANCE.md); [CI success](https://github.com/veejvn/minecraft-fusion-defense/actions/runs/44850790552); production data still TBD |
-| T-07 | Enemy movement, combat, targeting | T-05 and approved combat definitions |
+| **T-07 — PLAN v1.0 APPROVED / NOT CODED** | Enemy movement, combat, targeting | T-05 accepted; [Owner-approved T-07 plan v1.0 (D-25–D-38 = A, 20 pending acceptance gates)](../development/T-07-ENEMY-MOVEMENT-COMBAT-TARGETING-IMPLEMENTATION-PLAN.md); separate coding authorization required; combat stats/behaviors still TBD |
 | T-08 | Fusion mechanics | T-05, transactional entity operations and approved recipes |
 | T-09 | Grassland five waves, victory/defeat | T-06–T-07; approved wave data; use the newer Owner G07 terminal decision |
 | T-10 | Special abilities | T-07 and explicitly approved executable ability/effect contracts |

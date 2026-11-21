@@ -17,7 +17,7 @@
 
 ### Phạm vi MVP đã xác nhận (`docs/product/ROADMAP.md`, `README.md`)
 - **Level & Grid:** 1 Grassland Level, Grid 5 Rows × 9 Columns, 5 Waves; English-only UI.
-- **Thực thể & Fusion:** 5 Base Defenders, 7 Fusion Defenders, 4 Enemy Types (Zombie, Husk, Spider, Pillager), 7 Fusion Recipes (7 cặp Tier-1 + Tier-1 → Tier-2, Fusion miễn phí mọi lane/khoảng cách, output tại Target Cell), 12 Special Abilities (`iron_bastion` của Steel Guardian đã xác nhận ID ở PGD-01, effects vẫn TBD).
+- **Thực thể & Fusion:** 5 Base Defenders, 7 Fusion Defenders, 4 Enemy Types (Zombie, Husk, Vindicator, Pillager — Owner đổi Spider sang Vindicator ngày 2026-11-21 vì Spider sẽ làm Defender trong tương lai, ngoài MVP hiện tại), 7 Fusion Recipes (7 cặp Tier-1 + Tier-1 → Tier-2, Fusion miễn phí mọi lane/khoảng cách, output tại Target Cell), 12 Special Abilities (`iron_bastion` của Steel Guardian đã xác nhận ID ở PGD-01, effects vẫn TBD).
 - **Tài nguyên:** Energy dùng để Summon; Power Crystal (cap 5) dùng cho Special Abilities.
 - **Tiến độ & Unlock:** Starter Base: Iron Golem, Skeleton; Starter Recipes: Skeleton Sniper, Steel Guardian. Snow Golem (First Grassland Victory), Wolf (50 kills tích lũy trong trận Victory), Blaze (5 Grassland Victories). Replay Victory được cộng tiến độ, Defeat không cộng; Fusion optional cho điều kiện thắng.
 
@@ -50,7 +50,7 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 | **T-04** | Core simulation foundation | Đã nghiệm thu (`SimulationClock`, `TransactionEngine`, `EventQueue`, `EventScheduler`). |
 | **T-05** | Battlefield 5×9, occupancy, Entity Registry, `BattleRuntime` | **Owner-accepted kỹ thuật** tại `3ee3d30` (`docs/reports/T-05-FINAL-ACCEPTANCE.md`). |
 | **T-06** | Summon, Placement & Resources (Energy, Crystal, RNG, Pending Wave Rewards) | **Owner-accepted kỹ thuật (26/26 gates PASS):** Commit `147e8bd` (+ bổ sung test `battle-resources.test.ts` 21 tests), CI run `44850790552` **success**; báo cáo nghiệm thu `docs/reports/T-06-FINAL-ACCEPTANCE.md` và đã cập nhật `ROADMAP.md`. Production data (summon cost/cooldown, Energy item rate/amount/distribution, Wave 1–5 reward) vẫn giữ `TBD`. |
-| **T-07** | Enemy movement, combat, targeting | Chưa bắt đầu (phụ thuộc T-05 và combat definitions được duyệt). |
+| **T-07** | Enemy movement, combat, targeting | **Plan v1.0 đã được Owner duyệt (`D-25`–`D-38 = A`, 20 acceptance gates) / chưa ủy quyền code:** `docs/development/T-07-ENEMY-MOVEMENT-COMBAT-TARGETING-IMPLEMENTATION-PLAN.md`, đã đồng bộ `ROADMAP.md`. Combat stats/behaviors vẫn `TBD` (dùng test fixtures). |
 | **T-08** | Fusion mechanics | Chưa bắt đầu (phụ thuộc T-05 và recipes được duyệt). |
 | **T-09** | Grassland 5 Waves, Victory/Defeat | Chưa bắt đầu (phụ thuộc T-06–T-07, Wave data và G07 terminal priority). |
 | **T-10** | Special abilities | Chưa bắt đầu (phụ thuộc T-07 và executable ability/effect contracts). |
@@ -77,12 +77,15 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 - **Thay đổi file:**
   - Khởi tạo `MEMORY_BANK.md` theo yêu cầu Owner (commit `93e429e`, sau đó cập nhật tiếp trong phiên).
   - Xóa `docs/DOCUMENTATION_STATUS.md` và dọn các liên kết tham chiếu trong 5 file tài liệu hoạt động (`README.md`, `ROADMAP.md`, `DEVELOPMENT_WORKFLOW.md`, `AI_AGENT_GUIDELINES.md`, `TECHNICAL_ARCHITECTURE.md`) (commit `68d5142`).
-  - Rà soát & nghiệm thu T-06 (**26/26 gates PASS**): bổ sung test `BattleRuntime` empty `claim` + dual `terminal` trong `packages/game/tests/battle-resources.test.ts`, lập `docs/reports/T-06-FINAL-ACCEPTANCE.md`, và cập nhật trạng thái `OWNER-ACCEPTED` trong `docs/product/ROADMAP.md` và `docs/development/T-06-SUMMON-PLACEMENT-RESOURCES-IMPLEMENTATION-PLAN.md`.
+  - Rà soát & nghiệm thu T-06 (**26/26 gates PASS**): bổ sung test `BattleRuntime` empty `claim` + dual `terminal` trong `packages/game/tests/battle-resources.test.ts`, lập `docs/reports/T-06-FINAL-ACCEPTANCE.md`, và cập nhật trạng thái `OWNER-ACCEPTED` trong `docs/product/ROADMAP.md` và `docs/development/T-06-SUMMON-PLACEMENT-RESOURCES-IMPLEMENTATION-PLAN.md` (commit `87507f0`).
+  - Lập kế hoạch T-07 (`docs/development/T-07-ENEMY-MOVEMENT-COMBAT-TARGETING-IMPLEMENTATION-PLAN.md`) và nâng lên **Plan v1.0 (Owner-approved `D-25`–`D-38 = A`, 20 gates)**, đồng bộ trạng thái trong `docs/product/ROADMAP.md`.
+  - Cập nhật đồng bộ đội hình Enemy MVP từ `Spider` sang `Vindicator` (reward khi chết giữ `150 Energy / 1 Power Crystal`; Spider chuyển sang định hướng Defender tương lai, ngoài MVP) trên toàn bộ `docs/` và `.agents/skills/minecraft-gameplay-rules/SKILL.md`.
 
 ---
 
 ## 5. Kế hoạch cho phiên làm việc tiếp theo (Next Session Plan)
 
-1. **Chuẩn bị cho T-07 (Enemy Movement, Combat, Targeting) / T-08 (Fusion):**
-   - Lập kế hoạch kỹ thuật (Implementation Plan + Pre-Implementation Readiness Review) cho T-07 (hoặc T-08 song song theo dependency §3A của `ROADMAP.md`).
-   - Rà soát các thông số combat/entity/recipe còn `TBD` trong `ENTITY_CATALOG.md`, `GAME_BALANCING.md`, `FUSION_RECIPES.md`, `PGD-02/` để hỏi Owner hoặc tách hợp đồng session fixture tương tự T-06.
+1. **Triển khai T-07 (khi Owner ủy quyền coding):**
+   - Thực hiện theo 6 slices (`T-07.1`–`T-07.6`) và 20 acceptance gates trong `docs/development/T-07-ENEMY-MOVEMENT-COMBAT-TARGETING-IMPLEMENTATION-PLAN.md`: mở rộng cộng thêm `TransactionEngine.executePhase`, `BattleRuntime`, combat session validation, movement/targeting/combat/death/breach và unit tests với test-only fixtures.
+2. **Chuẩn bị song song cho T-08 (Fusion) hoặc chốt Balance:**
+   - Lập kế hoạch kỹ thuật cho T-08 (Fusion mechanics) và/hoặc rà soát các thông số combat/behavior còn `TBD` trong `ENTITY_CATALOG.md` và `GAME_BALANCING.md`.
