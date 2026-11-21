@@ -180,9 +180,9 @@ Những vấn đề cần lựa chọn phải được trình bày cho chủ d�
 
 ## 11. Tài liệu tham chiếu
 
-- [Technical Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81b6893ac6d59454f8be)
-- [MVP Scope — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb)
-- [Gameplay Mechanics — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81eeaf62f611c5342660)
-- [Fusion Recipes — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41)
-- [Ability Catalog — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81968c6cecad6e88290c)
-- [Level Design — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81079f43ecfa6388d6ca)
+- [Technical Architecture — Minecraft Fusion Defense](TECHNICAL_ARCHITECTURE.md)
+- [MVP Scope — Minecraft Fusion Defense](../product/MVP_SCOPE.md)
+- [Gameplay Mechanics — Minecraft Fusion Defense](../product/GAMEPLAY_MECHANICS.md)
+- [Fusion Recipes — Minecraft Fusion Defense](../game-design/FUSION_RECIPES.md)
+- [Ability Catalog — Minecraft Fusion Defense](../game-design/ABILITY_CATALOG.md)
+- [Level Design — Minecraft Fusion Defense](../game-design/LEVEL_DESIGN.md)
