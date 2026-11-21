@@ -48,7 +48,7 @@ Các workstreams có thể thực hiện song song hoặc chia nhỏ theo depend
 
 ## 3A. Owner-approved technical execution sequence (2026-11-21)
 
-**Status: OWNER-APPROVED PLANNING SEQUENCE, NOT IMPLEMENTATION APPROVAL.** This section supersedes the earlier "workstreams have no agreed order" statement for technical dependency planning only. The workstreams above remain useful categories; this is not a sprint schedule, release commitment, or authorization to implement T-05 gameplay code. T-05 implementation requires the Owner's separate coding instruction. No new MVP gameplay content is approved here.
+**Status: OWNER-APPROVED TECHNICAL DEPENDENCY SEQUENCE.** This section supersedes the earlier "workstreams have no agreed order" statement for technical dependency planning only. The workstreams above remain useful categories; this is not a sprint schedule or release commitment. **T-05 was separately authorized, implemented and technically accepted on 2026-11-21; T-06 remains planning-only and is not authorized for coding.** No new MVP gameplay content is approved by this roadmap.
 
 | Task | Planned deliverable | Dependency / approval gate |
 | --- | --- | --- |
@@ -56,7 +56,7 @@ Các workstreams có thể thực hiện song song hoặc chia nhỏ theo depend
 | T-03 | Game Data foundation | Existing implementation; production definitions still subject to approval |
 | T-04 | Core simulation foundation | Owner-accepted; preserve existing contracts |
 | CI improvement | Add `@mfd/game-data` Vitest step to workspace CI | Independent documentation/tooling change; CI success requires an actual run |
-| **T-05** | **Battlefield 5×9, Defender occupancy, Entity Registry, deterministic IDs, headless runtime integration** | T-02–T-04; Owner-approved T-05 plan; separate authorization before coding |
+| **T-05 — TECHNICALLY ACCEPTED** | **Battlefield 5×9, Defender occupancy, Entity Registry, deterministic IDs, headless runtime integration** | Implemented at `3ee3d30`; 14/14 acceptance gates Owner-accepted; [acceptance report](../reports/T-05-FINAL-ACCEPTANCE.md); [CI success](https://github.com/veejvn/minecraft-fusion-defense/actions/runs/44846418049) |
 | T-06 | Summon, placement, Energy/Power Crystal resources | T-05 and approved gameplay values |
 | T-07 | Enemy movement, combat, targeting | T-05 and approved combat definitions |
 | T-08 | Fusion mechanics | T-05, transactional entity operations and approved recipes |
@@ -74,7 +74,8 @@ Dependencies are minimum planning gates, not a claim that all implementation dec
 - **D-02 A:** Headless-first TypeScript runtime; do not change Phaser Hello Scene or React Host.
 - **D-03 A:** Internal test/runtime commands only; do not expose a new public React/Phaser command API.
 - Full plan and fourteen acceptance gates: [T-05 Battlefield & Runtime Integration Implementation Plan](../development/T-05-BATTLEFIELD-RUNTIME-INTEGRATION-IMPLEMENTATION-PLAN.md).
-- T-05 is **OWNER-APPROVED PLAN / NOT YET CODED**. Do not infer completion or CI PASS from the plan.
+- T-05 is **OWNER-ACCEPTED TECHNICALLY (2026-11-21)**, not merely planned: implementation commit [`3ee3d30`](https://github.com/veejvn/minecraft-fusion-defense/commit/3ee3d30fe455624ae52f35e00cb31744ce6639f6), [14-gate acceptance report](../reports/T-05-FINAL-ACCEPTANCE.md) and [successful CI run 44846418049](https://github.com/veejvn/minecraft-fusion-defense/actions/runs/44846418049). This does **not** mean the gameplay MVP is complete.
+- **T-06 is NOT approved for coding.** Its plan and any open gameplay decisions require separate Owner review and authorization.
 
 ### Planning constraints
 
