@@ -55,6 +55,6 @@ Không coi danh sách này là pipeline CI/CD bắt buộc hoặc các command �
 
 ## 6. Tham chiếu
 
-- [Technical Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81b6893ac6d59454f8be)
-- [Testing Strategy — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81dea9f1ffc88723a885)
-- [MVP Scope — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb)
+- [Technical Architecture — Minecraft Fusion Defense](../architecture/TECHNICAL_ARCHITECTURE.md)
+- [Testing Strategy — Minecraft Fusion Defense](TESTING_STRATEGY.md)
+- [MVP Scope — Minecraft Fusion Defense](../product/MVP_SCOPE.md)
