@@ -70,59 +70,41 @@ export class TransactionEngine<S, P, R> {
     }
     const first = this.queue.peekDue(tick);
     if (!first) return { status: 'SKIPPED', executed: 0 };
+    if (remainingBudget === 0) return { status: 'DEFERRED', executed: 0 };
     const stageState = structuredClone(this.state);
     const stageQueue = new EventQueue(this.queue.snapshot());
     const stageRng = structuredClone(this.rng);
-    let executed = 0;
-    let current: SimulationEvent<P> | undefined = first;
     this.executing = true;
     try {
-      // A transaction consists of its triggering event and all newly generated due events.
-      // Pre-existing later events stay in the queue for the scheduler's next transaction.
-      const generated: SimulationEvent<P>[] = [];
+      // Commit the handler and its enqueues together. The scheduler selects the
+      // next event from the committed queue, including any newly due events.
       stageQueue.takeDue(tick);
-      while (current) {
-        executed++;
-        if (executed > EVENTS_PER_TICK) {
-          throw stageQueue.failure('EXECUTION_LIMIT', tick, current.id, current.causalDepth);
-        }
-        const event = current;
-        let active = true;
-        let enqueueFailure: { error: unknown } | undefined;
-        try {
-          this.handler({ state: stageState, rng: stageRng, event: structuredClone(event), enqueue: input => {
-            if (!active) throw new Error('Transaction handler has already returned');
-            if (enqueueFailure) throw enqueueFailure.error;
-            try {
-              const created = stageQueue.enqueue(input, tick);
-              if (created.scheduledTick <= tick) generated.push(created);
-              return structuredClone(created);
-            } catch (error) {
-              enqueueFailure = { error };
-              throw error;
-            }
-          } });
-        } finally {
-          active = false;
-        }
-        if (enqueueFailure) throw enqueueFailure.error;
-        // Execute newly generated due events in canonical order. Other queued events
-        // remain deferred until this atomic transaction has committed.
-        generated.sort((a, b) => a.scheduledTick - b.scheduledTick || a.insertionSequence - b.insertionSequence);
-        current = generated.shift();
-        if (current) {
-          const snapshot = stageQueue.snapshot();
-          stageQueue.restore({ ...snapshot, events: snapshot.events.filter(item => item.id !== current!.id) });
-        }
+      let active = true;
+      let enqueueFailure: { error: unknown } | undefined;
+      try {
+        this.handler({ state: stageState, rng: stageRng, event: structuredClone(first), enqueue: input => {
+          if (!active) throw new Error('Transaction handler has already returned');
+          if (enqueueFailure) throw enqueueFailure.error;
+          try {
+            return stageQueue.enqueue(input, tick);
+          } catch (error) {
+            enqueueFailure = { error };
+            throw error;
+          }
+        } });
+      } catch (error) {
+        throw enqueueFailure ? enqueueFailure.error : error;
+      } finally {
+        active = false;
       }
-      if (executed > remainingBudget) return { status: 'DEFERRED', executed: 0 };
+      if (enqueueFailure) throw enqueueFailure.error;
       const committed = structuredClone({ state: stageState, rng: stageRng });
       this.state = committed.state;
       this.queue = stageQueue;
       this.rng = committed.rng;
-      return { status: 'APPLIED', executed };
+      return { status: 'APPLIED', executed: 1 };
     } catch (error) {
-      return this.fail(error, tick, current?.id ?? first.id, current?.causalDepth ?? first.causalDepth, options);
+      return this.fail(error, tick, first.id, first.causalDepth, options);
     } finally {
       this.executing = false;
     }

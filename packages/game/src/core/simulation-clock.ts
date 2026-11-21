@@ -27,10 +27,28 @@ export class SimulationClock {
   advance(elapsedMs: number, onTick: (tick: number) => void): number {
     if (!Number.isFinite(elapsedMs) || elapsedMs < 0) throw new RangeError('Invalid elapsed time');
     if (this.paused) return 0;
-    this.accumulatorMs += elapsedMs;
+    const step = this.tickDurationMs;
+    const fraction = elapsedMs % step;
+    // The quotient after removing the remainder is integral up to rounding.
+    let wholeTicks = Math.round((elapsedMs - fraction) / step);
+    const untilNextTick = step - this.accumulatorMs;
+    // Combine only fractions so even a very large finite delta cannot overflow
+    // the accumulator or lose the previously retained remainder.
+    if (fraction >= untilNextTick) {
+      wholeTicks++;
+      this.accumulatorMs = fraction - untilNextTick;
+    } else {
+      this.accumulatorMs += fraction;
+      // Addition can round up to one full interval.
+      if (this.accumulatorMs >= step) {
+        wholeTicks++;
+        this.accumulatorMs = 0;
+      }
+    }
+    const plannedTicks = Math.min(wholeTicks, this.maxCatchUpTicks);
+    if (!Number.isSafeInteger(this.tick + plannedTicks)) throw new RangeError('Tick counter is out of range');
     let executed = 0;
-    while (!this.paused && this.accumulatorMs >= this.tickDurationMs && executed < this.maxCatchUpTicks) {
-      this.accumulatorMs -= this.tickDurationMs;
+    while (!this.paused && executed < plannedTicks) {
       onTick(++this.tick);
       executed++;
     }
