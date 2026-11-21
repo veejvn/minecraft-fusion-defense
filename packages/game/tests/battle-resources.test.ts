@@ -254,10 +254,21 @@ describe('T-06.5 random and reward hooks', () => {
     expect(resources(game).items.get(drops[0].id)).toEqual(drops[0]);
     expect(resources(game).pending).toBe(7);
     game.enqueue({ type: 'terminal', result: 'victory' }, 3);
+    game.enqueue({ type: 'terminal', result: 'defeat' }, 3);
     reward(game, 3, 9n);
     expect(step(game, 30)).toBe(1);
     expect(resources(game)).toMatchObject({ terminal: 'victory', pending: 0, energy: 120 });
     expect(step(game, 30)).toBe(0);
+  });
+
+  it('rejects empty BattleRuntime claim commands without burning the request', () => {
+    const game = battle();
+    game.enqueue({ type: 'claim', requestId: 'empty_claim' }, 1);
+    step(game);
+    expect(resources(game)).toMatchObject({
+      crystals: 0, pending: 0, outcome: { status: 'REJECTED', reason: 'nothing-to-claim' },
+    });
+    expect(resources(game).processedClaims.has('empty_claim')).toBe(false);
   });
 
   it('claims partially and rejects repeating a successful claim even after storage frees', () => {

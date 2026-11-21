@@ -1,8 +1,8 @@
 # T-06 — Summon, Placement & Resources: Final Implementation Plan v1.0 + Pre-Implementation Readiness Review v1.1
 
 **Project:** Minecraft Fusion Defense  
-**Status:** **OWNER-APPROVED PLAN v1.0 + OWNER-APPROVED READINESS REVIEW v1.1 (2026-11-21) — CONDITIONAL READY; CODING NOT AUTHORIZED; IMPLEMENTATION NOT VERIFIED**  
-**Scope:** Headless `packages/game` resource gameplay; documentation-only approval and publication.  
+**Status:** **OWNER-ACCEPTED TECHNICALLY (2026-11-21) — 26/26 GATES PASS (Headless Scope; Production Data Remains TBD)**  
+**Scope:** Headless `packages/game` resource gameplay; implementation commit `147e8bd`, [T-06 Final Acceptance Report](../reports/T-06-FINAL-ACCEPTANCE.md).  
 **Dependency:** [T-05 technical acceptance](../reports/T-05-FINAL-ACCEPTANCE.md), T-04 simulation contracts, validated Game Data.  
 **Authority:** [Documentation Policy](../DOCUMENTATION_POLICY.md); [Gameplay Mechanics](../product/GAMEPLAY_MECHANICS.md), [Game Balancing](../game-design/GAME_BALANCING.md), [Level Design](../game-design/LEVEL_DESIGN.md), [Game Engine Architecture](../architecture/GAME_ENGINE_ARCHITECTURE.md), [Data Architecture](../architecture/DATA_ARCHITECTURE.md), G02–G07 and the later explicit G07 terminal-priority Owner decision.
 
@@ -96,7 +96,7 @@ All **21 decisions D-04–D-24** are Owner-approved for T-06 design, **not** aut
 
 These slices describe intended boundaries, **not** authorization to code or to invent intermediate product rules.
 
-## 6. Acceptance matrix — 26 gates (all PENDING implementation)
+## 6. Acceptance matrix — 26 gates (26/26 PASS — see [Acceptance Report](../reports/T-06-FINAL-ACCEPTANCE.md))
 
 | Gate | Acceptance requirement |
 | --- | --- |
@@ -164,7 +164,7 @@ Produce an acceptance report with **PASS / FAIL / BLOCKED** and file/test eviden
 
 **NOT AUTHORIZED:** T-06 coding, Codex coding prompt, local working-tree modification, branch creation/switching, checkout, merge, cherry-pick, reset, clean, unstage, code commit/push, Project Skills changes, or unrelated file changes. A later, specific Owner instruction is required for implementation and for any exception to existing Git limits.
 
-**Acceptance status:** 26/26 gates **PENDING**; no T-06 implementation or CI success is asserted by this plan.
+**Acceptance status:** **26/26 gates PASS (Owner-accepted technically on 2026-11-21)** — implemented at `147e8bd`, verified in [T-06 Final Acceptance Report](../reports/T-06-FINAL-ACCEPTANCE.md) and CI run `44850790552`. Production data remains TBD.
 
 ## 10. Owner-approved Pre-Implementation Readiness Review v1.1 (2026-11-21)
 

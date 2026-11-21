@@ -49,7 +49,7 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 | **T-03** | Game Data foundation | Hoàn thành khung schema/validation (`packages/game-data`); dữ liệu production vẫn chờ duyệt đầy đủ (`docs/reports/T-03-*.md`). |
 | **T-04** | Core simulation foundation | Đã nghiệm thu (`SimulationClock`, `TransactionEngine`, `EventQueue`, `EventScheduler`). |
 | **T-05** | Battlefield 5×9, occupancy, Entity Registry, `BattleRuntime` | **Owner-accepted kỹ thuật** tại `3ee3d30` (`docs/reports/T-05-FINAL-ACCEPTANCE.md`). |
-| **T-06** | Summon, Placement & Resources (Energy, Crystal, RNG, Pending Wave Rewards) | **Cần đồng bộ/nghiệm thu:** Plan v1.0 & Readiness v1.1 (D-04–D-24, 26 gates AC-01–AC-26) đã được duyệt trong `docs/development/T-06-SUMMON-PLACEMENT-RESOURCES-IMPLEMENTATION-PLAN.md` nhưng tài liệu vẫn ghi `NOT CODED` / chưa có `docs/reports/T-06-FINAL-ACCEPTANCE.md`. Thực tế commit `147e8bd` đã cài đặt `battle-resources.ts`, `resource-rng.ts`, `resource-session.ts`, tích hợp `battle-runtime.ts` và 20 tests trong `battle-resources.test.ts`. |
+| **T-06** | Summon, Placement & Resources (Energy, Crystal, RNG, Pending Wave Rewards) | **Owner-accepted kỹ thuật (26/26 gates PASS):** Commit `147e8bd` (+ bổ sung test `battle-resources.test.ts` 21 tests), CI run `44850790552` **success**; báo cáo nghiệm thu `docs/reports/T-06-FINAL-ACCEPTANCE.md` và đã cập nhật `ROADMAP.md`. Production data (summon cost/cooldown, Energy item rate/amount/distribution, Wave 1–5 reward) vẫn giữ `TBD`. |
 | **T-07** | Enemy movement, combat, targeting | Chưa bắt đầu (phụ thuộc T-05 và combat definitions được duyệt). |
 | **T-08** | Fusion mechanics | Chưa bắt đầu (phụ thuộc T-05 và recipes được duyệt). |
 | **T-09** | Grassland 5 Waves, Victory/Defeat | Chưa bắt đầu (phụ thuộc T-06–T-07, Wave data và G07 terminal priority). |
@@ -68,23 +68,21 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
   - Đọc mã nguồn T-06 vừa commit tại `147e8bd`: `packages/game/src/core/battle-resources.ts`, `resource-rng.ts`, `resource-session.ts`, `packages/game/src/systems/battle-runtime.ts`, `packages/game/tests/battle-resources.test.ts`.
   - Phát hiện khoảng lệch giữa tài liệu và code: tài liệu T-06/Roadmap vẫn ghi trạng thái `NOT AUTHORIZED` / `26/26 gates PENDING`, trong khi code và test cho T-06 đã được commit lên `main` (`147e8bd`).
 - **Kết quả kiểm chứng đã chạy trong phiên:**
-  - `pnpm --filter @mfd/game test`: **PASS** — 5 test files, **70/70 tests** (`lifecycle-adapter.test.ts` 7, `create-game.test.ts` 4, `battle-runtime.test.ts` 12, `battle-resources.test.ts` 20, `simulation-foundation.test.ts` 27).
+  - `pnpm --filter @mfd/game test`: **PASS** — 5 test files, **71/71 tests** (`lifecycle-adapter.test.ts` 7, `create-game.test.ts` 4, `battle-runtime.test.ts` 12, `battle-resources.test.ts` 21, `simulation-foundation.test.ts` 27).
   - `pnpm --filter @mfd/game-data test`: **PASS** — 1 test file, **25/25 tests** (`validation.test.ts`).
-  - `pnpm typecheck`: **PASS** — 3/3 packages (`@mfd/game-data`, `@mfd/game`, `@mfd/web`, cached Turbo).
-  - Chưa chạy trong phiên: `pnpm build`, `@mfd/web` Playwright E2E/production tests.
+  - `pnpm typecheck`: **PASS** — 3/3 packages (`@mfd/game-data`, `@mfd/game`, `@mfd/web`).
+  - `pnpm build`: **PASS** — `@mfd/web` Next.js production build (`0 cached`).
+  - Remote CI (`gh run list`): run `44850790552` trên commit `147e8bd` và run `44872044295` trên `68d5142` đều đạt **success** (bổ sung test mới ở `battle-resources.test.ts` và các cập nhật tài liệu đang ở working tree local, chưa commit/push).
+  - Chưa chạy trong phiên: `@mfd/web` Playwright E2E/production tests (`apps/web` không thay đổi trong T-06).
 - **Thay đổi file:**
-  - Khởi tạo `MEMORY_BANK.md` theo yêu cầu Owner.
-  - Xóa `docs/DOCUMENTATION_STATUS.md` và dọn các liên kết tham chiếu trong 5 file tài liệu hoạt động (`README.md`, `ROADMAP.md`, `DEVELOPMENT_WORKFLOW.md`, `AI_AGENT_GUIDELINES.md`, `TECHNICAL_ARCHITECTURE.md`) chuyển sang `docs/DOCUMENTATION_POLICY.md`; giữ nguyên các hồ sơ lịch sử `docs/decisions/PGD-02/`.
+  - Khởi tạo `MEMORY_BANK.md` theo yêu cầu Owner (commit `93e429e`, sau đó cập nhật tiếp trong phiên).
+  - Xóa `docs/DOCUMENTATION_STATUS.md` và dọn các liên kết tham chiếu trong 5 file tài liệu hoạt động (`README.md`, `ROADMAP.md`, `DEVELOPMENT_WORKFLOW.md`, `AI_AGENT_GUIDELINES.md`, `TECHNICAL_ARCHITECTURE.md`) (commit `68d5142`).
+  - Rà soát & nghiệm thu T-06 (**26/26 gates PASS**): bổ sung test `BattleRuntime` empty `claim` + dual `terminal` trong `packages/game/tests/battle-resources.test.ts`, lập `docs/reports/T-06-FINAL-ACCEPTANCE.md`, và cập nhật trạng thái `OWNER-ACCEPTED` trong `docs/product/ROADMAP.md` và `docs/development/T-06-SUMMON-PLACEMENT-RESOURCES-IMPLEMENTATION-PLAN.md`.
 
 ---
 
 ## 5. Kế hoạch cho phiên làm việc tiếp theo (Next Session Plan)
 
-1. **Rà soát & đóng cổng nghiệm thu T-06 (ưu tiên trước khi qua T-07):**
-   - Đối chiếu từng dòng code trong `battle-resources.ts`, `resource-rng.ts`, `resource-session.ts`, `battle-runtime.ts` và `battle-resources.test.ts` với **21 quyết định D-04–D-24** và **26 acceptance gates (AC-01–AC-26)** trong `docs/development/T-06-SUMMON-PLACEMENT-RESOURCES-IMPLEMENTATION-PLAN.md`.
-   - Kiểm tra xem có thiếu edge-case test nào (ví dụ: non-integer tick rate boundaries, rollback RNG khi `applyResourceEvent` fail-stop, Energy Item normalized position & region boundaries, claim/terminal edge cases).
-   - Chạy đầy đủ `pnpm --filter @mfd/game test`, `pnpm --filter @mfd/game-data test`, `pnpm typecheck`, `pnpm build`.
-   - Nếu Owner yêu cầu, lập báo cáo `docs/reports/T-06-FINAL-ACCEPTANCE.md` và đồng bộ trạng thái trong `docs/product/ROADMAP.md`.
-2. **Chuẩn bị cho T-07 (Enemy Movement, Combat, Targeting) / T-08 (Fusion):**
-   - Xác định rõ các thông số combat/entity nào còn `TBD` trong `ENTITY_CATALOG.md`, `GAME_BALANCING.md`, `PGD-02/` để hỏi Owner chốt hoặc thiết kế contract inject fixture tương tự T-06 trước khi code.
-   - Kiểm tra thêm cải tiến CI được nhắc trong `ROADMAP.md` (thêm bước test `@mfd/game-data` vào `.github/workflows/ci.yml` nếu chưa có).
+1. **Chuẩn bị cho T-07 (Enemy Movement, Combat, Targeting) / T-08 (Fusion):**
+   - Lập kế hoạch kỹ thuật (Implementation Plan + Pre-Implementation Readiness Review) cho T-07 (hoặc T-08 song song theo dependency §3A của `ROADMAP.md`).
+   - Rà soát các thông số combat/entity/recipe còn `TBD` trong `ENTITY_CATALOG.md`, `GAME_BALANCING.md`, `FUSION_RECIPES.md`, `PGD-02/` để hỏi Owner hoặc tách hợp đồng session fixture tương tự T-06.
