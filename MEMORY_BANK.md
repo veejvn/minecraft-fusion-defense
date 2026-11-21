@@ -51,7 +51,7 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 | **T-05** | Battlefield 5×9, occupancy, Entity Registry, `BattleRuntime` | **Owner-accepted kỹ thuật** tại `3ee3d30` (`docs/reports/T-05-FINAL-ACCEPTANCE.md`). |
 | **T-06** | Summon, Placement & Resources (Energy, Crystal, RNG, Pending Wave Rewards) | **Owner-accepted kỹ thuật (26/26 gates PASS):** Commit `147e8bd` (+ bổ sung test `battle-resources.test.ts` 21 tests), CI run `44850790552` **success**; báo cáo nghiệm thu `docs/reports/T-06-FINAL-ACCEPTANCE.md` và đã cập nhật `ROADMAP.md`. Production data (summon cost/cooldown, Energy item rate/amount/distribution, Wave 1–5 reward) vẫn giữ `TBD`. |
 | **T-07** | Enemy movement, combat, targeting | **Owner-accepted kỹ thuật (20/20 gates PASS):** Code tại `7b7c37d` (push via `6b0ee0b`), CI run `44877738893` **success**; báo cáo nghiệm thu `docs/reports/T-07-FINAL-ACCEPTANCE.md` và đã cập nhật `ROADMAP.md`. Combat stats/behaviors vẫn `TBD` (dùng test fixtures). |
-| **T-08** | Fusion mechanics | Chưa bắt đầu (phụ thuộc T-05 và recipes được duyệt). |
+| **T-08** | Fusion mechanics | **Draft v0.1 kế hoạch** tại `docs/development/T-08-FUSION-MECHANICS-IMPLEMENTATION-PLAN.md`: 10 quyết định đề xuất `D-39`–`D-48` (chờ Owner duyệt), 5 slices, 20 acceptance gates (`AC-01`–`AC-20`); chưa được phép code. |
 | **T-09** | Grassland 5 Waves, Victory/Defeat | Chưa bắt đầu (phụ thuộc T-06–T-07, Wave data và G07 terminal priority). |
 | **T-10** | Special abilities | Chưa bắt đầu (phụ thuộc T-07 và executable ability/effect contracts). |
 | **T-11** | Save & Resume, persistent progression | Chưa bắt đầu. |
@@ -80,12 +80,13 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
   - Nghiệm thu T-06 (`docs/reports/T-06-FINAL-ACCEPTANCE.md`, commit `87507f0`).
   - Cập nhật đồng bộ đội hình Enemy MVP từ `Spider` sang `Vindicator` (reward `150/1`; Spider chuyển sang định hướng Defender tương lai, ngoài MVP) trên `docs/` và `.agents/skills/minecraft-gameplay-rules/SKILL.md` (commit `593d2a5`).
   - Lập kế hoạch T-07 v1.0 (`D-25`–`D-38 = A`), triển khai T-07 trong `packages/game` (commit `7b7c37d`), đẩy lên `main` (`6b0ee0b`) và đóng 20/20 gates PASS trong `docs/reports/T-07-FINAL-ACCEPTANCE.md` + `ROADMAP.md` sau khi CI run `44877738893` thành công.
+  - Lập bản nháp kế hoạch T-08 (`docs/development/T-08-FUSION-MECHANICS-IMPLEMENTATION-PLAN.md` Draft v0.1) với 10 quyết định kỹ thuật `D-39`–`D-48`, 5 slices và 20 acceptance gates.
 
 ---
 
 ## 5. Kế hoạch cho phiên làm việc tiếp theo (Next Session Plan)
 
-1. **Chuyển sang T-08 (Fusion Mechanics):**
-   - Lập kế hoạch kỹ thuật (Implementation Plan v1.0) cho **T-08 (Fusion)**: kéo thả Source → Target không giới hạn lane/khoảng cách, 0 Energy/Power Crystal, tra cứu Recipe data-driven bất kể thứ tự input, output tại Target Cell với 100% own Max HP / xóa status kế thừa / attack-ready ngay lập tức, đồng bộ với `CombatState` và `ResourceState` (auto-collect Crystal nếu có).
+1. **Chốt kế hoạch & triển khai T-08 (Fusion Mechanics):**
+   - Owner duyệt các quyết định `D-39`–`D-48` trong `docs/development/T-08-FUSION-MECHANICS-IMPLEMENTATION-PLAN.md` để nâng lên Plan v1.0 và ủy quyền coding T-08.
 2. **Chuẩn bị cho T-09 (Grassland 5 Waves & Victory/Defeat):**
-   - Rà soát các thông số `TBD` còn lại (Wave composition/timing/rewards, combat stats/behaviors) hoặc thiết kế session contract tương tự T-06/T-07.
+   - Rà soát các thông số `TBD` còn lại (Wave composition/timing/rewards, combat stats/behaviors) hoặc thiết kế session contract tương tự T-06/T-07/T-08.
