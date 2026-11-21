@@ -1,285 +1,279 @@
 **Đường dẫn trong repository:** `docs/game-design/ABILITY_CATALOG.md`  
 **Dự án:** Minecraft Fusion Defense  
-**Trạng thái:** Draft v1.0 — Bản tiếng Việt  
-**Phạm vi:** MVP Desktop Web; chiến trường 5 × 9; 5 Base Defenders; 7 Fusion Defenders; 4 Enemy; 5 Waves tại Grassland.
+**Trạng thái:** Confirmed v2.0 — Đã được Owner xác nhận chính thức ngày `2026-11-21` (đồng bộ quy tắc G09 từ `PGD-02` và hợp đồng runtime T-10; chỉ giữ lại VFX/Animation/UI Events thuộc phạm vi `T-12` ở trạng thái `TBD`)  
+**Phạm vi:** MVP Desktop Web; chiến trường 5 × 9; 5 Base Defenders; 7 Fusion Defenders; 4 Enemy (`zombie`, `husk`, `vindicator`, `pillager`); 5 Waves tại Grassland.
 
 **Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Mục đích
 
-Tài liệu định nghĩa danh mục 12 **required Special Abilities** (11 existing draft IDs + Steel Guardian `iron_bastion` (effects TBD)), quy tắc kích hoạt, hiệu ứng, cấu trúc dữ liệu, tình huống đặc biệt và tiêu chí nghiệm thu cho MVP. Cần đọc cùng `GDD.md`, `GAMEPLAY_MECHANICS.md`, `ENTITY_CATALOG.md` và `FUSION_RECIPES.md`.
+Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận của MVP** (5 Base Defenders + 7 Fusion Defenders, bao gồm Steel Guardian `iron_bastion`), quy tắc kích hoạt, hiệu ứng, cấu trúc dữ liệu `AbilityDefinition`, mã từ chối chuẩn, tình huống đặc biệt và tiêu chí nghiệm thu cho MVP. Cần đọc cùng [GDD.md](../product/GDD.md), [GAMEPLAY_MECHANICS.md](../product/GAMEPLAY_MECHANICS.md), [ENTITY_CATALOG.md](ENTITY_CATALOG.md), [FUSION_RECIPES.md](FUSION_RECIPES.md) và [T-10 Implementation Plan](../development/T-10-SPECIAL-ABILITIES-IMPLEMENTATION-PLAN.md).
 
-**Nhãn quyết định:** **Confirmed** = đã xác nhận; **Draft** = đề xuất thiết kế; **TBD** = chưa quyết định. Không được xem cơ chế hoặc thông số Draft là đã chốt.
+**Nhãn quyết định:** **Confirmed** = đã được Owner xác nhận (`2026-11-21`); **TBD** = chưa quyết định (chỉ còn các mục trình diễn UI/VFX/Audio thuộc phạm vi `T-12`). Các chỉ số gốc (`baseMaxHp`, `baseAttackDamage`, `armor`, `fireResistancePct`, `freezeImmune`) thuộc `ENTITY_CATALOG.md` / `GAME_BALANCING.md` và có thể được Owner tinh chỉnh sau đợt chơi thử thực nghiệm.
 
-## 2. Quy tắc hệ thống đã xác nhận
+## 2. Quy tắc hệ thống đã xác nhận (`Confirmed`)
 
 1. **Power Crystal** là tài nguyên độc lập với **Energy**. Power Crystal dùng để kích hoạt Special Ability của Defender, không dùng cho Fusion thông thường.
-2. Power Crystal đến từ Wave Rewards, Enemy death Items và independent random Items. Initial 0/cap 5, lifetime 10 giây Game Time, random attempt mỗi 30–60 giây/1 Crystal đã Confirmed. Wave Reward amount và Ability Cost vẫn TBD; chi tiết collection/Pending theo Gameplay Mechanics.
-3. Mỗi Base Defender và Fusion Defender trong MVP có một Special Ability được định nghĩa.
-4. Chỉ cho phép kích hoạt khi Game State là `PLAYING`, Defender sở hữu kỹ năng còn sống và hợp lệ, Ability khả dụng, đủ Power Crystal và mục tiêu hợp lệ nếu Ability yêu cầu mục tiêu.
-5. Ability có thể có Cooldown cấu hình riêng; việc từng Ability có Cooldown hay không và thời lượng cụ thể vẫn là TBD. Cooldown và Power Crystal Cost là hai cơ chế độc lập.
-6. Ability có thể dùng Targeting Strategy khác với đòn đánh thường. Hiệu ứng xuyên Lane hoặc toàn chiến trường phải được khai báo rõ, không mặc định áp dụng cho mọi đòn đánh.
-7. Pause dừng gameplay timers/Cooldown. Defender attack và Enemy movement tính đồng thời; Event Queue resolve theo insertion sequence với sequence number tăng dần. Victory/Defeat cùng tick theo terminal event resolve trước, không blanket Defeat priority.
-8. Fusion tốn 0 Energy/Crystal, mọi Lane/khoảng cách, Output tại Target Cell; 100% own Max HP, không inherited statuses, attack-ready với valid target. Engine không có Tier ceiling; initial bảy approved Recipes. Fusion không tự kích hoạt Special Ability.
+2. **Kinh tế Power Crystal:** Initial `0` / cap tối đa `5`, lifetime `10` giây Game Time, random attempt mỗi `30–60` giây sinh `1` Crystal. Ngoài ra đến từ Enemy death Items và Wave Rewards (phần dư vượt cap `5` lưu vào `Pending Wave Reward`).
+3. Mỗi Base Defender và Fusion Defender trong MVP có đúng **một** Special Ability được định nghĩa (`12` Abilities tổng cộng).
+4. **Chi phí & Cooldown mặc định đã xác nhận:**
+   - **Chi phí:** `1` **Power Crystal** cho mỗi lần kích hoạt hợp lệ (áp dụng đồng nhất cho cả 12 Abilities; số nguyên cấu hình qua `powerCrystalCost` trong data).
+   - **Cooldown:** `0` giây (**không có cooldown**; trường `cooldownSeconds` vẫn hỗ trợ cấu hình `>= 0` ở mức engine nhưng cấu hình MVP hiện tại là `0`).
+5. **Điều kiện kích hoạt:** Chỉ cho phép khi Game State là `PLAYING`, Defender sở hữu còn sống trên Grid và không bị vô hiệu hóa (`stun`/`freeze` trừ khi cấu hình cho phép), đủ Power Crystal, hết Cooldown (nếu cấu hình `> 0`), và có mục tiêu hợp lệ đối với các Ability yêu cầu mục tiêu (`requiresTarget: true`).
+6. **Targeting & Phạm vi:** Ability khai báo rõ `targetScope` và `requiresTarget`. Kỹ năng tự thân/đồng minh/chủ động (`pack_frenzy`, `piercing_barrage`, `glacial_fortress`, `alpha_howl`, `iron_bastion`) được phép kích hoạt khi không có Enemy trên sân. Không mặc định lan xuyên Lane ngoài phạm vi đã khai báo.
+7. **Pause & Terminal:** `PAUSED` đóng băng toàn bộ Game Time (cooldown, status duration, Burn tick, multihit cadence, projectile, redirect aura); mọi yêu cầu kích hoạt khi `PAUSED` hoặc `VICTORY`/`DEFEAT` bị từ chối ngay tại cổng `enqueue`. Defender attack và Enemy movement tính đồng thời theo tick cố định. Terminal Priority theo quyết định Owner [G07-TERMINAL-PRIORITY-OWNER-2026-11-20.md](../decisions/PGD-02/owner-decisions/G07-TERMINAL-PRIORITY-OWNER-2026-11-20.md): *first valid resolved terminal event wins*.
+8. **Tương tác Fusion:** Fusion tốn `0` Energy / `0` Power Crystal, mọi Lane/khoảng cách, Output tại Target Cell ở `100%` own Max HP, **không kế thừa** bất kỳ buff/shield/redirect/cooldown nào của nguyên liệu và không tự kích hoạt Special Ability.
 
-## 3. Danh mục Special Abilities trong MVP
+## 3. Danh mục 12 Special Abilities trong MVP (`Confirmed 2026-11-21`)
 
-| Ability ID | Tên Ability | Defender sở hữu | Vai trò | Trạng thái |
-| --- | --- | --- | --- | --- |
-| `blizzard` | Blizzard | `snow_golem` | Khống chế diện rộng | Draft |
-| `iron_bastion` | Iron Bastion | `steel_guardian` | Defensive identity | Confirmed identity/name/ID; effects TBD |
-| `earthquake` | Earthquake | `iron_golem` | Sát thương tuyến trước / gián đoạn | Draft |
-| `arrow_storm` | Arrow Storm | `skeleton` | Sát thương tầm xa diện rộng | Draft |
-| `pack_frenzy` | Pack Frenzy | `wolf` | Bùng nổ cận chiến / Buff | Draft |
-| `inferno` | Inferno | `blaze` | Sát thương lửa diện rộng / Burn | Draft |
-| `piercing_barrage` | Piercing Barrage | `skeleton_sniper` | Sát thương xuyên mục tiêu tầm xa | Draft |
-| `absolute_zero` | Absolute Zero | `ice_golem` | Freeze diện rộng mạnh | Draft |
-| `glacial_fortress` | Glacial Fortress | `frost_guardian` | Shield / Slow | Draft |
-| `wildfire_rush` | Wildfire Rush | `flame_fang` | Bùng nổ cận chiến nhanh / Burn | Draft |
-| `meteor_arrow_rain` | Meteor Arrow Rain | `inferno_archer` | Sát thương lửa tầm xa diện rộng | Draft |
-| `alpha_howl` | Alpha Howl | `alpha_wolf` | Hỗ trợ đồng minh / Buff | Draft |
+| Ability ID | Tên Ability | Defender sở hữu | Loại | Cần mục tiêu (`requiresTarget`) | Chi phí / Cooldown | Trạng thái |
+| --- | --- | --- | --- | --- | --- | --- |
+| `blizzard` | Blizzard | `snow_golem` | Base | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed** |
+| `earthquake` | Earthquake | `iron_golem` | Base | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed** |
+| `arrow_storm` | Arrow Storm | `skeleton` | Base | Có (`same-lane-enemy-in-range`) | `1` Crystal / `0s` | **Confirmed** |
+| `pack_frenzy` | Pack Frenzy | `wolf` | Base | Không (`self`) | `1` Crystal / `0s` | **Confirmed** |
+| `inferno` | Inferno | `blaze` | Base | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed** |
+| `piercing_barrage` | Piercing Barrage | `skeleton_sniper` | Fusion | Không (`same-lane` proactive) | `1` Crystal / `0s` | **Confirmed** |
+| `absolute_zero` | Absolute Zero | `ice_golem` | Fusion | Có (`all-enemies`) | `1` Crystal / `0s` | **Confirmed** |
+| `glacial_fortress` | Glacial Fortress | `frost_guardian` | Fusion | Không (`self` + front tile) | `1` Crystal / `0s` | **Confirmed** |
+| `wildfire_rush` | Wildfire Rush | `flame_fang` | Fusion | Có (`melee-enemy`) | `1` Crystal / `0s` | **Confirmed** |
+| `meteor_arrow_rain` | Meteor Arrow Rain | `inferno_archer` | Fusion | Có (`area-3x3-closest-enemy`) | `1` Crystal / `0s` | **Confirmed** |
+| `alpha_howl` | Alpha Howl | `alpha_wolf` | Fusion | Không (`ally-3x3`) | `1` Crystal / `0s` | **Confirmed** |
+| `iron_bastion` | Iron Bastion | `steel_guardian` | Fusion | Không (`self` + `ally-3x3`) | `1` Crystal / `0s` | **Confirmed** |
 
-Tên kỹ năng và ý tưởng hiệu ứng trong bảng vẫn ở trạng thái **Draft**, chưa phải cơ chế hoàn toàn được xác nhận.
+## 4. Special Abilities của 5 Base Defenders (`Confirmed`)
 
-## 4. Special Abilities của Base Defenders
+### 4.1. Blizzard — Snow Golem (`blizzard`)
 
-### 4.1. Blizzard — Snow Golem
+- **Mục tiêu thiết kế:** Khống chế đám đông bằng băng trên cùng Lane.
+- **Hiệu ứng xác nhận:** Áp dụng **Slow `-50%` tốc độ di chuyển trong `5` giây** lên toàn bộ Enemy đang có mặt trên **cùng Lane** tại thời điểm kích hoạt.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (từ chối `no-target` nếu không có Enemy trên Lane). Cùng nguồn làm mới thời gian (`FR1`); nhiều Slow chồng nhau chỉ lấy mức làm chậm mạnh nhất (`strongest wins`). Slow đã gắn tiếp tục tồn tại nếu mục tiêu đổi Lane hoặc Owner chết/Fusion.
 
-- **Mục tiêu thiết kế:** Khống chế đám đông bằng băng, tạo khoảng thời gian chiến thuật để các Defender khác tấn công.
-- **Hiệu ứng đề xuất:** Áp dụng Slow lên Enemy hợp lệ trong một vùng xác định; có thể gây thêm một lượng nhỏ sát thương băng.
-- **Targeting:** Chọn vùng ảnh hưởng; vùng quanh bản thân hay vùng do người chơi chọn vẫn TBD.
-- **Ảnh hưởng khác Lane:** TBD; không được mặc định cho phép.
-- **Thông số:** `radiusCells`, `slowPercent`, `durationMs`, `damage` — tất cả TBD.
-- **Đánh đổi chiến thuật:** Hữu ích khi đối phó Enemy nhanh nhưng có thể gây ít sát thương trực tiếp.
+### 4.2. Earthquake — Iron Golem (`earthquake`)
 
-### 4.2. Earthquake — Iron Golem
+- **Mục tiêu thiết kế:** Gây sát thương vật lý tức thời và làm choáng tuyến trước trên cùng Lane.
+- **Hiệu ứng xác nhận:** Gây ngay **`3× Attack Damage` sát thương vật lý** (giảm bởi Armor) và **Stun `2` giây** lên toàn bộ Enemy đang có mặt trên **cùng Lane**. **Không có Knockback.**
+- **Điều kiện & Quy tắc:** `requiresTarget: true`. Stun chặn di chuyển, đòn đánh thường, kỹ năng và tạm dừng chuỗi multihit chưa bắn (`FR3`). Cùng nguồn làm mới; khác nguồn độc lập.
 
-- **Mục tiêu thiết kế:** Tạo thời điểm gây áp lực và gián đoạn Enemy cho Tank tuyến trước.
-- **Hiệu ứng đề xuất:** Gây sát thương diện rộng lên Enemy gần đó; có thể thêm Stun ngắn hoặc Knockback, chờ xác nhận thiết kế.
-- **Targeting:** Vùng xung quanh Defender sở hữu, đề xuất.
-- **Thông số:** `radiusCells`, `damage`, `stunDurationMs` hoặc `knockbackCells` — TBD.
-- **Lưu ý:** Knockback không được đẩy Enemy ra khỏi Lane hợp lệ hoặc gây lỗi xử lý va chạm.
+### 4.3. Arrow Storm — Skeleton (`arrow_storm`)
 
-### 4.3. Arrow Storm — Skeleton
+- **Mục tiêu thiết kế:** Xả loạt mũi tên liên tiếp cường độ cao dọc theo Lane.
+- **Hiệu ứng xác nhận:** Bắn chuỗi **`8` mũi tên** cách nhau **`0.2` giây** (mũi đầu bắn ngay tại tick kích hoạt), mỗi mũi gây **`100% Attack Damage`** (snapshot lúc bắn mỗi phát), tốc độ đạn thường, không xuyên mục tiêu (`pierce: false`).
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (yêu cầu Enemy hợp lệ trong tầm trên cùng Lane). Mỗi lần bắn chọn lại mục tiêu; nếu Skeleton bị Stun/Freeze giữa chuỗi thì tạm dừng cadence giữ nguyên thời gian chờ còn lại (`FR3`, không xả dồn khi hết choáng). Chết/Fusion hoặc hết mục tiêu hủy các phát chưa bắn; mũi tên đã bắn tiếp tục bay độc lập và có thể trúng Enemy hợp lệ khác nếu mục tiêu cũ chết.
 
-- **Mục tiêu thiết kế:** Tạm thời biến Defender bắn đơn mục tiêu thành nguồn sát thương nhiều mục tiêu.
-- **Hiệu ứng đề xuất:** Bắn một loạt mũi tên vào các Enemy hợp lệ trong Lane hoặc vùng đã cấu hình.
-- **Targeting:** Đề xuất ban đầu là Lane của Defender; phương án chọn mục tiêu khác vẫn TBD.
-- **Thông số:** `projectileCount`, `damagePerHit`, `targetCount`, `intervalMs` — TBD.
-- **Lưu ý:** Cần xác định một Enemy có thể trúng nhiều mũi tên trong cùng lần kích hoạt hay không.
+### 4.4. Pack Frenzy — Wolf (`pack_frenzy`)
 
-### 4.4. Pack Frenzy — Wolf
+- **Mục tiêu thiết kế:** Bùng nổ tốc độ đánh và sát thương cận chiến cho bản thân Wolf.
+- **Hiệu ứng xác nhận:** Tự buff **`+100% Attack Speed` và `+50% Attack Damage` trong `8` giây**.
+- **Điều kiện & Quy tắc:** `requiresTarget: false` (kích hoạt được khi không có Enemy). Cùng nguồn làm mới không cộng dồn; cộng dồn **tuyến tính trên chỉ số gốc** (`additive base`) với các Buff khác nguồn (như `alpha_howl`). Stun vẫn chặn tấn công thường nhưng không đóng băng bộ đếm thời gian Buff. Wolf chết hoặc bị tiêu thụ cho Fusion thì tự mất Buff.
 
-- **Mục tiêu thiết kế:** Tạo đợt bùng nổ sát thương cận chiến trong thời gian ngắn cho Defender tốc độ cao.
-- **Hiệu ứng đề xuất:** Tạm tăng Attack Speed và/hoặc Damage cho chính Wolf; không mặc định Buff đồng minh.
-- **Targeting:** Bản thân Defender.
-- **Thông số:** `attackSpeedMultiplier`, `damageMultiplier`, `durationMs` — TBD.
-- **Lưu ý:** Cần xác định Buff có ảnh hưởng tới đòn đánh đang thực hiện hay không.
+### 4.5. Inferno — Blaze (`inferno`)
 
-### 4.5. Inferno — Blaze
+- **Mục tiêu thiết kế:** Sát thương lửa diện rộng xuyên giáp cùng Lane kết hợp thiêu đốt theo thời gian.
+- **Hiệu ứng xác nhận:** Gây ngay **`3× Attack Damage` hệ Fire** (`armorPiercing: true`, chịu `Fire Resistance`) và gắn **Burn `25% Attack Damage/giây` trong `5` giây** (`1 tick/giây`, `damageType: 'fire'`) cho toàn bộ Enemy đang có mặt trên **cùng Lane**.
+- **Điều kiện & Quy tắc:** `requiresTarget: true`. Sát thương Burn snapshot Attack Damage hiện tại của Blaze lúc gắn/làm mới; đòn hit hợp lệ có sát thương sau giảm trừ bằng `0` vẫn confirm hit và gắn Burn. Cùng nguồn làm mới thời gian/tick; khác nguồn nhảy sát thương độc lập. Burn tiếp tục tồn tại sau khi Blaze chết/Fusion hoặc mục tiêu đổi Lane.
 
-- **Mục tiêu thiết kế:** Gây áp lực bằng lửa trên diện rộng và duy trì Burn.
-- **Hiệu ứng đề xuất:** Gây sát thương lửa và áp dụng Burn lên Enemy hợp lệ trong vùng ảnh hưởng.
-- **Targeting:** Đề xuất vùng theo hướng tấn công; Lane và hình dạng vùng ảnh hưởng TBD.
-- **Thông số:** `damage`, `burnDamagePerTick`, `burnTickMs`, `burnDurationMs`, `radiusCells` — TBD.
-- **Lưu ý:** Cần quy định Burn cộng dồn hay làm mới thời gian tồn tại.
+## 5. Special Abilities của 7 Fusion Defenders (`Confirmed`)
 
-## 5. Special Abilities của Fusion Defenders
+### 5.1. Piercing Barrage — Skeleton Sniper (`piercing_barrage`)
 
-### 5.1. Piercing Barrage — Skeleton Sniper
+- **Mục tiêu thiết kế:** Mũi tên hợp nhất xuyên thủng toàn bộ hàng Enemy trên cùng Lane.
+- **Hiệu ứng xác nhận:** Bắn **`1` mũi tên hợp nhất** gây **`600% Attack Damage`** (snapshot lúc bắn), tốc độ **`2×`**, xuyên không giới hạn dọc **cùng Lane** (`pierce: true`, không suy giảm sát thương theo số mục tiêu).
+- **Điều kiện & Quy tắc:** `requiresTarget: false` (có thể bắn khi không có Enemy). Mỗi Enemy chỉ trúng tối đa `1` lần bởi cùng một mũi tên (`hitEnemyIds`); Enemy miễn nhiễm vẫn tính là đã hit để mũi tên bay tiếp cho tới khi ra khỏi biên cột `9`. Mũi tên đã bắn tiếp tục bay nếu Skeleton Sniper chết hoặc Fusion.
 
-- **Mục tiêu thiết kế:** Thưởng cho khả năng bắn chính xác tầm xa bằng sát thương xuyên nhiều Enemy.
-- **Hiệu ứng đề xuất:** Bắn một hoặc nhiều Projectile xuyên qua các mục tiêu hợp lệ theo đường bay cấu hình.
-- **Targeting:** Đề xuất đường thẳng hoặc đường bay hướng đến mục tiêu đã chọn.
-- **Thông số:** `projectileCount`, `damage`, `pierceLimit`, `rangeCells` — TBD.
-- **Lưu ý:** Cần xác định thời gian tồn tại Projectile và thứ tự xử lý va chạm.
+### 5.2. Absolute Zero — Ice Golem (`absolute_zero`)
 
-### 5.2. Absolute Zero — Ice Golem
+- **Mục tiêu thiết kế:** Đóng băng toàn bộ chiến trường trong thời gian giới hạn.
+- **Hiệu ứng xác nhận:** **Freeze trong `4` giây** toàn bộ Enemy đang có mặt trên **cả `5` Lane**.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (cần ít nhất `1` Enemy sống trên sân). Freeze chặn di chuyển, tấn công và kỹ năng; tôn trọng `freezeImmune` (bỏ qua) và `freezeResistancePct` (giảm thời lượng tỷ lệ thuận lúc gắn/làm mới). Cùng nguồn làm mới; khác nguồn độc lập; đồng tồn tại với `Slow` và `Stun`; tiếp tục duy trì sau khi Ice Golem chết/Fusion hoặc mục tiêu đổi Lane.
 
-- **Mục tiêu thiết kế:** Tạo hiệu ứng khống chế mạnh hơn Blizzard nhưng có giới hạn rõ về thời gian và phạm vi.
-- **Hiệu ứng đề xuất:** Freeze tạm thời các Enemy trong vùng xác định; sát thương băng bổ sung vẫn TBD.
-- **Targeting:** Vùng quanh Defender hoặc vùng do người chơi chọn — TBD.
-- **Thông số:** `radiusCells`, `freezeDurationMs`, `damage` — TBD.
-- **Lưu ý:** Thứ tự ưu tiên Freeze/Slow, khả năng miễn nhiễm và áp dụng lại hiệu ứng vẫn TBD.
+### 5.3. Glacial Fortress — Frost Guardian (`glacial_fortress`)
 
-### 5.3. Glacial Fortress — Frost Guardian
+- **Mục tiêu thiết kế:** Tạo lá chắn hấp thụ sát thương kết hợp vùng làm chậm ngay trước mặt tuyến phòng thủ.
+- **Hiệu ứng xác nhận:** Tự tạo **Shield bằng `50% Max HP`** tồn tại đến khi bị đánh vỡ. Chừng nào Shield còn tồn tại (`amount > 0`), duy trì vùng **`1` ô ngay phía trước `(row, col + 1)`** áp dụng **Slow `-50%`** cho mọi Enemy đang ở trong ô.
+- **Điều kiện & Quy tắc:** `requiresTarget: false`.
+  - Enemy rời ô `(row, col + 1)` khi Shield vẫn còn thì mất ngay Slow từ vùng.
+  - Khi Shield bị phá vỡ (`amount === 0`), các Enemy đang bị làm chậm trong vùng chuyển sang giữ **residual Slow `5` giây**.
+  - Kích hoạt lại khi Shield cũ chưa vỡ sẽ đặt lại lượng Shield về `50% Max HP` mới mà **giữ nguyên `shieldId` và thứ tự tạo (`creationOrder`)** (`FR2`).
+  - Shield hấp thụ trước HP (kể cả sát thương xuyên Armor, trừ cờ `shieldPiercing`). Nếu Frost Guardian chết hoặc Fusion thì Shield và vùng biến mất, nhưng residual Slow đã chuyển/đang gắn trên Enemy giữ nguyên đến hết hạn.
 
-- **Mục tiêu thiết kế:** Tăng khả năng trụ vững tuyến trước đồng thời làm chậm Enemy gần đó.
-- **Hiệu ứng đề xuất:** Cấp Shield tạm thời cho Frost Guardian và áp dụng Slow trong vùng xung quanh.
-- **Targeting:** Bản thân Defender và Enemy trong vùng lân cận.
-- **Thông số:** `shieldAmount`, `shieldDurationMs`, `slowPercent`, `slowDurationMs`, `radiusCells` — TBD.
-- **Lưu ý:** Thứ tự hấp thụ sát thương và quy tắc cộng dồn Shield vẫn TBD.
+### 5.4. Wildfire Rush — Flame Fang (`wildfire_rush`)
 
-### 5.4. Wildfire Rush — Flame Fang
+- **Mục tiêu thiết kế:** Xả chuỗi đòn cận chiến nhanh tại chỗ và thiêu đốt mục tiêu.
+- **Hiệu ứng xác nhận:** Thực hiện **`5` đòn cận chiến đứng tại chỗ** (**chốt không lao tới / không dash**) cách nhau **`0.2` giây** trong tầm cận chiến. Mỗi đòn gây **`100%` Attack Damage hiện tại** (sát thương vật lý, snapshot tại thời điểm tung đòn) và khi trúng mục tiêu sẽ gắn **Burn `25% Attack Damage/giây` trong `5` giây** (`1 tick/giây`, hệ Fire).
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (yêu cầu Enemy trong tầm cận chiến). Mỗi nhịp đánh retarget lại mục tiêu hợp lệ; Stun tạm dừng cadence giữ nguyên thời gian chờ còn lại (`FR3`); chết/Fusion hoặc hết mục tiêu trong tầm sẽ hủy các đòn chưa tung.
 
-- **Mục tiêu thiết kế:** Tạo khoảng thời gian gây sát thương cận chiến nhanh, kết hợp áp lực Burn.
-- **Hiệu ứng đề xuất:** Thực hiện chuỗi đòn đánh cận chiến liên tiếp vào mục tiêu hợp lệ và áp dụng Burn.
-- **Targeting:** Enemy trong tầm cận chiến; có đổi mục tiêu giữa chuỗi đánh hay không vẫn TBD.
-- **Thông số:** `hitCount`, `damagePerHit`, `intervalMs`, `burnDurationMs` — TBD.
-- **Lưu ý:** Cơ chế lao tới hoặc di chuyển nhanh **chưa được xác nhận**; không tự suy diễn từ từ “Rush”.
+### 5.5. Meteor Arrow Rain — Inferno Archer (`meteor_arrow_rain`)
 
-### 5.5. Meteor Arrow Rain — Inferno Archer
+- **Mục tiêu thiết kế:** Trút mưa tên lửa xuống khu vực cố định 3×3 quanh tuyến đầu Enemy.
+- **Hiệu ứng xác nhận:** Bắn **`8` mũi tên lửa rơi** cách nhau **`0.2` giây** vào **vùng cố định `3×3` lấy tâm là Enemy gần căn cứ nhất tại thời điểm kích hoạt**. Mỗi phát chọn lại mục tiêu trong vùng khóa (hoặc rơi xuống ô tâm nếu không còn Enemy trong vùng nhưng vẫn còn Enemy trên sân), khóa ô rơi, gây **`100% Attack Damage`** (hệ Fire, snapshot lúc phát tên) và gắn **Burn `25% Attack Damage/giây` trong `5` giây** cho toàn bộ Enemy nằm trong ô rơi.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (yêu cầu ít nhất `1` Enemy trên sân). Các mũi tên đang rơi tiếp tục hoàn thành đường rơi sau khi Inferno Archer chết/Fusion; các phát chưa bắn bị hủy nếu Inferno Archer chết/Fusion hoặc không còn bất kỳ Enemy nào trên sân; Stun tạm dừng các phát chưa bắn (`FR3`). Burn tồn tại độc lập sau khi source chết/Fusion.
 
-- **Mục tiêu thiết kế:** Tạo sát thương diện rộng tầm xa kết hợp Burn.
-- **Hiệu ứng đề xuất:** Bắn mưa tên lửa vào vùng xác định, gây sát thương và áp dụng Burn lên Enemy hợp lệ.
-- **Targeting:** Vùng do người chơi chọn hoặc Lane của Defender — TBD.
-- **Thông số:** `arrowCount`, `damagePerArrow`, `radiusCells`, `burnDurationMs` — TBD.
-- **Lưu ý:** Phải khai báo rõ vùng ảnh hưởng có bao gồm các Lane khác hay không.
+### 5.6. Alpha Howl — Alpha Wolf (`alpha_howl`)
 
-### 5.6. Alpha Howl — Alpha Wolf
+- **Mục tiêu thiết kế:** Cường hóa đồng loạt bản thân và các Defender xung quanh trong phạm vi 3×3.
+- **Hiệu ứng xác nhận:** Tại thời điểm kích hoạt, snapshot toàn bộ Defender sống trong vùng **`3×3`** (bao gồm chính Alpha Wolf) để cấp **`+100% Attack Speed` và `+50% Attack Damage` trong `8` giây**.
+- **Điều kiện & Quy tắc:** `requiresTarget: false`.
+  - Đồng minh đã nhận Buff tiếp tục giữ Buff hết `8` giây dù rời vùng hoặc Alpha Wolf chết/Fusion sau đó; riêng Buff trên chính Alpha Wolf kết thúc ngay khi Alpha Wolf chết/Fusion.
+  - Đồng minh nào chết hoặc bị tiêu thụ làm nguyên liệu Fusion sẽ mất Buff của mình (không kế thừa sang Fusion Output).
+  - Cùng nguồn làm mới; các Alpha Wolf khác nhau và `pack_frenzy` cộng dồn tuyến tính trên chỉ số gốc (`additive base`).
+  - Stun không chặn kích hoạt hay đóng băng thời gian Buff; Defender không có đòn tấn công thường vẫn nhận trạng thái Buff mà không tự sinh ra đòn đánh mới.
 
-- **Mục tiêu thiết kế:** Biến Defender cận chiến mạnh thành đơn vị hỗ trợ đội hình trong thời gian ngắn.
-- **Hiệu ứng đề xuất:** Tăng Attack Speed và/hoặc Damage cho Defender đồng minh gần đó.
-- **Targeting:** Đồng minh trong vùng cấu hình; Alpha Wolf có tự nhận Buff hay không vẫn TBD.
-- **Thông số:** `radiusCells`, `attackSpeedMultiplier`, `damageMultiplier`, `durationMs` — TBD.
-- **Lưu ý:** Quy tắc cộng dồn Buff và việc áp dụng lên Fusion Defender vẫn TBD.
+### 5.7. Iron Bastion — Steel Guardian (`iron_bastion`)
 
-### 5.7. Steel Guardian — Iron Bastion
+- **Mục tiêu thiết kế:** Lá chắn sinh tồn tối đa và lá chắn che chở chuyển hướng sát thương cho đồng minh 3×3 (danh tính xác nhận tại [PGD-01](../decisions/PGD-01-STEEL-GUARDIAN.md), thông số cơ chế chốt ngày `2026-11-21`).
+- **Hiệu ứng xác nhận:**
+  1. Tự tạo **Shield bằng `100%` Max HP hiện tại** (snapshot lúc kích hoạt), **tồn tại cho đến khi bị đánh vỡ** (không tự biến mất sau `8` giây).
+  2. Kích hoạt vùng bảo vệ đồng minh **`3×3` động trong `8` giây**, chuyển hướng **`50%` sát thương sau Armor/Resistance** của các Defender đồng minh trong vùng về Steel Guardian.
+- **Điều kiện & Quy tắc:** `requiresTarget: false`.
+  - Phần sát thương chuyển hướng đi thẳng vào **Shield rồi HP** của Steel Guardian mà **không tính lại Armor/Resistance của Guardian lần thứ hai**; phần `50%` còn lại đi qua Shield rồi HP của đồng minh.
+  - Nếu có nhiều Steel Guardian che phủ cùng đồng minh, chọn **Guardian gần nhất theo khoảng cách Manhattan**, hòa chọn **Entity ID nhỏ hơn** (không cộng dồn nhiều Redirect cho cùng 1 đòn đánh).
+  - Sát thương có cờ `shieldPiercing` giữ nguyên tính xuyên Shield trên cả phần chuyển hướng lẫn phần giữ lại.
+  - Kích hoạt lại khi hiệu ứng cũ chưa hết sẽ đặt lại Shield (`FR2` giữ nguyên `shieldId`/`creationOrder`) và đặt lại đồng hồ `8` giây mà không cộng dồn.
+  - Sát thương chuyển hướng có thể hạ gục Steel Guardian (khi Guardian chết, phần sát thương dư **không tràn ngược lại đồng minh**). Guardian chết hoặc Fusion sẽ chấm dứt ngay vùng bảo vệ `3×3` và Shield của nó.
 
-**Confirmed — [PGD-01](../decisions/PGD-01-STEEL-GUARDIAN.md):** Steel Guardian (`steel_guardian`) has Iron Bastion (`iron_bastion`), a Special Ability with defensive identity. The other eleven Ability IDs retain their Draft status. **TBD:** whether this uses Shield, Armor, resistance or another mechanic; area, targeting, duration, Power Crystal cost, cooldown applicability, executable effect contract and lifecycle. The approved name and identity are not executable effects.
+## 6. Quy trình kích hoạt Ability (`Confirmed`)
 
-## 6. Quy trình kích hoạt Ability
+1. Trận đấu ở trạng thái `PLAYING`.
+2. Người chơi **kéo-thả `1` Power Crystal lên một Defender sống hợp lệ** trên Grid (không dừng simulation khi chọn/kéo).
+3. Hệ thống tuần tự hóa lệnh `activate-ability` qua Unified Event Queue và TransactionEngine (`D-60`).
+4. Kiểm tra trong giao dịch nguyên tử: Game State `PLAYING`, Defender tồn tại & còn sống, có `AbilityDefinition`, không bị `stun`/`freeze` (nếu không được phép), hết Cooldown, đủ `Power Crystal`, hợp lệ `targetCell` (nếu có) và thỏa điều kiện mục tiêu (`requiresTarget`).
+5. **Commit nguyên tử:** trừ `powerCrystalCost` Power Crystal, đặt `cooldownRemainingTicks` (nếu `> 0`), thực thi hiệu ứng tức thời / phát bắn đầu tiên ở `t = 0` và xếp lịch cadence/projectile, sau đó trả kết quả `outcome.status = 'APPLIED'`.
+6. Nếu bước kiểm tra thất bại, ghi nhận `outcome = { status: 'REJECTED', reason }` mà **không tiêu tốn Power Crystal, không bắt đầu Cooldown và không làm hỏng trạng thái trận đấu**.
 
-1. Người chơi chọn một Defender hoặc Fusion Defender còn sống.
-2. UI hiển thị Special Ability, số Power Crystal hiện có và trạng thái khả dụng.
-3. Người chơi bắt đầu kích hoạt và chọn mục tiêu nếu Ability yêu cầu.
-4. Kiểm tra `PLAYING`, Entity còn tồn tại và sống, Ability Definition, trạng thái khả dụng, Cooldown, Power Crystal và mục tiêu.
-5. Khóa hoặc tuần tự hóa thao tác kích hoạt để tránh request trùng lặp.
-6. Trừ Power Crystal theo cấu hình và tạo hiệu ứng như một giao dịch logic nguyên tử; nếu tạo hiệu ứng thất bại thì không tiêu tài nguyên hoặc bắt đầu Cooldown.
-7. Bắt đầu Cooldown nếu được cấu hình, phát Activation Event và chạy Animation/VFX.
-8. Nếu thất bại, hiển thị lý do mà không thay đổi Power Crystal hoặc Cooldown.
+## 7. Validation và Rejection Codes (Đồng bộ T-10 Contract)
 
-**UX chưa xác nhận:** Kích hoạt bằng cách chọn Defender rồi nhấn Ability, Hotkey hay thao tác khác; có Pause simulation khi chọn mục tiêu không; thời điểm tiêu Power Crystal là khi chọn hay khi thực thi hiệu ứng.
+Khớp trực tiếp với `AbilityValidationReason` trong [ability-state.ts](../../packages/game/src/abilities/ability-state.ts) và cổng `enqueue` của [battle-runtime.ts](../../packages/game/src/systems/battle-runtime.ts):
 
-**Mặc định đề xuất:** Chỉ tiêu Power Crystal khi hiệu ứng được tạo thành công.
+| Reason / Guard | Điều kiện kích hoạt từ chối | Tác động tài nguyên |
+| --- | --- | --- |
+| `paused` *(ở `enqueue`)* | Trận đấu đang `PAUSED` | Không xếp hàng, không tốn Crystal |
+| `terminal` *(ở `enqueue`)* | Trận đấu đã kết thúc (`VICTORY` / `DEFEAT`) | Không xếp hàng, không tốn Crystal |
+| `invalid-owner` | `defenderId` không tồn tại hoặc không phải Defender | `REJECTED`, không tốn Crystal |
+| `owner-dead` | Defender sở hữu có `hp <= 0` | `REJECTED`, không tốn Crystal |
+| `ability-unavailable` | Không tìm thấy `AbilityDefinition` gắn với Defender | `REJECTED`, không tốn Crystal |
+| `owner-disabled` | Defender đang chịu `stun` hoặc `freeze` (khi `!allowWhileDisabled`) | `REJECTED`, không tốn Crystal |
+| `on-cooldown` | Cooldown còn lại `> 0` | `REJECTED`, không tốn Crystal |
+| `insufficient-crystals` | `crystals < powerCrystalCost` | `REJECTED`, không tốn Crystal |
+| `invalid-target-cell` | `targetCell` truyền vào nằm ngoài Grid `5 × 9` | `REJECTED`, không tốn Crystal |
+| `no-target` | Ability có `requiresTarget: true` nhưng không có Enemy hợp lệ | `REJECTED`, không tốn Crystal |
 
-## 7. Validation và Failure Codes
+## 8. Quy tắc Status Effect & Thứ tự Xử lý Sát thương (`Confirmed`)
 
-| Code | Điều kiện |
-| --- | --- |
-| `INVALID_GAME_STATE` | Game không ở trạng thái PLAYING |
-| `INVALID_OWNER` | Defender sở hữu không tồn tại, đã chết hoặc không hợp lệ |
-| `ABILITY_NOT_FOUND` | Ability Definition thiếu hoặc không hợp lệ |
-| `ABILITY_UNAVAILABLE` | Ability bị vô hiệu hóa hoặc không khả dụng |
-| `INSUFFICIENT_POWER_CRYSTAL` | Power Crystal thấp hơn chi phí cấu hình |
-| `ABILITY_ON_COOLDOWN` | Cooldown chưa hoàn tất |
-| `INVALID_TARGET` | Mục tiêu bắt buộc không hợp lệ |
-| `DUPLICATE_ACTIVATION` | Request đang được xử lý trùng lặp |
-| `EFFECT_CREATION_FAILED` | Không thể hoàn tất việc tạo hiệu ứng |
+- **Pipeline sát thương (`D-62`):** Mọi sát thương qua `applyDamagePipeline` tuân theo thứ tự nghiêm ngặt:
+  **`Armor / Fire Resistance` → `Redirect (Iron Bastion)` → `Shield (Oldest-First)` → `HP`**
+  - Cờ `armorPiercing: true` bỏ qua `Armor`; `shieldPiercing: true` bỏ qua `Shield`.
+  - Đòn hợp lệ có sát thương sau giảm trừ bằng `0` vẫn trả về `hitConfirmed = true` để các hiệu ứng on-hit (như `Burn`) vẫn gắn bình thường.
+- **Status Identity & Làm mới (`FR1`):** Khóa định danh `(targetEntityId, sourceEntityId, abilityId, kind)`. Tái áp dụng cùng khóa giữ nguyên `statusId`, tăng `version++` và làm mới thời lượng (kèm snapshot mới với `Burn`).
+- **Chồng hiệu ứng (`D-63`):**
+  - `slow`: lấy mức mạnh nhất (`max(slowPct)`).
+  - `stun` / `freeze`: hiệu lực khi còn ít nhất `1` instance hoạt động; `freeze` kiểm tra `freezeImmune` và rút ngắn theo `1 - freezeResistancePct`.
+  - `burn`: nhảy sát thương hệ Fire mỗi `1.0s` Game Time; các nguồn khác nhau nhảy độc lập.
+  - `buff`: các nguồn khác nhau (`pack_frenzy`, từng `alpha_howl`) cộng dồn tuyến tính trên chỉ số gốc (`baseDamage`, `baseAttackSpeed`).
+- **Thứ tự mỗi Tick (`D-66`):** `Phase A0` (giảm Cooldown, chạy Multihit Cadence, cập nhật Projectile, đồng bộ Glacial Slow Zone, chạy Status & Burn tick, giảm Redirect timer, xử lý chết Phase A0) → `Phase A` (Enemy di chuyển + swept projectile crossing) → `Phase B` (tấn công cơ bản qua Damage Pipeline) → `Phase C` (xử lý chết, trao T-06 reward, kiểm tra Wave/Victory T-09).
 
-Các Code trên là **đề xuất tên API**, chưa phải hợp đồng kỹ thuật đã xác nhận.
+## 9. Data-driven Schema (Đồng bộ `AbilityDefinition` T-10)
 
-## 8. Các loại hiệu ứng và quy tắc Status Effect
-
-**Effect Primitives đề xuất:** `DAMAGE`, `AREA_DAMAGE`, `APPLY_SLOW`, `APPLY_FREEZE`, `APPLY_BURN`, `APPLY_SHIELD`, `APPLY_BUFF`, `SPAWN_PROJECTILES`, `MULTI_HIT`, `STUN`.
-
-Mỗi Effect nên định nghĩa: cách chọn mục tiêu, loại Entity hợp lệ, phạm vi Lane, hình dạng vùng tác động, giá trị hiệu ứng, thời lượng, quy tắc cộng dồn/làm mới, chu kỳ Tick nếu cần và thứ tự xử lý xác định.
-
-**Quy tắc chung chưa chốt:** Giới hạn Slow; thứ tự ưu tiên Slow và Freeze; Burn cộng dồn hay làm mới; Shield cộng dồn và hết hạn; Buff cộng dồn; miễn nhiễm/kháng hiệu ứng; quy trách nhiệm sát thương sau khi Owner chết; mục tiêu chết giữa chuỗi Multi-hit; Projectile tồn tại sau khi Owner bị loại; hành vi khi Pause hoặc kết thúc trận đấu.
-
-Không tự triển khai Targeting xuyên mọi Lane chỉ vì một số Ability có Area Effect.
-
-## 9. Data-driven Schema (đề xuất)
+Khớp với [ability-session.ts](../../packages/game/src/abilities/ability-session.ts) (việc ánh xạ từ `@mfd/game-data` khi mở khóa dữ liệu cân bằng entity sẽ dùng chung cấu trúc hợp đồng này):
 
 | Field | Type | Mô tả |
 | --- | --- | --- |
-| `id` | string | Ability ID duy nhất và ổn định |
-| `ownerEntityId` | string | ID Base/Fusion Defender hợp lệ |
-| `name` | string | Tên hiển thị |
-| `enabled` | boolean | Cờ bật/tắt Ability |
-| `powerCrystalCost` | integer | Không âm; **TBD theo từng Ability** |
-| `cooldownMs` | integer | Không âm, có thể cấu hình; **TBD** |
-| `targeting` | object | Loại mục tiêu, phạm vi Lane, hình dạng vùng |
-| `effects` | array | Danh sách Effect theo thứ tự xử lý |
-| `animationId` | string | Tham chiếu VFX nếu có |
-| `description` | string | Mô tả trên UI |
+| `id` | string | Ability ID duy nhất (`/^[a-z][a-z0-9_]*$/`) |
+| `ownerDefenderId` | string | ID Defender sở hữu hợp lệ trong `CombatSession` |
+| `powerCrystalCost` | integer | Số nguyên `>= 0` (`1` cho toàn bộ 12 Abilities MVP) |
+| `cooldownSeconds` | number | Số hữu hạn `>= 0` (`0` cho toàn bộ 12 Abilities MVP) |
+| `requiresTarget` | boolean | `true` nếu cần mục tiêu hợp lệ tại thời điểm kích hoạt |
+| `targetScope` | AbilityTargetScope | `'self' \| 'same-lane-enemies' \| 'same-lane-enemy-in-range' \| 'all-enemies' \| 'melee-enemy' \| 'area-3x3-closest-enemy' \| 'ally-3x3'` |
+| `allowWhileDisabled` | boolean? | Tùy chọn cho phép kích hoạt khi đang `stun`/`freeze` (mặc định `false`) |
+| `effects` | AbilityEffectDefinition[] | Mảng hiệu ứng xác nhận (`instant-damage`, `status`, `shield`, `redirect`, `projectile`, `multihit-projectile`, `multihit-melee`, `multihit-falling-area`) |
 
-Ví dụ JSON **chỉ minh họa cấu trúc**, không phải thông số đã cân bằng hoặc xác nhận:
+Ví dụ JSON chuẩn hóa cho `glacial_fortress` theo đúng thông số G09 đã xác nhận:
 
 ```json
 {
   "id": "glacial_fortress",
-  "ownerEntityId": "frost_guardian",
-  "name": "Glacial Fortress",
-  "enabled": true,
+  "ownerDefenderId": "frost_guardian",
   "powerCrystalCost": 1,
-  "cooldownMs": 0,
-  "targeting": {
-    "type": "SELF_AND_NEARBY_ENEMIES",
-    "laneScope": "CONFIGURED_AREA"
-  },
+  "cooldownSeconds": 0,
+  "requiresTarget": false,
+  "targetScope": "self",
   "effects": [
-    { "type": "APPLY_SHIELD", "amount": 100, "durationMs": 3000 },
-    { "type": "APPLY_SLOW", "slowPercent": 30, "durationMs": 2000, "radiusCells": 1 }
+    {
+      "kind": "shield",
+      "shieldMaxHpPct": 0.5,
+      "frontSlowZone": {
+        "slowPct": 0.5,
+        "residualDurationSeconds": 5
+      }
+    }
   ]
 }
 ```
 
-**Cảnh báo:** Tất cả giá trị số trong ví dụ chỉ là Placeholder minh họa Schema, **không phải** Power Crystal Cost, Cooldown, Shield, Duration hay Slow đã được duyệt. Không sao chép vào dữ liệu cân bằng chính thức khi chưa được xác nhận.
-
 ## 10. Tích hợp với các Game Systems
 
-- **Resource System:** Ability dùng Power Crystal, initial 0/cap 5. Wave overflow vào Pending Wave Reward; Item giữ timer khi không collect được. Gameplay Mechanics quy định values/spawn/lifetimes; Ability Cost/commit/rollback vẫn TBD.
-- **Entity System:** Owner ID và tham chiếu Special Ability phải hợp lệ; xóa hoặc Fusion Owner không tự kích hoạt Ability.
-- **Combat System:** Tái sử dụng Targeting, Damage, Projectile, Status Effect và Collision có thứ tự xử lý xác định.
-- **Game State:** Không kích hoạt khi `PAUSED`, `VICTORY` hoặc `DEFEAT`; Cooldown và Timers dừng khi Pause.
-- **UI:** Hiển thị Icon/Name, Cost, Availability, Targeting Preview và phản hồi thất bại.
-- **Event System (đề xuất):** `ability:requested`, `ability:activated`, `ability:failed`, `ability:cooldown_started`, `ability:cooldown_finished`.
-- **Data Architecture:** Kiểm tra Schema và tham chiếu; ưu tiên cấu hình Data-driven thay vì Hardcode theo từng Entity.
+- **Resource System:** Dùng `Power Crystal` (`initial 0 / cap 5`, sinh mỗi `30–60s`, lifetime `10s`, cộng thêm từ Enemy death & Wave Reward).
+- **Entity & Fusion System:** Xác thực Defender sở hữu sống; Fusion/tử trận gọi `cleanupEntityAbilityState` xóa buff bản thân, shield, redirect, slow zone, cooldown và cadence chưa bắn; không tự kích hoạt Ability khi Fusion.
+- **Combat & Wave System:** Tái sử dụng targeting và Damage Pipeline; Enemy chết do Ability/Burn/Projectile trao T-06 `enemy-reward` và kích hoạt kiểm tra T-09 Wave completion / Victory.
+- **UI & Event Bus Presentation (Phạm vi T-12 — `TBD`):** Tên event hiển thị UI (`ability:requested`, `ability:activated`, `ability:failed`, v.v.), chỉ báo preview vùng, animation, particle và âm thanh sẽ chốt ở giai đoạn `T-12`.
 
-## 11. Edge Cases
+## 11. Edge Cases đã chốt (`Confirmed`)
 
-- **Power Crystal vừa đủ chi phí:** Có thể kích hoạt và số dư trở về 0.
-- **Hai request kích hoạt liên tiếp quá nhanh:** Chỉ một lần Commit cho mỗi yêu cầu hợp lệ; không tiêu tài nguyên hoặc tạo hiệu ứng trùng.
-- **Owner chết trước Commit:** Từ chối và không tiêu Power Crystal.
-- **Owner chết sau Commit:** Effect/Projectile tiếp tục tồn tại theo chính sách riêng của Effect (TBD).
-- **Target chết trước Commit:** Từ chối hoặc chọn lại mục tiêu chỉ khi có cấu hình.
-- **Pause giữa Effect:** Dừng thời gian simulation; Resume không làm mất tiến trình đã trôi qua.
-- **Terminal events trong cùng tick:** Event Queue insertion sequence quyết định; terminal event resolve trước chốt kết quả, không blanket Defeat priority. Chi tiết generation vẫn TBD.
-- **Fusion khi đang chọn Target cho Ability:** Hủy lựa chọn nếu Owner bị tiêu thụ; không tự chuyển lựa chọn sang Fusion Output.
-- **Cost/Cooldown bằng 0 hoặc âm:** Chỉ cho phép 0 nếu cấu hình hỗ trợ rõ; giá trị âm không hợp lệ.
-- **Thiếu Power Crystal:** Không tạo Effect, không bắt đầu Cooldown, không tiêu tài nguyên.
+- **Power Crystal vừa đủ chi phí:** Kích hoạt thành công và số dư trừ về `0`.
+- **Hai request kích hoạt liên tiếp trong cùng tick:** Xếp hàng tuần tự; mỗi lần hợp lệ trừ `1` Crystal (hết Crystal ở request thứ hai thì request sau trả `insufficient-crystals`).
+- **Owner chết trước Commit:** Từ chối `invalid-owner` / `owner-dead`, không tốn Power Crystal.
+- **Owner chết hoặc bị Fusion sau Commit:**
+  - `blizzard`, `earthquake`, `inferno`, `absolute_zero`, `wildfire_rush` burn: status đã gắn lên Enemy giữ nguyên hết thời hạn.
+  - `arrow_storm`, `piercing_barrage`, `meteor_arrow_rain`: đạn đã bắn / mũi tên đang rơi tiếp tục hoàn thành đường bay; phát chưa bắn bị hủy.
+  - `alpha_howl`: buff trên đồng minh `3×3` giữ nguyên; buff trên chính Alpha Wolf kết thúc.
+  - `pack_frenzy`, `glacial_fortress` Shield/vùng, `iron_bastion` Shield/Redirect: kết thúc ngay (riêng residual Slow đã gắn của Glacial Fortress giữ nguyên).
+- **Mất mục tiêu giữa Multihit Cadence:** `arrow_storm`, `wildfire_rush` và `meteor_arrow_rain` (khi `0` Enemy trên sân) hủy sạch các phát chưa bắn; không hoàn lại Crystal đã dùng cho phát đầu tiên.
+- **Pause giữa Effect:** Đóng băng toàn bộ Game Time (`D-67`); Resume nối tiếp chính xác phần thời gian còn lại mà không bỏ bước hoặc xả dồn.
+- **Terminal events cùng tick:** Event resolved trước trong Unified Event Queue thắng (`G07 Decision B`), hủy mọi hành động tiếp theo.
 
-## 12. Acceptance Criteria của MVP
+## 12. Acceptance Criteria của MVP (`T-10 Headless Verified`)
 
-- [ ] Có đúng 12 Ability definitions tham chiếu tới 12 Defender (Steel Guardian Ability ID `iron_bastion`) trong MVP.
-- [ ] Mỗi Defender có đúng một Special Ability được định nghĩa.
-- [ ] Power Crystal độc lập với Energy.
-- [ ] Kích hoạt Ability yêu cầu đủ Power Crystal.
-- [ ] Power Crystal chỉ bị trừ một lần sau khi Effect Commit thành công.
-- [ ] Cooldown, nếu được cấu hình, ngăn kích hoạt cho đến khi kết thúc.
-- [ ] Kích hoạt thất bại không tiêu tài nguyên hoặc bắt đầu Cooldown.
-- [ ] Targeting và quy tắc xuyên Lane được khai báo rõ theo từng Ability.
-- [ ] Pause đóng băng Ability Timers và Effects.
-- [ ] Không thể kích hoạt Ability trong VICTORY/DEFEAT.
-- [ ] Request trùng lặp không được tạo Effect hoặc chi phí trùng.
-- [ ] Fusion không tiêu Power Crystal hoặc tự kích hoạt Ability.
-- [ ] Các Effect Type và Status Rules có thể kiểm thử độc lập.
+- [x] Có đúng `12` Ability definitions tham chiếu tới `12` Defender (bao gồm Steel Guardian `iron_bastion`) trong MVP.
+- [x] Mỗi Defender có đúng một Special Ability được định nghĩa và xác nhận.
+- [x] Power Crystal độc lập với Energy (`1` Crystal / kích hoạt, `0s` Cooldown).
+- [x] Kích hoạt Ability yêu cầu đủ Power Crystal và đúng điều kiện `requiresTarget`.
+- [x] Power Crystal chỉ bị trừ một lần sau khi Transaction Commit thành công.
+- [x] Cooldown cấu hình (`>= 0`) hoạt động độc lập với Power Crystal Cost và chặn tái kích hoạt khi chưa hết hạn.
+- [x] Kích hoạt thất bại không tiêu tài nguyên hoặc bắt đầu Cooldown.
+- [x] Targeting và quy tắc xuyên Lane được khai báo rõ theo từng Ability (`AC-03`, `AC-04`).
+- [x] Pause đóng băng toàn bộ Ability Timers, Cadences, Projectiles, Redirects và Statuses (`AC-15`).
+- [x] Không thể kích hoạt Ability trong `VICTORY` / `DEFEAT` (`AC-15`).
+- [x] Hai request trùng/liên tiếp được tuần tự hóa nguyên tử, không tạo hiệu ứng lậu (`AC-02`).
+- [x] Fusion không tiêu Power Crystal, không kế thừa Buff/Shield và không tự kích hoạt Ability (`AC-13`).
+- [x] Đủ `22` unit & integration tests bao phủ `AC-01`–`AC-17` trong `packages/game/tests/battle-abilities.test.ts` (đã nghiệm thu cục bộ `AC-01`–`AC-19` PASS).
+- [ ] Tích hợp UI kéo-thả Power Crystal, VFX, Animation và trải nghiệm thực tế trên UI *(thuộc phạm vi `T-12` / bản chơi thử 1-lane)*.
 
-## 13. Open Design Decisions
+## 13. Trạng thái Quyết định (Decision Status)
 
-| Chủ đề | Trạng thái |
-| --- | --- |
-| Power Crystal Cost chính xác của từng Ability | TBD |
-| Có Cooldown hay không và thời lượng theo Ability | TBD |
-| UX chọn mục tiêu cho Ability | TBD |
-| Hình dạng Area và phạm vi xuyên Lane | TBD |
-| Damage, Duration, số lần đánh và Multipliers | TBD |
-| Quy tắc cộng dồn/làm mới/miễn nhiễm Status Effect | TBD |
-| Giới hạn Power Crystal tối đa | Confirmed: 5; không còn TBD |
-| Random Power Crystal Item | Confirmed: attempt mỗi 30–60 giây Game Time, 1 Crystal/Item, lifetime 10 giây |
-| VFX, Audio và thời điểm Animation | TBD |
-| Effect tiếp tục tồn tại sau khi Owner chết/Fusion | TBD |
+| Chủ đề | Trạng thái | Ghi chú |
+| --- | --- | --- |
+| Power Crystal Cost chính xác của 12 Abilities | **Confirmed (`2026-11-21`)** | `1` Power Crystal / kích hoạt hợp lệ |
+| Cooldown theo Ability | **Confirmed (`2026-11-21`)** | `0` giây (không cooldown; hỗ trợ cấu hình `>= 0` ở engine) |
+| UX chọn mục tiêu & kích hoạt Ability | **Confirmed (`2026-11-21`)** | Kéo-thả `1` Power Crystal lên Defender khi `PLAYING` |
+| Hình dạng Area và phạm vi xuyên Lane | **Confirmed (`2026-11-21`)** | Quy định rõ theo từng Ability ở §3–§5 |
+| Damage, Duration, số lần đánh và Multipliers | **Confirmed (`2026-11-21`)** | Theo thông số tương đối `× AD`, `% Max HP`, `0.2s` / `1s` / `2s` / `4s` / `5s` / `8s` ở §4–§5 *(có thể điều chỉnh sau playtest)* |
+| Quy tắc cộng dồn / làm mới / miễn nhiễm Status Effect | **Confirmed (`2026-11-21`)** | §8 (`FR1–FR3`, pipeline `Armor/Res → Redirect → Shield → HP`) |
+| Giới hạn Power Crystal tối đa | **Confirmed** | Cap `5` |
+| Random Power Crystal Item | **Confirmed** | Attempt mỗi `30–60s` Game Time, `1` Crystal/Item, lifetime `10s` |
+| Effect tồn tại sau khi Owner chết / Fusion | **Confirmed (`2026-11-21`)** | §11 (đạn đã bắn & Enemy status giữ; cadence chưa bắn hủy; Shield/Redirect/self-buff xóa; ally `alpha_howl` giữ) |
+| VFX, Audio, thời điểm Animation & UI Bus Events | **TBD (Phạm vi T-12)** | Chờ tích hợp UI/Assets ở T-12 (Audio không phải blocker MVP) |
 
 ## 14. Tài liệu liên quan
 
-- `docs/product/GDD.md`
-- `docs/product/GAMEPLAY_MECHANICS.md`
-- `docs/game-design/ENTITY_CATALOG.md`
-- `docs/game-design/FUSION_RECIPES.md`
-- `docs/game-design/GAME_BALANCING.md`
-- `docs/architecture/DATA_ARCHITECTURE.md`
+- [GDD.md](../product/GDD.md)
+- [GAMEPLAY_MECHANICS.md](../product/GAMEPLAY_MECHANICS.md)
+- [ENTITY_CATALOG.md](ENTITY_CATALOG.md)
+- [FUSION_RECIPES.md](FUSION_RECIPES.md)
+- [GAME_BALANCING.md](GAME_BALANCING.md)
+- [DATA_ARCHITECTURE.md](../architecture/DATA_ARCHITECTURE.md)
+- [T-10 Implementation Plan](../development/T-10-SPECIAL-ABILITIES-IMPLEMENTATION-PLAN.md)
+- [T-10 Acceptance Report](../reports/T-10-FINAL-ACCEPTANCE.md)
 
 ---
 
-**Kết thúc tài liệu — `ABILITY_CATALOG.md` — Draft v1.0 (Tiếng Việt)**
+**Kết thúc tài liệu — `ABILITY_CATALOG.md` — Confirmed v2.0 (2026-11-21)**
