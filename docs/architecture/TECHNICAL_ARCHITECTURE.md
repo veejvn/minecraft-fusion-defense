@@ -142,7 +142,7 @@ AI Agent phải kiểm tra codebase hiện tại trước khi đề xuất các 
 
 ## 11. Tài liệu liên quan
 
-- [GDD — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81e4af03d52a246e9a7a)
-- [MVP Scope — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb)
-- [Gameplay Mechanics — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81eeaf62f611c5342660)
-- [Tình trạng tài liệu — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81aab0cdf6dc190b711d)
+- [GDD — Minecraft Fusion Defense](../product/GDD.md)
+- [MVP Scope — Minecraft Fusion Defense](../product/MVP_SCOPE.md)
+- [Gameplay Mechanics — Minecraft Fusion Defense](../product/GAMEPLAY_MECHANICS.md)
+- [Tình trạng tài liệu — Minecraft Fusion Defense](../DOCUMENTATION_STATUS.md)
