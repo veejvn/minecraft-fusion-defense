@@ -45,5 +45,5 @@ Các phần dưới là hướng dẫn Proposed nếu audio được phê duyệ
 
 ## 6. Tham chiếu
 
-- [MVP Scope — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81abac99c4d6af32cbdb)
-- [Game Engine Architecture — Minecraft Fusion Defense](https://app.notion.com/p/40c62d2ce36e81368230c8786623a06b)
+- [MVP Scope — Minecraft Fusion Defense](../product/MVP_SCOPE.md)
+- [Game Engine Architecture — Minecraft Fusion Defense](../architecture/GAME_ENGINE_ARCHITECTURE.md)
