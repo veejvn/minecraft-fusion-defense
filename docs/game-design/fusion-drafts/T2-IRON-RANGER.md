@@ -23,7 +23,7 @@
 | Unlock rule | Unlocked at the start (cả Iron Golem và Skeleton mở từ đầu) | **Confirmed** |
 | Combat role | Heavy Ranged Marksman — xạ thủ sát thương hạng nặng, bắn chậm nhưng sát thương lớn, chuyên trị kẻ địch máu cao, sợ kẻ địch tốc độ cao. | **Confirmed** |
 | Normal attack | Steel Bolt (bắn chậm, sát thương đơn mục tiêu rất lớn) | **Confirmed** |
-| Special Ability | Siege Volley (`1` Power Crystal, `0s` cooldown, `same-lane-enemy-in-range`: bắn loạt `3` chốt thép xuyên giáp nặng cách nhau `0.3s`, mỗi chốt gây `200%` Attack Damage) | **Confirmed** |
+| Special Ability | Siege Volley (`1` Power Crystal, `0s` cooldown, `same-lane-enemy-in-range`: bắn `1` chốt thép hạng nặng xuyên giáp cực đại trúng mục tiêu đầu tiên, gây `450%` Attack Damage + `20%` Max HP của mục tiêu và Stun `1s`) | **Confirmed (v2.2)** |
 | Ability ID | `siege_volley` | **Confirmed** |
 
 ## 2. Công thức Fusion

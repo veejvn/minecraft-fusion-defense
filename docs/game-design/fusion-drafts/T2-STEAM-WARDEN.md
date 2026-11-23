@@ -23,7 +23,7 @@
 | Unlock rule | Tự động mở khi cả Snow Golem và Blaze unlock | **Confirmed** |
 | Combat role | Elemental Control — điều khiển nhịp chiến đấu bằng vùng hơi nước áp suất cao `3×3` xung quanh bản thân. | **Confirmed** |
 | Normal attack | Thermal Burst | **Confirmed** |
-| Special Ability | Thermal Collapse (`1` Power Crystal, `0s` cooldown, `area-3x3-self`: giải phóng vụ nổ hơi nước trong vùng `3×3` xung quanh Steam Warden gây `250%` Attack Damage hệ Fire xuyên giáp + gắn `Slow -50%` trong `5s` cho toàn bộ Enemy trong vùng `3×3`) | **Confirmed** |
+| Special Ability | Thermal Collapse (`1` Power Crystal, `0s` cooldown, `area-3x3-self`: giải phóng vụ nổ hơi nước trong vùng `3×3` xung quanh Steam Warden gây `250%` Attack Damage hệ Fire xuyên giáp — tăng lên `400%` Attack Damage (`+60%` Sốc Nhiệt) nếu địch đang `Burn` hoặc `Freeze`, đồng thời gắn `Slow -50%` trong `5s`) | **Confirmed (v2.2)** |
 | Ability ID | `thermal_collapse` | **Confirmed** |
 
 ## 2. Công thức Fusion

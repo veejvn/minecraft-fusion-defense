@@ -23,7 +23,7 @@
 | Unlock rule | Tự động mở khi Wolf unlock (Skeleton mở từ đầu) | **Confirmed** |
 | Combat role | Agile Melee / Hunter — cận chiến cơ động tốc độ đánh rất nhanh, xuyên giáp mục tiêu đơn. | **Confirmed** |
 | Normal attack | Bone Claw | **Confirmed** |
-| Special Ability | Predator Mark (`1` Power Crystal, `0s` cooldown, `melee-enemy`: tự buff `+100%` Attack Speed & `+50%` Attack Damage trong `6s` và tung ngay `4` đòn cào xương xuyên giáp cách nhau `0.2s`, mỗi đòn `110%` Attack Damage) | **Confirmed** |
+| Special Ability | Predator Mark (`1` Power Crystal, `0s` cooldown, `same-lane-enemies`: gắn Dấu Ấn Săn Mồi lên Enemy máu cao nhất trên Lane khiến nó nhận thêm `+40%` sát thương từ mọi nguồn trong `6s`, đồng thời tự buff `+50%` Attack Speed `6s` và tung `1` đòn cào xương xuyên giáp `250%` Attack Damage lên mục tiêu bị đánh dấu) | **Confirmed (v2.2)** |
 | Ability ID | `predator_mark` | **Confirmed** |
 
 ## 2. Công thức Fusion

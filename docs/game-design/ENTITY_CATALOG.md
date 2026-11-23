@@ -27,7 +27,7 @@ MVP: **5 Base Defenders, 15 Tier-2 Fusion Defenders, 4 Enemy types**, one Grassl
 | `iron_golem` | Iron Golem | 1 | Tank | Melee impact | Earthquake |
 | `skeleton` | Skeleton | 1 | Ranged Damage | Bow projectile | Arrow Storm |
 | `wolf` | Wolf | 1 | Melee Damage | Fast bite | Pack Frenzy |
-| `blaze` | Blaze | 1 | Fire Damage | Fire projectile, Burn | Inferno |
+| `blaze` | Blaze | 1 | Fire Damage | Lobbed fire projectile (arc trajectory), Burn | Inferno |
 
 Each Defender Definition must include: stable ID, display name, tier, role, HP, damage, attack speed, attack range, attack type, targeting strategy, summon Energy cost, specialAbilityId, animation/asset references, and optional status effects. **All numerical stats and precise targeting choices remain TBD until balancing.**
 

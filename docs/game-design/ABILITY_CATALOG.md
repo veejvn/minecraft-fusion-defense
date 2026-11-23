@@ -1,6 +1,6 @@
 **Đường dẫn trong repository:** `docs/game-design/ABILITY_CATALOG.md`  
 **Dự án:** Minecraft Fusion Defense  
-**Trạng thái:** Confirmed v2.1 — Đã được Owner xác nhận chính thức ngày `2026-11-21` và mở rộng lên đầy đủ **20 Special Abilities** ngày `2026-11-23` (5 Base Defenders + 15 Tier-2 Fusion Defenders; chỉ giữ lại VFX/Animation/UI Events thuộc phạm vi `T-12` ở trạng thái `TBD`)  
+**Trạng thái:** Confirmed v2.2 — Đã được Owner xác nhận chính thức ngày `2026-11-21` và hoàn tất đợt rà soát/refactor toàn bộ **20 Special Abilities** ngày `2026-11-23` (5 Base Defenders + 15 Tier-2 Fusion Defenders; chỉ giữ lại VFX/Animation/UI Events thuộc phạm vi `T-12` ở trạng thái `TBD`)  
 **Phạm vi:** MVP Desktop Web; chiến trường 5 × 9; 5 Base Defenders; 15 Fusion Defenders; 4 Enemy (`zombie`, `husk`, `vindicator`, `pillager`); 5 Waves tại Grassland.
 
 **Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
@@ -28,33 +28,33 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
 
 | Ability ID | Tên Ability | Defender sở hữu | Loại | Cần mục tiêu (`requiresTarget`) | Chi phí / Cooldown | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- |
-| `blizzard` | Blizzard | `snow_golem` | Base | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed** |
+| `blizzard` | Blizzard | `snow_golem` | Base | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
 | `earthquake` | Earthquake | `iron_golem` | Base | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed** |
 | `arrow_storm` | Arrow Storm | `skeleton` | Base | Có (`same-lane-enemy-in-range`) | `1` Crystal / `0s` | **Confirmed** |
 | `pack_frenzy` | Pack Frenzy | `wolf` | Base | Không (`self`) | `1` Crystal / `0s` | **Confirmed** |
-| `inferno` | Inferno | `blaze` | Base | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed** |
+| `inferno` | Inferno | `blaze` | Base | Có (`same-lane-enemies`, lobbed arc) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
 | `piercing_barrage` | Piercing Barrage | `skeleton_sniper` | Fusion | Không (`same-lane` proactive) | `1` Crystal / `0s` | **Confirmed** |
 | `absolute_zero` | Absolute Zero | `ice_golem` | Fusion | Có (`all-enemies`) | `1` Crystal / `0s` | **Confirmed** |
 | `glacial_fortress` | Glacial Fortress | `frost_guardian` | Fusion | Không (`self` + front tile) | `1` Crystal / `0s` | **Confirmed** |
-| `wildfire_rush` | Wildfire Rush | `flame_fang` | Fusion | Có (`melee-enemy`) | `1` Crystal / `0s` | **Confirmed** |
+| `wildfire_rush` | Wildfire Rush | `flame_fang` | Fusion | Có (`all-enemies` — first per lane) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
 | `meteor_arrow_rain` | Meteor Arrow Rain | `inferno_archer` | Fusion | Có (`area-3x3-closest-enemy`) | `1` Crystal / `0s` | **Confirmed** |
 | `alpha_howl` | Alpha Howl | `alpha_wolf` | Fusion | Không (`ally-3x3`) | `1` Crystal / `0s` | **Confirmed** |
 | `iron_bastion` | Iron Bastion | `steel_guardian` | Fusion | Không (`self` + `ally-3x3`) | `1` Crystal / `0s` | **Confirmed** |
-| `siege_volley` | Siege Volley | `iron_ranger` | Fusion | Có (`same-lane-enemy-in-range`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `siege_volley` | Siege Volley | `iron_ranger` | Fusion | Có (`same-lane-enemy-in-range`) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
 | `guardian_charge` | Guardian Charge | `ironfang_guardian` | Fusion | Không (`same-lane` proactive) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
 | `eruption` | Eruption | `magma_colossus` | Fusion | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
 | `glacier_barrage` | Glacier Barrage | `frostbite_ranger` | Fusion | Không (`same-lane` proactive) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
 | `winter_pounce` | Winter Pounce | `frostfang` | Fusion | Có (`front-3-cells`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
-| `thermal_collapse` | Thermal Collapse | `steam_warden` | Fusion | Có (`area-3x3-self`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
-| `predator_mark` | Predator Mark | `bonefang_hunter` | Fusion | Có (`melee-enemy`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `thermal_collapse` | Thermal Collapse | `steam_warden` | Fusion | Có (`area-3x3-self`) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
+| `predator_mark` | Predator Mark | `bonefang_hunter` | Fusion | Có (`same-lane-enemies` / closest) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
 | `solar_cataclysm` | Solar Cataclysm | `infernal_archon` | Fusion | Có (`all-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
 
 ## 4. Special Abilities của 5 Base Defenders (`Confirmed`)
 
-### 4.1. Blizzard — Snow Golem (`blizzard`)
+### 4.1. Blizzard — Snow Golem (`blizzard`, Updated `2026-11-23`)
 
-- **Mục tiêu thiết kế:** Khống chế đám đông bằng băng trên cùng Lane.
-- **Hiệu ứng xác nhận:** Áp dụng **Slow `-50%` tốc độ di chuyển trong `5` giây** lên toàn bộ Enemy đang có mặt trên **cùng Lane** tại thời điểm kích hoạt.
+- **Mục tiêu thiết kế:** Khống chế đám đông bằng băng kèm sát thương băng nhẹ trên cùng Lane.
+- **Hiệu ứng xác nhận:** Gây ngay **`1× Attack Damage` hệ Ice** và áp dụng **Slow `-50%` tốc độ di chuyển trong `5` giây** lên toàn bộ Enemy đang có mặt trên **cùng Lane** tại thời điểm kích hoạt.
 - **Điều kiện & Quy tắc:** `requiresTarget: true` (từ chối `no-target` nếu không có Enemy trên Lane). Cùng nguồn làm mới thời gian (`FR1`); nhiều Slow chồng nhau chỉ lấy mức làm chậm mạnh nhất (`strongest wins`). Slow đã gắn tiếp tục tồn tại nếu mục tiêu đổi Lane hoặc Owner chết/Fusion.
 
 ### 4.2. Earthquake — Iron Golem (`earthquake`)
@@ -75,13 +75,13 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
 - **Hiệu ứng xác nhận:** Tự buff **`+100% Attack Speed` và `+50% Attack Damage` trong `8` giây**.
 - **Điều kiện & Quy tắc:** `requiresTarget: false` (kích hoạt được khi không có Enemy). Cùng nguồn làm mới không cộng dồn; cộng dồn **tuyến tính trên chỉ số gốc** (`additive base`) với các Buff khác nguồn (như `alpha_howl`). Stun vẫn chặn tấn công thường nhưng không đóng băng bộ đếm thời gian Buff. Wolf chết hoặc bị tiêu thụ cho Fusion thì tự mất Buff.
 
-### 4.5. Inferno — Blaze (`inferno`)
+### 4.5. Inferno — Blaze (`inferno`, Refactored `2026-11-23`)
 
-- **Mục tiêu thiết kế:** Sát thương lửa diện rộng xuyên giáp cùng Lane kết hợp thiêu đốt theo thời gian.
-- **Hiệu ứng xác nhận:** Gây ngay **`3× Attack Damage` hệ Fire** (`armorPiercing: true`, chịu `Fire Resistance`) và gắn **Burn `25% Attack Damage/giây` trong `5` giây** (`1 tick/giây`, `damageType: 'fire'`) cho toàn bộ Enemy đang có mặt trên **cùng Lane**.
-- **Điều kiện & Quy tắc:** `requiresTarget: true`. Sát thương Burn snapshot Attack Damage hiện tại của Blaze lúc gắn/làm mới; đòn hit hợp lệ có sát thương sau giảm trừ bằng `0` vẫn confirm hit và gắn Burn. Cùng nguồn làm mới thời gian/tick; khác nguồn nhảy sát thương độc lập. Burn tiếp tục tồn tại sau khi Blaze chết/Fusion hoặc mục tiêu đổi Lane.
+- **Mục tiêu thiết kế:** Pháo kích lửa theo quỹ đạo **đường cong (lobbed arc)** — đồng nhất với đòn đánh thường bắn cầu lửa đường cong mới của Blaze (khác biệt hoàn toàn với bắn thẳng của Skeleton và đòn nổ cả Lane của Magma Colossus).
+- **Hiệu ứng xác nhận:** Phóng chuỗi **`4` cầu lửa theo quỹ đạo đường cong (lobbed arc)** cách nhau **`0.25` giây** nhắm vào Enemy trên **cùng Lane** (mỗi cầu lửa rơi trúng ô mục tiêu đang đứng, gây nổ trong ô rơi). Mỗi cầu lửa gây **`125% Attack Damage` hệ Fire** (`armorPiercing: true`, chịu `Fire Resistance`) và gắn **Burn `25% Attack Damage/giây` trong `5` giây** (`1 tick/giây`, `damageType: 'fire'`) cho toàn bộ Enemy nằm trong ô rơi.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (`same-lane-enemies`). Cầu lửa đã phóng tiếp tục bay theo đường cong tới ô đích nếu Blaze chết/Fusion; các phát chưa phóng bị hủy nếu Blaze chết/Fusion hoặc hết Enemy trên Lane; Stun/Freeze tạm dừng cadence (`FR3`). Sát thương Burn snapshot Attack Damage lúc phát đạn; Burn tồn tại độc lập sau khi Blaze chết/Fusion.
 
-## 5. Special Abilities của 7 Fusion Defenders (`Confirmed`)
+## 5. Special Abilities của 15 Fusion Defenders (`Confirmed`)
 
 ### 5.1. Piercing Barrage — Skeleton Sniper (`piercing_barrage`)
 
@@ -105,11 +105,11 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
   - Kích hoạt lại khi Shield cũ chưa vỡ sẽ đặt lại lượng Shield về `50% Max HP` mới mà **giữ nguyên `shieldId` và thứ tự tạo (`creationOrder`)** (`FR2`).
   - Shield hấp thụ trước HP (kể cả sát thương xuyên Armor, trừ cờ `shieldPiercing`). Nếu Frost Guardian chết hoặc Fusion thì Shield và vùng biến mất, nhưng residual Slow đã chuyển/đang gắn trên Enemy giữ nguyên đến hết hạn.
 
-### 5.4. Wildfire Rush — Flame Fang (`wildfire_rush`)
+### 5.4. Wildfire Rush — Flame Fang (`wildfire_rush`, Refactored `2026-11-23`)
 
-- **Mục tiêu thiết kế:** Xả chuỗi đòn cận chiến nhanh tại chỗ và thiêu đốt mục tiêu.
-- **Hiệu ứng xác nhận:** Thực hiện **`5` đòn cận chiến đứng tại chỗ** (**chốt không lao tới / không dash**) cách nhau **`0.2` giây** trong tầm cận chiến. Mỗi đòn gây **`100%` Attack Damage hiện tại** (sát thương vật lý, snapshot tại thời điểm tung đòn) và khi trúng mục tiêu sẽ gắn **Burn `25% Attack Damage/giây` trong `5` giây** (`1 tick/giây`, hệ Fire).
-- **Điều kiện & Quy tắc:** `requiresTarget: true` (yêu cầu Enemy trong tầm cận chiến). Mỗi nhịp đánh retarget lại mục tiêu hợp lệ; Stun tạm dừng cadence giữ nguyên thời gian chờ còn lại (`FR3`); chết/Fusion hoặc hết mục tiêu trong tầm sẽ hủy các đòn chưa tung.
+- **Mục tiêu thiết kế:** Triệu hồi bầy `5` sói lửa nhảy vồ vào kẻ địch đi đầu của cả `5` Lane và gây thiêu đốt dữ dội.
+- **Hiệu ứng xác nhận:** Triệu hồi tối đa **`5` con sói lửa** (mỗi Lane `1` con nếu Lane đó đang có Enemy sống) nhảy thẳng tới cắn **kẻ địch đầu tiên (gần căn cứ nhất) trên mỗi Lane (`0..4`)**. Mỗi cú cắn gây **`250% Attack Damage` hệ Fire** (`armorPiercing: true`, snapshot lúc kích hoạt) và gắn **Thiêu Đốt Dữ Dội — Burn `50% Attack Damage/giây` trong `6` giây** (`1 tick/giây`, `damageType: 'fire'`).
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (`all-enemies` — yêu cầu ít nhất `1` Enemy sống trên toàn sân; chỉ triệu hồi sói lửa tại các Lane có Enemy, không lãng phí trên Lane trống). Sói lửa đã triệu hồi hoàn thành cú vồ và Burn giữ nguyên hết `6` giây ngay cả khi Flame Fang chết hoặc Fusion.
 
 ### 5.5. Meteor Arrow Rain — Inferno Archer (`meteor_arrow_rain`)
 
@@ -140,11 +140,11 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
   - Kích hoạt lại khi hiệu ứng cũ chưa hết sẽ đặt lại Shield (`FR2` giữ nguyên `shieldId`/`creationOrder`) và đặt lại đồng hồ `8` giây mà không cộng dồn.
   - Sát thương chuyển hướng có thể hạ gục Steel Guardian (khi Guardian chết, phần sát thương dư **không tràn ngược lại đồng minh**). Guardian chết hoặc Fusion sẽ chấm dứt ngay vùng bảo vệ `3×3` và Shield của nó.
 
-### 5.8. Siege Volley — Iron Ranger (`siege_volley`, Confirmed `2026-11-23`)
+### 5.8. Siege Volley — Iron Ranger (`siege_volley`, Refactored `2026-11-23`)
 
-- **Mục tiêu thiết kế:** Xạ thủ sát thương hạng nặng chuyên kết liễu kẻ địch máu nhiều (như Husk) với tốc độ bắn chậm nhưng hỏa lực xuyên giáp rất lớn; điểm yếu là kẻ địch tốc độ cao (như Vindicator).
-- **Hiệu ứng xác nhận:** Bắn loạt **`3` chốt thép hạng nặng xuyên giáp** cách nhau **`0.3` giây** (`multihit-projectile`, `armorPiercing: true`, `pierce: false`), mỗi phát gây **`200% Attack Damage`** vật lý dọc **cùng Lane**.
-- **Điều kiện & Quy tắc:** `requiresTarget: true` (`same-lane-enemy-in-range`). Stun/Freeze tạm dừng cadence; chết/Fusion hoặc hết mục tiêu hủy phát chưa bắn.
+- **Mục tiêu thiết kế:** Xạ thủ sát thương hạng nặng bắn chậm nhưng sát thương đơn mục tiêu cực lớn, chuyên kết liễu kẻ địch máu nhiều (như Husk) và yếu trước kẻ địch tốc độ cao (như Vindicator).
+- **Hiệu ứng xác nhận:** Bắn **`1` chốt thép hạng nặng xuyên giáp cực đại** (`projectile`, `armorPiercing: true`, `pierce: false`, tốc độ `1.4×`) trúng **mục tiêu đầu tiên** trên **cùng Lane**, gây **`450% Attack Damage` vật lý cộng thêm `+20% Max HP` của mục tiêu** và gây **Stun `1` giây** lên mục tiêu trúng đòn.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (`same-lane-enemy-in-range`). Không xuyên qua mục tiêu đầu tiên (dễ bị kẻ địch nhanh/máu giấy đứng trước chặn đòn nếu không bảo vệ). Chốt thép đã bắn tiếp tục bay nếu Iron Ranger chết/Fusion.
 
 ### 5.9. Guardian Charge — Ironfang Guardian (`guardian_charge`, Confirmed `2026-11-23`)
 
@@ -170,17 +170,17 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
 - **Hiệu ứng xác nhận:** Quét sát thương băng trong phạm vi **`3` ô phía trước** (`col` đến `col + 3` trên **cùng Lane**, `front-3-cells`), gây **`250% Attack Damage`** hệ Ice — và **tăng thêm `+60%` sát thương (tổng `400% Attack Damage`)** lên bất kỳ Enemy nào đang chịu hiệu ứng băng giá (`slow` hoặc `freeze`), đồng thời gắn **Slow `-50%` trong `4` giây**.
 - **Điều kiện & Quy tắc:** `requiresTarget: true` (`front-3-cells` — cần ít nhất `1` Enemy trong phạm vi `3` ô phía trước trên cùng Lane).
 
-### 5.13. Thermal Collapse — Steam Warden (`thermal_collapse`, Confirmed `2026-11-23`)
+### 5.13. Thermal Collapse — Steam Warden (`thermal_collapse`, Refactored `2026-11-23`)
 
-- **Mục tiêu thiết kế:** Vụ nổ áp suất hơi nước bao phủ khu vực `3×3` xung quanh chính Steam Warden.
-- **Hiệu ứng xác nhận:** Kích nổ hơi nước trong vùng **`3×3` lấy tâm là chính Steam Warden** (`area-3x3-self`, `|row - ownerRow| <= 1` và `|col - ownerCol| <= 1`), gây **`250% Attack Damage` hệ Fire** (`armorPiercing: true`) và gắn **Slow `-50%` trong `5` giây** cho toàn bộ Enemy trong vùng `3×3`.
+- **Mục tiêu thiết kế:** Vụ nổ áp suất hơi nước bao phủ khu vực `3×3` xung quanh chính Steam Warden, kích hoạt hiệu ứng **Sốc Nhiệt (Thermal Shock)** lên kẻ địch đang bị thiêu đốt hoặc đóng băng.
+- **Hiệu ứng xác nhận:** Kích nổ hơi nước trong vùng **`3×3` lấy tâm là chính Steam Warden** (`area-3x3-self`, `|row - ownerRow| <= 1` và `|col - ownerCol| <= 1`), gây **`250% Attack Damage` hệ Fire** (`armorPiercing: true`) — và **gây Sốc Nhiệt tăng thêm `+60%` sát thương (tổng `400% Attack Damage`)** lên bất kỳ Enemy nào trong vùng đang chịu **`Burn`** hoặc **`Freeze`**, đồng thời gắn **Slow `-50%` trong `5` giây**.
 - **Điều kiện & Quy tắc:** `requiresTarget: true` (`area-3x3-self` — cần ít nhất `1` Enemy trong vùng `3×3` quanh Steam Warden).
 
-### 5.14. Predator Mark — Bonefang Hunter (`predator_mark`, Confirmed `2026-11-23`)
+### 5.14. Predator Mark — Bonefang Hunter (`predator_mark`, Refactored `2026-11-23`)
 
-- **Mục tiêu thiết kế:** Tự cường hóa bản năng săn mồi và dồn chuỗi đòn cào xương xuyên giáp vào mục tiêu cận chiến.
-- **Hiệu ứng xác nhận:** Tự buff **`+100% Attack Speed` và `+50% Attack Damage` trong `6` giây** (`self` buff) đồng thời thực hiện chuỗi **`4` đòn cận chiến xuyên giáp** cách nhau **`0.2` giây** (`multihit-melee`, `armorPiercing: true`), mỗi đòn gây **`110% Attack Damage`** vật lý.
-- **Điều kiện & Quy tắc:** `requiresTarget: true` (`melee-enemy`).
+- **Mục tiêu thiết kế:** Đánh dấu con mồi quan trọng nhất trên Lane làm mục tiêu suy yếu (nhận thêm sát thương từ mọi nguồn), kết hợp cú cào xương xuyên giáp dồn sát thương.
+- **Hiệu ứng xác nhận:** Chọn **mục tiêu ưu tiên trên cùng Lane** (Enemy máu cao nhất, hòa chọn gần căn cứ nhất) để gắn **Dấu Ấn Săn Mồi (`vulnerable` / `mark`) khiến mục tiêu nhận thêm `+40%` sát thương từ mọi nguồn trong `6` giây**, đồng thời Bonefang Hunter tự buff **`+50%` Attack Speed trong `6` giây** và tung ngay **`1` đòn cào xương xuyên giáp** gây **`250% Attack Damage`** vật lý lên mục tiêu bị đánh dấu (nếu mục tiêu ở trong tầm đánh của Bonefang Hunter, hoặc gây trực tiếp khi nhảy cào xuyên giáp trong tầm Lane).
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (`same-lane-enemies`). Hiệu ứng `vulnerable` (`+40%` sát thương nhận vào) áp dụng sau Armor/Resistance trong Damage Pipeline (cùng nguồn làm mới thời lượng; nhiều dấu ấn lấy mức mạnh nhất `strongest wins`). Dấu Ấn trên Enemy giữ nguyên hết `6` giây ngay cả khi Bonefang Hunter chết/Fusion.
 
 ### 5.15. Solar Cataclysm — Infernal Archon (`solar_cataclysm`, Confirmed `2026-11-23`)
 
@@ -217,15 +217,16 @@ Khớp trực tiếp với `AbilityValidationReason` trong [ability-state.ts](..
 ## 8. Quy tắc Status Effect & Thứ tự Xử lý Sát thương (`Confirmed`)
 
 - **Pipeline sát thương (`D-62`):** Mọi sát thương qua `applyDamagePipeline` tuân theo thứ tự nghiêm ngặt:
-  **`Armor / Fire Resistance` → `Redirect (Iron Bastion)` → `Shield (Oldest-First)` → `HP`**
+  **`Armor / Fire Resistance` → `Vulnerable / Mark (+% Damage Taken)` → `Redirect (Iron Bastion)` → `Shield (Oldest-First)` → `HP`**
   - Cờ `armorPiercing: true` bỏ qua `Armor`; `shieldPiercing: true` bỏ qua `Shield`.
   - Đòn hợp lệ có sát thương sau giảm trừ bằng `0` vẫn trả về `hitConfirmed = true` để các hiệu ứng on-hit (như `Burn`) vẫn gắn bình thường.
 - **Status Identity & Làm mới (`FR1`):** Khóa định danh `(targetEntityId, sourceEntityId, abilityId, kind)`. Tái áp dụng cùng khóa giữ nguyên `statusId`, tăng `version++` và làm mới thời lượng (kèm snapshot mới với `Burn`).
 - **Chồng hiệu ứng (`D-63`):**
   - `slow`: lấy mức mạnh nhất (`max(slowPct)`).
+  - `vulnerable` (`mark` từ `predator_mark`): lấy mức tăng sát thương nhận vào mạnh nhất (`max(damageTakenBonusPct)`).
   - `stun` / `freeze`: hiệu lực khi còn ít nhất `1` instance hoạt động; `freeze` kiểm tra `freezeImmune` và rút ngắn theo `1 - freezeResistancePct`.
   - `burn`: nhảy sát thương hệ Fire mỗi `1.0s` Game Time; các nguồn khác nhau nhảy độc lập.
-  - `buff`: các nguồn khác nhau (`pack_frenzy`, từng `alpha_howl`) cộng dồn tuyến tính trên chỉ số gốc (`baseDamage`, `baseAttackSpeed`).
+  - `buff`: các nguồn khác nhau (`pack_frenzy`, từng `alpha_howl`, `predator_mark`) cộng dồn tuyến tính trên chỉ số gốc (`baseDamage`, `baseAttackSpeed`).
 - **Thứ tự mỗi Tick (`D-66`):** `Phase A0` (giảm Cooldown, chạy Multihit Cadence, cập nhật Projectile, đồng bộ Glacial Slow Zone, chạy Status & Burn tick, giảm Redirect timer, xử lý chết Phase A0) → `Phase A` (Enemy di chuyển + swept projectile crossing) → `Phase B` (tấn công cơ bản qua Damage Pipeline) → `Phase C` (xử lý chết, trao T-06 reward, kiểm tra Wave/Victory T-09).
 
 ## 9. Data-driven Schema (Đồng bộ `AbilityDefinition` T-10)

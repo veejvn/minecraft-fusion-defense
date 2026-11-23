@@ -17,7 +17,7 @@
 
 ### Phạm vi MVP đã xác nhận (`docs/product/ROADMAP.md`, `README.md`)
 - **Level & Grid:** 1 Grassland Level, Grid 5 Rows × 9 Columns, 5 Waves; English-only UI.
-- **Thực thể & Fusion:** 5 Base Defenders, **15 Tier-2 Fusion Defenders** (mở rộng chính thức từ 7 lên toàn bộ 15 cặp ghép ngày `2026-11-23`), 4 Enemy Types (Zombie, Husk, Vindicator, Pillager — Owner đổi Spider sang Vindicator ngày 2026-11-21), **15 Fusion Recipes** (Fusion miễn phí mọi lane/khoảng cách, output tại Target Cell), **20 Special Abilities** (`ABILITY_CATALOG.md` Confirmed v2.1).
+- **Thực thể & Fusion:** 5 Base Defenders, **15 Tier-2 Fusion Defenders** (mở rộng chính thức từ 7 lên toàn bộ 15 cặp ghép ngày `2026-11-23`), 4 Enemy Types (Zombie, Husk, Vindicator, Pillager — Owner đổi Spider sang Vindicator ngày 2026-11-21), **15 Fusion Recipes** (Fusion miễn phí mọi lane/khoảng cách, output tại Target Cell), **20 Special Abilities** (`ABILITY_CATALOG.md` Confirmed v2.2 — đã hoàn tất rà soát/refactor 6 kỹ năng `blizzard`, `inferno` lobbed arc, `wildfire_rush` 5 sói lửa 5 lane, `siege_volley`, `thermal_collapse` Sốc Nhiệt, `predator_mark` Vulnerable `+40%`).
 - **Tài nguyên:** Energy dùng để Summon; Power Crystal (cap 5) dùng cho Special Abilities (`1` Crystal, `0s` cooldown).
 - **Tiến độ & Unlock:** Starter Base: Iron Golem, Skeleton; Starter Recipes (3): Skeleton Sniper, Steel Guardian, Iron Ranger. Snow Golem (First Grassland Victory), Wolf (50 kills tích lũy trong trận Victory), Blaze (5 Grassland Victories); mọi Fusion Recipe tự mở khi cả 2 Base nguyên liệu mở. Replay Victory được cộng tiến độ, Defeat không cộng; Fusion optional cho điều kiện thắng.
 
