@@ -1,7 +1,7 @@
 # MEMORY_BANK — Minecraft Fusion Defense
 
-**Cập nhật lần cuối:** 2026-11-23T18:10:00+07:00  
-**Nhánh Git hiện tại:** `main` (đã hoàn tất triển khai **`T-12`** + 4 bản vá UX/gameplay từ playtest thực tế: Base Defender summon cooldowns, đồng bộ `onToolChange` giữa Phaser & React, kéo-thả Summon/Crystal kèm ghost sprite + summon pop VFX, và responsive `100dvh` single-viewport không cuộn; đã kiểm chứng xanh 100% toàn bộ test/build local; chưa commit/push)
+**Cập nhật lần cuối:** 2026-11-23T21:44:00+07:00  
+**Nhánh Git hiện tại:** `main` (đã hoàn tất 49/49 PNG pixel-art assets gồm `fusion_glove.png` & `shovel.png`, bật `USE_GENERATED_TOOL_PNGS = true` trên HUD; xanh 100% `189/189` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck`, `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production`; sẵn sàng sang **Cân bằng game**; chưa commit/push)
 
 ---
 
@@ -55,8 +55,8 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 | **T-09** | Grassland 5 Waves, Victory/Defeat | **Đã code & commit local tại `3378dd7`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** `docs/reports/T-09-FINAL-ACCEPTANCE.md`; 126/126 game tests (16 tests `battle-waves.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa push lên GitHub nên AC-20 remote CI đang pending. Dữ liệu Wave 1–5 và reward vẫn `TBD` (dùng test fixtures). |
 | **T-10** | Special abilities | **Đã code & commit local tại `0040ac5`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI; `ABILITY_CATALOG.md` đã nâng cấp Confirmed v2.0 (2026-11-21); đã hoàn tất `T-10B` 1-Lane Playtest Sandbox (`/playtest`):** `playtest-presets.ts`, `playtest-controller.ts`, `PlaytestScene`, `createPlaytestGame`, `PlaytestHost`, `/playtest`, `playtest-controller.test.ts`; phục vụ Owner chơi thử & tinh chỉnh chỉ số thực tế trước khi chốt `GAME_BALANCING.md` / `T-11`. |
 | **T-11** | Save & Resume, persistent progression | **Đã code & commit tại `03c18ae`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** Kế hoạch v1.0 (`D-76`–`D-85 = A`), báo cáo nghiệm thu `docs/reports/T-11-FINAL-ACCEPTANCE.md`; 174/174 game tests (19 tests `battle-persistence.test.ts`), 25/25 game-data tests, typecheck, build & 6/6 E2E tests PASS. |
-| **T-12** | UI, assets và playable integration | **Đã code & kiểm chứng xanh toàn bộ local (`D-86`–`D-95 = A` + Playtest UX/Cooldown Patch):** Plan v1.0 (`T-12-UI-ASSETS-PLAYABLE-INTEGRATION-IMPLEMENTATION-PLAN.md`); 47 PNG assets (`apps/web/public/assets/`); mở rộng `AbilityEngine`/`ProgressionStore` lên **15 Fusion Recipes / 20 Special Abilities v2.2**; hoàn thiện `asset-manifest.ts`, `grassland-campaign-config.ts`, `campaign-controller.ts`, `GrasslandBattleScene` (`5×9`), `createCampaignGame`, `GameShell` (Main Menu, Level Selection, Defender Collection, Achievements, Settings, How to Play, BattleHudOverlay, Save/Resume Continue flow); bổ sung **Base Defender summon cooldowns (`4s/5s/7s/6s/8s`)**, **đồng bộ tool `onToolChange`**, **kéo-thả thẻ/Crystal kèm ghost sprite & summon pop VFX**, và **bố cục responsive `100dvh` một màn hình**. Kiểm chứng PASS: `182/182` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck`, `pnpm build`, `6/6` `test:e2e`, `1/1` `test:production`. |
-| **T-13** | MVP QA & local acceptance | Chưa bắt đầu. |
+| **T-12** | UI, assets và playable integration | **Đã code & nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** `docs/reports/T-12-FINAL-ACCEPTANCE.md`; Plan v1.0 (`D-86`–`D-95 = A`), 47 PNG assets (`apps/web/public/assets/`), 15 Fusion Recipes / 20 Special Abilities v2.2, `CampaignController` + `GrasslandBattleScene` (`5×9`) + `GameShell` + Base Defender summon cooldowns (`4s/5s/7s/6s/8s`), `onToolChange` sync, kéo-thả HUD kèm ghost sprite & summon VFX, và layout responsive `100dvh`. |
+| **T-13** | MVP QA & local acceptance | **Automated QA PASS / Chờ Owner chỉnh 2 điểm, cân bằng & chơi thử ký duyệt:** `docs/reports/T-13-MVP-QA-LOCAL-ACCEPTANCE.md`; bổ sung `packages/game/tests/mvp-qa-acceptance.test.ts` (`Base-only 5-Wave Victory`, `15 Fusion Recipes`, `20 Special Abilities`, `5-Victory Progression`) & mở rộng `production-home.spec.cjs` (viewport `1280×720` & `1366×768`, 0 broken PNGs, HUD drag-and-drop summon, `/playtest`, port tách biệt `3100`). Kiểm chứng PASS: `186/186` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck`, `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production`. |
 
 ---
 
@@ -94,15 +94,29 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
     2. **Sửa lỗi kẹt trạng thái chọn Defender cùng loại:** Đồng bộ `onToolChange` từ `GrasslandBattleScene` -> `createCampaignGame` -> `CampaignHost` -> `GameShell` mỗi khi scene reset tool về `select` sau summon, dùng Crystal hoặc chuột phải.
     3. **Kéo-thả Summon/Crystal kèm Ghost Preview & Summon VFX:** Bổ sung `onPointerDown` kéo-thả (`>= 8px`) từ thẻ HUD & nút Crystal với `64×64` cursor ghost + highlight xanh/đỏ & ghost sprite trên ô canvas (`setExternalDragAtClientPoint` / `dropExternalDragAtClientPoint`) và hiệu ứng vòng tròn `'summon'` khi triệu hồi thành công.
     4. **Responsive vừa khít `100dvh` cho màn hình nhỏ:** Thu gọn `GRID_ORIGIN_Y = 22`, `CELL_H = 132`, `Phaser.Scale.CENTER_BOTH` và đặt `.mfd-shell-battle` ở `100dvh; overflow: hidden` với `CampaignHost` co giãn `flex: 1; min-height: 0` cùng toast nổi không chiếm chiều cao dọc.
-  - Kiểm chứng PASS sau bản vá: `182/182` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck` (`3/3`), `pnpm build`, `6/6` `test:e2e`, `1/1` `test:production`.
+  - **Hoàn tất nghiệm thu `T-12` & `T-13` Automated MVP QA:**
+    - Lập báo cáo nghiệm thu `docs/reports/T-12-FINAL-ACCEPTANCE.md` (20 gates) & báo cáo sẵn sàng QA `docs/reports/T-13-MVP-QA-LOCAL-ACCEPTANCE.md`, đồng bộ `docs/product/ROADMAP.md` §3A.
+    - Viết `packages/game/tests/mvp-qa-acceptance.test.ts` (4 tests PASS: thắng 5 Waves Grassland chỉ dùng Base Defenders mở đầu không cần Fusion, xác minh đủ 15 Fusion Recipes, smoke test đủ 20 Special Abilities trong `BattleRuntime`, tích lũy unlock 5 trận thắng & cô lập Defeat).
+    - Mở rộng `apps/web/tests/e2e/production-home.spec.cjs` thêm Test 2 ở màn hình `1366×768` (kiểm tra How to Play, Settings, 0 ảnh PNG hỏng trên cả 3 tab Collection, responsive `scrollHeight <= innerHeight`, kéo-thả thẻ Skeleton lên canvas và kiểm tra `/playtest`) và cấu hình `apps/web/tests/e2e/production.config.cjs` chạy cổng tách biệt `3100` để không đụng dev server `:3000`.
+    - Kiểm chứng cuối cùng PASS toàn bộ: `186/186` `@mfd/game` (15 files), `25/25` `@mfd/game-data`, `pnpm typecheck` (`3/3`), `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production`.
+  - **Hoàn tất 2 điều chỉnh theo phản hồi playtest của Owner (`2026-11-23`):**
+    1. **Hiển thị đòn đánh thường cho toàn bộ 20 Defender (`/` & `/playtest`):** Thêm `attackCount` vào `PlaytestDefenderView`/`PlaytestEnemyView` (`playtest-controller.ts`, `campaign-controller.ts`), tạo `packages/game/src/assets/basic-attack-vfx.ts` (`BASIC_ATTACK_VFX_BY_DEFENDER`, `BasicAttackVisualTracker`, `renderBasicAttackEffects`) và tích hợp vào cả `GrasslandBattleScene` & `PlaytestScene` (đạn thẳng, cầu lửa parabol cho `blaze`/`infernal_archon`, hiệu ứng chém/cào/cắn/dậm cận chiến, chuyển động lao tới/giật lùi và chớp trúng đòn trên Enemy).
+    2. **Tắt spawn ngẫu nhiên Energy Orb & Power Crystal Item trên sân:** Bổ sung flag tùy chọn `enableRandomEnergyItems` & `enableRandomCrystalItems` trong `resource-session.ts` / `battle-resources.ts` (giữ mặc định `true` để tương thích 100% unit tests `T-06`/`T-11`, set `false` ở `grassland-campaign-config.ts` & `playtest-presets.ts` trong khi vẫn giữ `+50 EN / 3s`, thưởng trực tiếp/rơi đồ từ Enemy và Wave Reward Crystal). Đồng bộ `how-to-play-modal.tsx` và `docs/product/GAMEPLAY_MECHANICS.md` §4.3 & §5.2.
+    - Kiểm chứng PASS sau chỉnh sửa: `188/188` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck` (`3/3`), `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production`.
+  - **Cập nhật cơ chế Dung hợp từ Shop, Găng Tay Dung Hợp & Xẻng (`2026-11-23`):**
+    1. **Dung hợp trực tiếp từ thẻ mua (`summon-fuse`):** Chỉnh `fusion-state.ts`, `fusion-engine.ts`, `battle-runtime.ts`, `CampaignController` (`summonAndFuseDefender`, `getCardFusionOutputId`) và `GrasslandBattleScene` để kéo/chọn thẻ Base Defender thả lên Tier-1 tương thích trên sân sẽ trừ Energy + kích hoạt hồi chiêu thẻ đó và dung hợp thành Tier-2 ngay tại Target Cell (hiển thị preview vàng + sprite Tier-2).
+    2. **Găng Tay Dung Hợp (`Fusion Glove`, 0 EN, 15s Game-Time CD):** Bỏ cơ chế tự kéo-thả dung hợp miễn phí ở chế độ `select`. Người chơi chọn hoặc kéo **Glove** trên HUD để **Di chuyển (`move-defender`)** sang ô trống hoặc **Dung hợp (`fuse`)** hai Defender trên sân; đóng băng khi Pause, lưu/khôi phục qua `snapshot-codec.ts` (`gloveCooldownUntilTick`).
+    3. **Xẻng (`Shovel`, 0 EN, 0% hoàn, 0s CD):** Thêm nút **Shovel** trên HUD (click hoặc kéo-thả lên Defender) gọi `removeDefender` xóa ngay lập tức để giải phóng ô.
+    4. **Tài sản hình ảnh chờ phiên tạo ảnh:** Khai báo `OPTIONAL_TOOL_SPRITE_ASSETS` (`fusion_glove.png`, `shovel.png`, 64×64) trong `asset-manifest.ts` và render icon SVG pixel tạm (bật `USE_GENERATED_TOOL_PNGS = true` trong `battle-hud-overlay.tsx` sau khi tạo ảnh xong); ghi spec chi tiết trong `docs/game-design/FUSION_RECIPES.md`.
+    - Kiểm chứng PASS sau cập nhật: `189/189` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck` (`3/3`), `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production`.
+  - **Tích hợp 2 PNG công cụ `fusion_glove.png` & `shovel.png` (`2026-11-23`):**
+    - Xác nhận `fusion_glove.png` và `shovel.png` trong `apps/web/public/assets/sprites/items/`, đưa vào `ITEM_SPRITE_ASSETS` / `ALL_GAME_ASSETS` (**49 PNGs**), cập nhật `asset-manifest.test.ts`, và bật `USE_GENERATED_TOOL_PNGS = true` trong `battle-hud-overlay.tsx`.
 
 ---
 
 ## 5. Kế hoạch cho phiên làm việc tiếp theo (Next Session Plan)
 
-1. **Nghiệm thu `T-12` (`docs/reports/T-12-FINAL-ACCEPTANCE.md`) & Commit:**
-   - Lập báo cáo nghiệm thu `T-12` (20/20 gates) nếu Owner yêu cầu, commit + push.
-2. **Chuyển sang `T-13` (MVP QA, Manual Playthrough 5 Waves & Tinh chỉnh Cân bằng cuối cùng):**
-   - Owner chơi thử trực tiếp tại `/` và `/playtest`, chốt bảng số liệu cân bằng chính thức (`GAME_BALANCING.md` / `ENTITY_CATALOG.md`) và hoàn tất nghiệm thu MVP.
-3. **Đóng cổng AC-20 trên Remote CI:**
-   - Sau khi push `main` lên GitHub, kiểm tra workflow CI thực tế cho T-08–T-12.
+1. **Cân bằng Game Chính thức (`GAME_BALANCING.md` / `ENTITY_CATALOG.md`):**
+   - Tinh chỉnh chỉ số Defender (chi phí Energy, cooldown summon, HP/damage/attackSpeed/range), cooldown Găng Tay (`15s`), chỉ số Enemy, Wave 1–5 spawn pacing, Energy passive cadence & Ability multipliers trong `playtest-presets.ts` / `grassland-campaign-config.ts`, sau đó chốt tài liệu từ `TBD` sang `Confirmed`.
+2. **Manual Playthrough 5 Waves & Đóng cổng AC-20 trên Remote CI:**
+   - Owner chơi thử trọn vẹn 5 Waves trên trình duyệt, nghiệm thu `T-13`, sau đó `git commit` + `git push` để kích hoạt & xác nhận GitHub Actions CI cho T-08–T-13.

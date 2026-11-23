@@ -100,6 +100,8 @@ export const CAMPAIGN_BASE_COOLDOWNS: Readonly<Record<string, number>> = {
   blaze: 8,
 };
 
+export const CAMPAIGN_GLOVE_COOLDOWN_SECONDS = 15;
+
 export const GRASSLAND_WAVE_CRYSTALS: readonly number[] = [1, 1, 1, 1, 2];
 
 export const GRASSLAND_CAMPAIGN_WAVES: readonly WaveConfigDefinition[] = [
@@ -363,6 +365,9 @@ export function createGrasslandCampaignInputs(
         { x: 0.65, y: 0.28 },
       ],
     },
+    enableRandomEnergyItems: false,
+    enableRandomCrystalItems: false,
+    fusionGloveCooldownSeconds: CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
   };
 
   const rawFusionInput: FusionSessionInput = {

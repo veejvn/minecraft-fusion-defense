@@ -662,6 +662,12 @@ function validateResourcesState(resources: ResourceState | undefined, ctx?: Chec
       assertSemantic(isPositiveSafeInt(readyTick), 'summonCooldownUntilTick value must be positive safe int');
     }
   }
+  if (resources.gloveCooldownUntilTick !== undefined) {
+    assertSemantic(
+      isPositiveSafeInt(resources.gloveCooldownUntilTick),
+      'resources.gloveCooldownUntilTick must be positive safe int',
+    );
+  }
   validateOutcome(resources.outcome, 'resources');
 }
 

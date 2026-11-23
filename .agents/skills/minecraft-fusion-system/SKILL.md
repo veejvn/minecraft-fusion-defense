@@ -16,8 +16,9 @@ Before coding, also apply the `minecraft-gameplay-rules` Project Skill. That ski
 ### Interaction vocabulary
 
 - **Source**: the Defender the player picks up and drags.
-- **Target**: the Defender onto which the Source is dropped.
-- A Fusion attempt is `tryFusion(source, target)` (or the repository's equivalent naming).
+- **Target**: the Defender onto which the Source (placed Defender via Fusion Glove, or Base Shop Card via `summon-fuse`) is dropped.
+- A Fusion attempt is `tryFusion(source, target)` (or `fuse` / `summon-fuse` in runtime).
+- Note (`2026-11-23` Owner Update): Placed Defenders require the **Fusion Glove** (0 Energy, 15s Game-Time cooldown; also supports moving a Defender to an empty cell), whereas dropping a Shop Card directly onto a compatible Defender (`summon-fuse`) spends that card's Energy and summon cooldown immediately. **Shovel** removes any Defender at 0 Energy, 0% refund, 0s cooldown.
 - The result always occupies the Target's original Grid cell.
 - Source position must not determine the result position.
 

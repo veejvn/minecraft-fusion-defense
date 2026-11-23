@@ -40,9 +40,13 @@ export const ENEMY_SPRITE_ASSETS: Readonly<Record<string, SpriteAssetEntry>> = {
   pillager: { id: 'pillager', key: 'mfd-enemy-pillager', url: '/assets/sprites/enemies/pillager.png', width: 64, height: 64, category: 'enemy' },
 };
 
-export const ITEM_SPRITE_ASSETS: Readonly<Record<'energy_orb' | 'power_crystal', SpriteAssetEntry>> = {
+export const ITEM_SPRITE_ASSETS: Readonly<
+  Record<'energy_orb' | 'power_crystal' | 'fusion_glove' | 'shovel', SpriteAssetEntry>
+> = {
   energy_orb: { id: 'energy_orb', key: 'mfd-item-energy_orb', url: '/assets/sprites/items/energy_orb.png', width: 64, height: 64, category: 'item' },
   power_crystal: { id: 'power_crystal', key: 'mfd-item-power_crystal', url: '/assets/sprites/items/power_crystal.png', width: 64, height: 64, category: 'item' },
+  fusion_glove: { id: 'fusion_glove', key: 'mfd-item-fusion_glove', url: '/assets/sprites/items/fusion_glove.png', width: 64, height: 64, category: 'item' },
+  shovel: { id: 'shovel', key: 'mfd-item-shovel', url: '/assets/sprites/items/shovel.png', width: 64, height: 64, category: 'item' },
 };
 
 export const MAP_TILE_ASSETS: Readonly<Record<'grassland_tile_light' | 'grassland_tile_dark' | 'base_gate_tile' | 'spawn_portal_tile', SpriteAssetEntry>> = {
@@ -79,6 +83,12 @@ export const ALL_GAME_ASSETS: readonly SpriteAssetEntry[] = [
   ...Object.values(MAP_TILE_ASSETS),
   ...Object.values(EFFECT_SPRITE_ASSETS),
 ];
+
+/** Back-compat alias for the HUD tool sprites now included in `ITEM_SPRITE_ASSETS`. */
+export const OPTIONAL_TOOL_SPRITE_ASSETS: Readonly<Record<'fusion_glove' | 'shovel', SpriteAssetEntry>> = {
+  fusion_glove: ITEM_SPRITE_ASSETS.fusion_glove,
+  shovel: ITEM_SPRITE_ASSETS.shovel,
+};
 
 export function getDefenderAsset(definitionId: string): SpriteAssetEntry | undefined {
   return DEFENDER_SPRITE_ASSETS[definitionId];

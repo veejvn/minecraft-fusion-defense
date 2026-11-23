@@ -9,7 +9,11 @@ export type FusionFailureReason =
   | 'invalid-target'
   | 'entity-dead'
   | 'no-recipe'
-  | 'recipe-unavailable';
+  | 'recipe-unavailable'
+  | 'glove-on-cooldown'
+  | 'defender-unavailable'
+  | 'summon-on-cooldown'
+  | 'insufficient-energy';
 
 export type FusionOutcome =
   | {
@@ -29,11 +33,17 @@ export type FusionState = {
   outcome: FusionOutcome | null;
 };
 
-export type FusionCommand = {
-  readonly type: 'fuse';
-  readonly sourceId: EntityId;
-  readonly targetId: EntityId;
-};
+export type FusionCommand =
+  | {
+      readonly type: 'fuse';
+      readonly sourceId: EntityId;
+      readonly targetId: EntityId;
+    }
+  | {
+      readonly type: 'summon-fuse';
+      readonly definitionId: string;
+      readonly targetId: EntityId;
+    };
 
 /** Create initial per-battle fusion outcome tracking state. */
 export function createFusionState(): FusionState {

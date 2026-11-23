@@ -272,7 +272,9 @@ Tên field, scheduler/tick implementation còn TBD; không tự biến +50 mỗi
 
 ### 4.3. Energy Item Collection
 
-Ngoài Energy tự sinh, người chơi có thể thu thập các vật phẩm Energy xuất hiện ngẫu nhiên trên chiến trường.
+> **Owner Decision Update (`2026-11-23`):** Trong chế độ Grassland Campaign và `/playtest`, sinh **Energy Item ngẫu nhiên trên sân đã bị tắt** (`enableRandomEnergyItems = false`) vì lượng Energy tự cộng (`+50` mỗi `3` giây Game Time) và Energy trực tiếp từ tiêu diệt Enemy đã đủ cho nhịp trận. Cơ chế `Energy Item` vẫn được giữ tùy chọn trong `BattleResources` cho các unit test core.
+
+Ngoài Energy tự sinh, người chơi có thể thu thập các vật phẩm Energy nếu cấu hình Level bật tính năng này.
 
 **Spawn Rules:**
 
@@ -339,7 +341,7 @@ Nguồn: Wave Reward, Enemy death Crystal Items và random spawn độc lập.
 
 **Confirmed:** Crystal reward tạo Item tại vị trí Enemy chết, kể cả khi storage đã đầy; mỗi Crystal được thưởng tạo một collectible Item. Các reward là integer không âm được cấu hình riêng trong Enemy Definition.
 
-**Confirmed:** random Power Crystal spawn độc lập: attempt đầu sau ngẫu nhiên 30–60 giây Game Time; mỗi attempt kế tiếp cách ngẫu nhiên 30–60 giây. Mỗi attempt thành công tạo một Item trị giá 1 Crystal tại cell ngẫu nhiên không có Defender; không có cell hợp lệ thì bỏ qua attempt. Không có cap riêng cho số Item cùng tồn tại; nhiều Item được phép trùng cell. Summon lên cell có Item được phép: auto-collect oldest-first đến giới hạn storage, Item dư giữ timer gốc; Item còn lại sau khi Defender bị loại bỏ. Click Item được ưu tiên hơn click Defender.
+**Confirmed (`2026-11-23` Owner Playtest Update):** Trong chế độ Grassland Campaign và `/playtest`, cơ chế **random Power Crystal spawn độc lập mỗi 30–60 giây đã bị tắt** (`enableRandomCrystalItems = false`); nguồn Power Crystal trong trận đến từ **Enemy death Crystal Items** (Vindicator, Pillager) và **Wave Rewards**. Khi bật tùy chọn random spawn trong các kịch bản test engine: attempt đầu sau ngẫu nhiên 30–60 giây Game Time; mỗi attempt kế tiếp cách ngẫu nhiên 30–60 giây. Mỗi attempt thành công tạo một Item trị giá 1 Crystal tại cell ngẫu nhiên không có Defender; không có cell hợp lệ thì bỏ qua attempt. Không có cap riêng cho số Item cùng tồn tại; nhiều Item được phép trùng cell. Summon lên cell có Item được phép: auto-collect oldest-first đến giới hạn storage, Item dư giữ timer gốc; Item còn lại sau khi Defender bị loại bỏ. Click Item được ưu tiên hơn click Defender.
 
 ### 5.3. Ability Activation
 

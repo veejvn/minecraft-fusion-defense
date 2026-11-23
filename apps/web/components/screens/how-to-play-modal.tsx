@@ -7,19 +7,19 @@ interface HowToPlayModalProps {
 
 const GUIDE_STEPS = [
   {
-    step: '1. Collect Energy & Summon',
+    step: '1. Passive Energy & Summon',
     icon: '/assets/sprites/items/energy_orb.png',
-    text: 'Click glowing Energy Orbs on the Grassland grid to gain Energy. Select an unlocked Base Defender card at the top bar and click an empty cell on the 5x9 battlefield to summon.',
+    text: 'Gain +50 Energy automatically every 3 seconds and earn Energy rewards by defeating Enemies. Select or drag an unlocked Base Defender card onto an empty cell on the 5x9 battlefield to summon.',
   },
   {
-    step: '2. Free Drag-and-Drop Fusion',
+    step: '2. Fusion, Glove & Shovel',
     icon: '/assets/sprites/defenders/steel_guardian.png',
-    text: 'Drag any living Tier-1 Defender onto another Tier-1 Defender anywhere on the 5x9 grid — across any distance or lane, for 0 Energy! The Tier-2 Fusion Defender spawns on the target cell at full HP.',
+    text: 'Fuse by dragging a Base Defender card onto a compatible Tier-1 Defender on the grid (pays card Energy & cooldown), or use the Fusion Glove (0 EN, 15s CD) to Move or Fuse placed Defenders. Use Shovel to remove unwanted Defenders.',
   },
   {
     step: '3. Power Crystal Special Abilities',
     icon: '/assets/sprites/items/power_crystal.png',
-    text: 'Click Power Crystal Drops or Claim Pending Wave Rewards (cap 5/5). Click the Power Crystal button in the HUD, then click any Defender to unleash its Special Ability (1 Crystal, 0s cooldown).',
+    text: 'Collect Power Crystals dropped by defeated Vindicators/Pillagers or Claim Pending Wave Rewards (cap 5/5). Click or drag the Power Crystal button onto any Defender to cast its Special Ability (1 Crystal, 0s cooldown).',
   },
   {
     step: '4. Defend 5 Waves & Unlock Units',

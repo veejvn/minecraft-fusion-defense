@@ -184,4 +184,106 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     expect(readyCard.cooldownRemainingSeconds).toBe(0);
     expect(reloaded.summonDefender('skeleton', { row: 1, column: 0 })).toBe(true);
   });
+
+  it('disables random Energy and Crystal item spawns while keeping +50 EN / 3s periodic Energy active', () => {
+    const storage = new InMemoryStorageAdapter();
+    const controller = new CampaignController({ storage });
+    controller.startNewBattle({ battleId: 'camp_no_random_spawns', unlockAll: true });
+
+    // Place a Skeleton Sniper on lane 0 and step 70s in intervals while avoiding defeat?
+    // Actually verify over 18s (360 ticks @ 50ms) before any Wave 1 Zombie reaches col 0 or dies:
+    // +50 EN initial + 6 periodic ticks (3,6,9,12,15,18s) = 350 EN, and 0 random orbs or crystal spawns!
+    expect(controller.getSnapshot().energy).toBe(50);
+    for (let i = 0; i < 360; i++) {
+      controller.stepMs(50);
+      expect(controller.getSnapshot().items).toHaveLength(0);
+    }
+    expect(controller.getSnapshot().energy).toBe(350);
+
+    // Also verify longer 70s horizon using a runtime check via no enemies / 0 kills:
+    // Wave 1 spawns at 3s and Zombies walk in 18s, so summon Skeleton Sniper at (0,0),(0,1),(1,0),(1,1)...
+    // wait: killing enemies grants Energy directly, and Wave 1 Zombies drop 0 Crystals.
+    // Even across 70s, no 'energy' orb item should EVER spawn!
+    for (let lane = 0; lane < 5; lane++) {
+      controller.summonDefender('skeleton', { row: lane, column: 0 });
+    }
+    for (let i = 0; i < 1040; i++) {
+      controller.stepMs(50);
+      const energyItems = controller.getSnapshot().items.filter(item => item.kind === 'energy');
+      expect(energyItems).toHaveLength(0);
+    }
+  });
+
+  it('supports direct shop-card fusion (summon-fuse), Fusion Glove 15s cooldown (Move/Fuse) with Pause/Save persistence, and instant 0%-refund Shovel removal', () => {
+    const storage = new InMemoryStorageAdapter();
+    const controller = new CampaignController({ storage });
+    controller.startNewBattle({ battleId: 'camp_glove_shovel_1' });
+
+    // Place Iron Golem? Start at 50 EN -> summon Skeleton at (0, 0).
+    expect(controller.summonDefender('skeleton', { row: 0, column: 0 })).toBe(true);
+    const skel = controller.getSnapshot().defenders.find(d => d.row === 0 && d.column === 0)!;
+    expect(controller.getCardFusionOutputId('skeleton', skel.id)).toBe('skeleton_sniper');
+
+    // Attempt immediate direct shop-card fusion while Skeleton card is still on 4s cooldown -> rejected!
+    // Advance 3s so +50 EN passive triggers (Energy = 50), while Skeleton 4s cooldown still has 1s left.
+    for (let i = 0; i < 60; i++) controller.stepMs(50);
+    expect(controller.getSnapshot().energy).toBe(50);
+    expect(controller.summonAndFuseDefender('skeleton', skel.id)).toBe(false);
+    expect(controller.getSnapshot().lastToast?.message).toBe('Defender is recharging (on cooldown)');
+    expect(controller.getSnapshot().energy).toBe(50);
+
+    // Advance 1.5s more (total 4.5s > 4s cooldown), then direct shop-card fuse Skeleton onto placed Skeleton!
+    for (let i = 0; i < 30; i++) controller.stepMs(50);
+    expect(controller.summonAndFuseDefender('skeleton', skel.id)).toBe(true);
+    const afterShopFuse = controller.getSnapshot();
+    expect(afterShopFuse.energy).toBe(0);
+    expect(afterShopFuse.defenders).toHaveLength(1);
+    expect(afterShopFuse.defenders[0]).toMatchObject({
+      definitionId: 'skeleton_sniper',
+      row: 0,
+      column: 0,
+    });
+    expect(afterShopFuse.baseDefenderCards.find(c => c.id === 'skeleton')?.onCooldown).toBe(true);
+
+    // Move fused Skeleton Sniper from (0, 0) to empty cell (2, 1) using Fusion Glove (0 EN, triggers 15s cooldown).
+    const sniper = afterShopFuse.defenders[0]!;
+    expect(controller.moveDefender(sniper.id, { row: 2, column: 1 })).toBe(true);
+    const afterMove = controller.getSnapshot();
+    expect(afterMove.energy).toBe(0);
+    expect(afterMove.defenders[0]).toMatchObject({
+      id: sniper.id,
+      definitionId: 'skeleton_sniper',
+      row: 2,
+      column: 1,
+    });
+    expect(afterMove.gloveCooldown.onCooldown).toBe(true);
+    expect(afterMove.gloveCooldown.totalSeconds).toBe(15);
+    expect(afterMove.gloveCooldown.remainingSeconds).toBeCloseTo(15, 1);
+
+    // Pause freezes Fusion Glove cooldown.
+    controller.setPaused(true);
+    controller.stepMs(4000);
+    expect(controller.getSnapshot().gloveCooldown.remainingSeconds).toBeCloseTo(15, 1);
+    controller.setPaused(false);
+
+    // Attempting another move while Glove is on cooldown is rejected.
+    expect(controller.moveDefender(sniper.id, { row: 2, column: 2 })).toBe(false);
+    expect(controller.getSnapshot().lastToast?.message).toBe('Fusion Glove is recharging (on cooldown)');
+
+    // Save & Resume preserves Glove cooldown; after 15.5s it clears and Move succeeds again.
+    const reloaded = new CampaignController({ storage });
+    expect(reloaded.resumeSavedBattle()).toBe(true);
+    expect(reloaded.getSnapshot().gloveCooldown.onCooldown).toBe(true);
+    for (let i = 0; i < 310; i++) reloaded.stepMs(50);
+    expect(reloaded.getSnapshot().gloveCooldown.onCooldown).toBe(false);
+    expect(reloaded.moveDefender(sniper.id, { row: 2, column: 2 })).toBe(true);
+
+    // Shovel removes Defender immediately with 0 EN cost, 0% refund, and 0s cooldown.
+    const energyBeforeShovel = reloaded.getSnapshot().energy;
+    expect(reloaded.removeDefender(sniper.id)).toBe(true);
+    const afterShovel = reloaded.getSnapshot();
+    expect(afterShovel.defenders).toHaveLength(0);
+    expect(afterShovel.energy).toBe(energyBeforeShovel);
+    expect(afterShovel.lastToast?.message).toBe('Removed Skeleton Sniper with Shovel');
+  });
 });

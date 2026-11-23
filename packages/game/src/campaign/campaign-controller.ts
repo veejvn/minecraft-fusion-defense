@@ -40,6 +40,7 @@ import { BattleRuntime } from '../systems/battle-runtime';
 import type { WavePhaseStatus } from '../waves/wave-state';
 import {
   CAMPAIGN_DEFENDER_CATALOG,
+  CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
   GRASSLAND_CAMPAIGN_WAVES,
   createGrasslandCampaignInputs,
   type GrasslandCampaignRuntimeInputs,
@@ -84,6 +85,13 @@ export interface SavedBattleSummary {
   readonly crystals: number;
 }
 
+export interface GloveCooldownView {
+  readonly totalSeconds: number;
+  readonly remainingSeconds: number;
+  readonly progressPct: number;
+  readonly onCooldown: boolean;
+}
+
 export interface CampaignSnapshot {
   readonly status: CampaignBattleStatus;
   readonly battleId: string | null;
@@ -111,6 +119,7 @@ export interface CampaignSnapshot {
   readonly redirectAuras: readonly PlaytestRedirectAuraView[];
   readonly flashes: readonly PlaytestFlashEffect[];
   readonly baseDefenderCards: readonly BaseDefenderCardView[];
+  readonly gloveCooldown: GloveCooldownView;
   readonly unlockedRecipeIds: readonly string[];
   readonly lastToast: CampaignToast | null;
   readonly newlyUnlocked: {
@@ -167,7 +176,10 @@ function defaultStorageAdapter(): PersistenceStorageAdapter {
   return new InMemoryStorageAdapter();
 }
 
-function formatEnglishRejection(category: 'summon' | 'fuse' | 'ability' | 'collect' | 'claim', reason?: string): string {
+function formatEnglishRejection(
+  category: 'summon' | 'fuse' | 'move' | 'remove' | 'ability' | 'collect' | 'claim',
+  reason?: string,
+): string {
   switch (reason) {
     case 'paused':
       return 'Game is Paused';
@@ -177,11 +189,16 @@ function formatEnglishRejection(category: 'summon' | 'fuse' | 'ability' | 'colle
       return 'Insufficient Energy';
     case 'summon-on-cooldown':
       return 'Defender is recharging (on cooldown)';
+    case 'glove-on-cooldown':
+      return 'Fusion Glove is recharging (on cooldown)';
     case 'defender-unavailable':
       return 'Defender is still locked';
     case 'occupied':
+    case 'occupied-cell':
     case 'grid-conflict':
       return 'Cell is already occupied';
+    case 'same-cell':
+      return 'Defender is already on that cell';
     case 'invalid-cell':
     case 'invalid-target-cell':
       return 'Invalid grid cell';
@@ -193,6 +210,7 @@ function formatEnglishRejection(category: 'summon' | 'fuse' | 'ability' | 'colle
       return 'Defender is Stunned or Frozen';
     case 'on-cooldown':
       return 'Ability is on Cooldown';
+    case 'no-recipe':
     case 'recipe-not-found':
       return 'No Fusion Recipe for these two Defenders';
     case 'recipe-unavailable':
@@ -491,6 +509,20 @@ export class CampaignController {
     return recipe.output;
   }
 
+  getCardFusionOutputId(definitionId: string, targetEntityId: string): string | null {
+    if (!this.runtime) return null;
+    const tgt = this.snapshotCache.defenders.find(d => d.id === targetEntityId);
+    if (!tgt || tgt.hp <= 0 || tgt.tier !== 1) {
+      return null;
+    }
+    const recipe = RECIPE_BY_PAIR.get(normalizePairKey(definitionId, tgt.definitionId));
+    if (!recipe) return null;
+    if (!this.unlockAllMode && !this.snapshotCache.unlockedRecipeIds.includes(recipe.id)) {
+      return null;
+    }
+    return recipe.output;
+  }
+
   summonDefender(definitionId: string, cell: Cell): boolean {
     if (!this.runtime || !isValidCell(cell)) {
       this.pushToast('error', 'Invalid grid cell');
@@ -556,6 +588,116 @@ export class CampaignController {
     this.refreshAndEmit();
     const outcome = this.runtime.snapshot().fusion?.outcome;
     return outcome && outcome.eventId !== prevEventId ? outcome.status === 'APPLIED' : true;
+  }
+
+  summonAndFuseDefender(definitionId: string, targetId: string): boolean {
+    if (!this.runtime) return false;
+    if (this.paused || this.lastTerminal !== null) {
+      this.pushToast('error', this.paused ? 'Game is Paused' : 'Battle has already ended');
+      this.refreshAndEmit();
+      return false;
+    }
+    const tgt = parseEntityId(targetId);
+    if (tgt === null) return false;
+
+    const targetTick = this.runtime.snapshot().tick + 1;
+    const prevEventId = this.runtime.snapshot().fusion?.outcome?.eventId ?? null;
+    const queued = this.runtime.enqueue(
+      { type: 'summon-fuse', definitionId, targetId: tgt },
+      targetTick,
+    );
+    if (queued.status !== 'APPLIED') {
+      this.pushToast('error', formatEnglishRejection('fuse', extractQueueReason(queued)));
+      this.refreshAndEmit();
+      return false;
+    }
+    this.runtime.advance(TICK_DURATION_MS);
+    this.processOutcomesAndTerminal();
+    this.refreshAndEmit();
+    const outcome = this.runtime.snapshot().fusion?.outcome;
+    return outcome && outcome.eventId !== prevEventId ? outcome.status === 'APPLIED' : true;
+  }
+
+  moveDefender(defenderId: string, targetCell: Cell): boolean {
+    if (!this.runtime || !isValidCell(targetCell)) {
+      this.pushToast('error', 'Invalid grid cell');
+      this.refreshAndEmit();
+      return false;
+    }
+    if (this.paused || this.lastTerminal !== null) {
+      this.pushToast('error', this.paused ? 'Game is Paused' : 'Battle has already ended');
+      this.refreshAndEmit();
+      return false;
+    }
+    const id = parseEntityId(defenderId);
+    if (id === null) return false;
+
+    const existing = this.snapshotCache.defenders.find(d => d.id === defenderId);
+    const targetTick = this.runtime.snapshot().tick + 1;
+    const prevEventId = this.runtime.snapshot().resources?.outcome?.eventId ?? null;
+    const queued = this.runtime.enqueue(
+      { type: 'move-defender', defenderId: id, targetCell },
+      targetTick,
+    );
+    if (queued.status !== 'APPLIED') {
+      this.pushToast('error', formatEnglishRejection('move', extractQueueReason(queued)));
+      this.refreshAndEmit();
+      return false;
+    }
+    this.runtime.advance(TICK_DURATION_MS);
+    this.processOutcomesAndTerminal();
+    const outcome = this.runtime.snapshot().resources?.outcome;
+    const applied = outcome && outcome.eventId !== prevEventId ? outcome.status === 'APPLIED' : true;
+    if (applied) {
+      const meta = existing ? DEFENDER_META_BY_ID.get(existing.definitionId) : undefined;
+      this.pushToast('info', `Moved ${meta?.name ?? 'Defender'}!`);
+      this.flashes.push({
+        id: this.nextFlashId++,
+        kind: 'summon',
+        lane: targetCell.row,
+        cell: targetCell,
+        color: meta?.accentColor ?? 0x38bdf8,
+        label: 'MOVED',
+        createdAtTick: this.runtime.snapshot().tick,
+        ttlMs: 420,
+      });
+    }
+    this.refreshAndEmit();
+    return applied;
+  }
+
+  removeDefender(defenderId: string): boolean {
+    if (!this.runtime) return false;
+    if (this.paused || this.lastTerminal !== null) {
+      this.pushToast('error', this.paused ? 'Game is Paused' : 'Battle has already ended');
+      this.refreshAndEmit();
+      return false;
+    }
+    const id = parseEntityId(defenderId);
+    if (id === null) return false;
+
+    const existing = this.snapshotCache.defenders.find(d => d.id === defenderId);
+    if (!existing) return false;
+
+    const targetTick = this.runtime.snapshot().tick + 1;
+    const queued = this.runtime.enqueue({ type: 'remove', id }, targetTick);
+    if (queued.status !== 'APPLIED') {
+      this.pushToast('error', formatEnglishRejection('remove', extractQueueReason(queued)));
+      this.refreshAndEmit();
+      return false;
+    }
+    this.runtime.advance(TICK_DURATION_MS);
+    this.processOutcomesAndTerminal();
+    const stillExists = this.runtime.snapshot().entities.has(id);
+    if (!stillExists) {
+      const meta = DEFENDER_META_BY_ID.get(existing.definitionId);
+      if (this.lastTerminal === null) {
+        this.saveCheckpointNow('manual');
+      }
+      this.pushToast('info', `Removed ${meta?.name ?? 'Defender'} with Shovel`);
+    }
+    this.refreshAndEmit();
+    return !stillExists;
   }
 
   activateAbility(defenderId: string, targetCell?: Cell): boolean {
@@ -824,6 +966,12 @@ export class CampaignController {
           abilityName: d.abilityName,
           requirement: this.getDefenderCollection().find(c => c.id === d.id)?.requirement ?? 'Unlocked',
         })),
+        gloveCooldown: {
+          totalSeconds: CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
+          remainingSeconds: 0,
+          progressPct: 0,
+          onCooldown: false,
+        },
         unlockedRecipeIds: unlockedRecipes,
         lastToast: this.lastToast,
         newlyUnlocked: this.newlyUnlocked,
@@ -906,6 +1054,7 @@ export class CampaignController {
           targetId: entityCombat?.targetId !== null && entityCombat?.targetId !== undefined
             ? String(entityCombat.targetId)
             : null,
+          attackCount: entityCombat?.attackCount ?? 0,
           badges,
         });
       } else {
@@ -950,6 +1099,7 @@ export class CampaignController {
           targetId: entityCombat?.targetId !== null && entityCombat?.targetId !== undefined
             ? String(entityCombat.targetId)
             : null,
+          attackCount: entityCombat?.attackCount ?? 0,
           badges,
         });
       }
@@ -1077,6 +1227,19 @@ export class CampaignController {
     const status: CampaignBattleStatus =
       terminal !== null ? terminal : this.paused ? 'paused' : 'playing';
 
+    const gloveTotalSeconds = CAMPAIGN_GLOVE_COOLDOWN_SECONDS;
+    const gloveReadyTick = resources?.gloveCooldownUntilTick ?? 0;
+    const gloveRemainingTicks = Math.max(0, gloveReadyTick - raw.tick);
+    const gloveOnCooldown = gloveRemainingTicks > 0;
+    const gloveRemainingSeconds = gloveOnCooldown
+      ? Number((gloveRemainingTicks / TICKS_PER_SECOND).toFixed(1))
+      : 0;
+    const gloveTotalTicks = gloveTotalSeconds * TICKS_PER_SECOND;
+    const gloveProgressPct =
+      gloveOnCooldown && gloveTotalTicks > 0
+        ? Math.min(100, Math.max(0, Math.round((gloveRemainingTicks / gloveTotalTicks) * 100)))
+        : 0;
+
     return {
       status,
       battleId: this.battleId,
@@ -1104,6 +1267,12 @@ export class CampaignController {
       redirectAuras,
       flashes: this.flashes.map(f => ({ ...f })),
       baseDefenderCards,
+      gloveCooldown: {
+        totalSeconds: gloveTotalSeconds,
+        remainingSeconds: gloveRemainingSeconds,
+        progressPct: gloveProgressPct,
+        onCooldown: gloveOnCooldown,
+      },
       unlockedRecipeIds: unlockedRecipes,
       lastToast: this.lastToast,
       newlyUnlocked: this.newlyUnlocked,

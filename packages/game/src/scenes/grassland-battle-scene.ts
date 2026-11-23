@@ -9,6 +9,10 @@ import {
   applyNearestFilterToManifestTextures,
   preloadGameAssets,
 } from '../assets/asset-manifest';
+import {
+  BasicAttackVisualTracker,
+  renderBasicAttackEffects,
+} from '../assets/basic-attack-vfx';
 import type { Cell } from '../battlefield/grid';
 import type { CampaignController, CampaignSnapshot } from '../campaign/campaign-controller';
 import type { PlaytestDefenderView, PlaytestEnemyView, PlaytestItemView } from '../playtest/playtest-controller';
@@ -17,11 +21,15 @@ import { PLAYTEST_PIXEL_TEXTURE_KEYS } from '../playtest/procedural-pixel-art';
 export type CampaignTool =
   | { readonly kind: 'select' }
   | { readonly kind: 'place'; readonly definitionId: string }
-  | { readonly kind: 'crystal' };
+  | { readonly kind: 'crystal' }
+  | { readonly kind: 'glove'; readonly pickedDefenderId?: string }
+  | { readonly kind: 'shovel' };
 
 export type ExternalDragPayload =
   | { readonly kind: 'place'; readonly definitionId: string }
-  | { readonly kind: 'crystal' };
+  | { readonly kind: 'crystal' }
+  | { readonly kind: 'glove' }
+  | { readonly kind: 'shovel' };
 
 export type CampaignVisualStyle = 'pixel-art' | 'procedural';
 
@@ -40,7 +48,7 @@ const INFERNO_TRAVEL_TICKS = 5;
 
 type DragState =
   | {
-      kind: 'defender-pending';
+      kind: 'glove-pending';
       sourceId: string;
       sourceCell: Cell;
       startX: number;
@@ -49,7 +57,7 @@ type DragState =
       currentY: number;
     }
   | {
-      kind: 'defender-fuse';
+      kind: 'glove-drag';
       sourceId: string;
       sourceCell: Cell;
       startX: number;
@@ -78,6 +86,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
   private externalDrag: { readonly payload: ExternalDragPayload; readonly cell: Cell | null } | null = null;
   private needsRender = true;
   private firstRendered = false;
+  private readonly attackTracker = new BasicAttackVisualTracker();
 
   private bgGraphics!: Phaser.GameObjects.Graphics;
   private overlayGraphics!: Phaser.GameObjects.Graphics;
@@ -149,20 +158,45 @@ export class GrasslandBattleScene extends Phaser.Scene {
     const cell = pt ? this.screenToCell(pt.x, pt.y) : null;
     this.needsRender = true;
     if (!cell) return false;
+
+    const defender = this.findDefenderAtCell(cell);
     if (payload.kind === 'place') {
-      const ok = this.controller.summonDefender(payload.definitionId, cell);
+      const ok = defender
+        ? this.controller.summonAndFuseDefender(payload.definitionId, defender.id)
+        : this.controller.summonDefender(payload.definitionId, cell);
       if (ok) {
         this.clearToolToSelect();
       }
       return ok;
     }
-    const defender = this.findDefenderAtCell(cell);
-    if (!defender) return false;
-    const ok = this.controller.activateAbility(defender.id, cell);
-    if (ok) {
-      this.clearToolToSelect();
+    if (payload.kind === 'crystal') {
+      if (!defender) return false;
+      const ok = this.controller.activateAbility(defender.id, cell);
+      if (ok) {
+        this.clearToolToSelect();
+      }
+      return ok;
     }
-    return ok;
+    if (payload.kind === 'shovel') {
+      if (!defender) return false;
+      const ok = this.controller.removeDefender(defender.id);
+      if (ok) {
+        this.clearToolToSelect();
+      }
+      return ok;
+    }
+    if (payload.kind === 'glove') {
+      if (!defender) return false;
+      if (this.snapshot.gloveCooldown.onCooldown) {
+        this.controller.moveDefender(defender.id, { row: defender.row, column: defender.column });
+        return false;
+      }
+      this.tool = { kind: 'glove', pickedDefenderId: defender.id };
+      this.onToolChange?.(this.tool);
+      this.needsRender = true;
+      return true;
+    }
+    return false;
   }
 
   setVisualStyle(style: CampaignVisualStyle): void {
@@ -179,6 +213,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
     this.dragState = null;
     this.hoverCell = null;
     this.externalDrag = null;
+    this.attackTracker.reset();
     this.needsRender = true;
     this.snapshot = this.controller.getSnapshot();
   }
@@ -216,8 +251,20 @@ export class GrasslandBattleScene extends Phaser.Scene {
       .setDepth(30);
 
     this.snapshot = this.controller.getSnapshot();
+    this.attackTracker.syncFromSnapshot(this.snapshot.defenders, this.snapshot.enemies, {
+      originX: GRID_ORIGIN_X,
+      originY: GRID_ORIGIN_Y,
+      cellW: CELL_W,
+      cellH: CELL_H,
+    });
     this.unsubscribe = this.controller.subscribe(next => {
       this.snapshot = next;
+      this.attackTracker.syncFromSnapshot(next.defenders, next.enemies, {
+        originX: GRID_ORIGIN_X,
+        originY: GRID_ORIGIN_Y,
+        cellW: CELL_W,
+        cellH: CELL_H,
+      });
       this.needsRender = true;
     });
 
@@ -246,9 +293,11 @@ export class GrasslandBattleScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     const stepped = this.controller.stepMs(delta);
+    const hasBasicAttackAnims = this.attackTracker.advance(delta, this.snapshot.paused);
     const snap = this.snapshot;
     if (
       stepped > 0 ||
+      hasBasicAttackAnims ||
       this.needsRender ||
       this.dragState !== null ||
       snap.items.length > 0 ||
@@ -314,7 +363,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
     const px = pointer.x;
     const py = pointer.y;
 
-    // Right-click cancels active summon or crystal tool back to Select/Fuse.
+    // Right-click cancels active summon/crystal/glove/shovel tool back to Select.
     if (pointer.rightButtonDown()) {
       this.dragState = null;
       this.clearToolToSelect();
@@ -322,7 +371,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
       return;
     }
 
-    // Priority 1 (GAMEPLAY_MECHANICS.md §18): Collect Energy / Power Crystal items before unit selection!
+    // Priority 1 (GAMEPLAY_MECHANICS.md §18): Collect Power Crystal items before unit selection!
     const item = this.findItemAt(px, py);
     if (item) {
       this.controller.collectItem(item.id);
@@ -332,8 +381,11 @@ export class GrasslandBattleScene extends Phaser.Scene {
     const cell = this.screenToCell(px, py);
     if (!cell) return;
 
+    const defender = this.findDefenderAtCell(cell);
     if (this.tool.kind === 'place') {
-      const ok = this.controller.summonDefender(this.tool.definitionId, cell);
+      const ok = defender
+        ? this.controller.summonAndFuseDefender(this.tool.definitionId, defender.id)
+        : this.controller.summonDefender(this.tool.definitionId, cell);
       if (ok) {
         this.clearToolToSelect();
       }
@@ -341,7 +393,6 @@ export class GrasslandBattleScene extends Phaser.Scene {
       return;
     }
 
-    const defender = this.findDefenderAtCell(cell);
     if (this.tool.kind === 'crystal') {
       if (defender) {
         const ok = this.controller.activateAbility(defender.id, cell);
@@ -353,17 +404,54 @@ export class GrasslandBattleScene extends Phaser.Scene {
       return;
     }
 
-    if (defender) {
-      this.dragState = {
-        kind: 'defender-pending',
-        sourceId: defender.id,
-        sourceCell: { row: defender.row, column: defender.column },
-        startX: px,
-        startY: py,
-        currentX: px,
-        currentY: py,
-      };
-      this.needsRender = true;
+    if (this.tool.kind === 'shovel') {
+      if (defender) {
+        const ok = this.controller.removeDefender(defender.id);
+        if (ok) {
+          this.clearToolToSelect();
+        }
+        this.needsRender = true;
+      }
+      return;
+    }
+
+    if (this.tool.kind === 'glove') {
+      const pickedId = this.tool.pickedDefenderId;
+      if (pickedId) {
+        if (!defender) {
+          const ok = this.controller.moveDefender(pickedId, cell);
+          if (ok) {
+            this.clearToolToSelect();
+          }
+          this.needsRender = true;
+          return;
+        }
+        if (defender.id === pickedId) {
+          this.tool = { kind: 'glove' };
+          this.onToolChange?.(this.tool);
+          this.needsRender = true;
+          return;
+        }
+        const ok = this.controller.fuseDefenders(pickedId, defender.id);
+        if (ok) {
+          this.clearToolToSelect();
+        }
+        this.needsRender = true;
+        return;
+      }
+
+      if (defender) {
+        this.dragState = {
+          kind: 'glove-pending',
+          sourceId: defender.id,
+          sourceCell: { row: defender.row, column: defender.column },
+          startX: px,
+          startY: py,
+          currentX: px,
+          currentY: py,
+        };
+        this.needsRender = true;
+      }
     }
   }
 
@@ -383,11 +471,11 @@ export class GrasslandBattleScene extends Phaser.Scene {
     this.dragState.currentX = px;
     this.dragState.currentY = py;
     if (
-      this.dragState.kind === 'defender-pending' &&
+      this.dragState.kind === 'glove-pending' &&
       Phaser.Math.Distance.Between(this.dragState.startX, this.dragState.startY, px, py) >= DRAG_THRESHOLD_PX
     ) {
       this.dragState = {
-        kind: 'defender-fuse',
+        kind: 'glove-drag',
         sourceId: this.dragState.sourceId,
         sourceCell: this.dragState.sourceCell,
         startX: this.dragState.startX,
@@ -404,12 +492,24 @@ export class GrasslandBattleScene extends Phaser.Scene {
     const state = this.dragState;
     this.dragState = null;
 
-    if (state.kind === 'defender-fuse') {
+    if (state.kind === 'glove-pending') {
+      this.tool = { kind: 'glove', pickedDefenderId: state.sourceId };
+      this.onToolChange?.(this.tool);
+      this.needsRender = true;
+      return;
+    }
+
+    if (state.kind === 'glove-drag') {
       const cell = this.screenToCell(pointer.x, pointer.y);
       if (cell) {
         const target = this.findDefenderAtCell(cell);
-        if (target && target.id !== state.sourceId) {
-          this.controller.fuseDefenders(state.sourceId, target.id);
+        const ok = target
+          ? target.id !== state.sourceId
+            ? this.controller.fuseDefenders(state.sourceId, target.id)
+            : false
+          : this.controller.moveDefender(state.sourceId, cell);
+        if (ok) {
+          this.clearToolToSelect();
         }
       }
     }
@@ -517,6 +617,13 @@ export class GrasslandBattleScene extends Phaser.Scene {
     this.renderDefenders(snap);
     this.renderEnemies(snap);
     this.renderProjectiles(snap);
+    renderBasicAttackEffects(
+      this.attackTracker,
+      this.fxGraphics,
+      this.visualStyle === 'pixel-art',
+      key => this.hasTexture(key),
+      (x, y, key, size, alpha, tint) => this.putFx(x, y, key, size, size, alpha, tint),
+    );
     this.renderItems(snap);
     this.renderFlashes(snap);
     this.renderDragOverlay();
@@ -585,7 +692,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
     this.putLabel(GRID_ORIGIN_X - 38, GRID_ORIGIN_Y + 14, 'BASE', '#93C5FD', '11px');
     this.putLabel(GRID_ORIGIN_X + gridW + 38, GRID_ORIGIN_Y + 14, 'SPAWN', '#F9A8D4', '11px');
 
-    // Interactive placement / fusion / crystal highlights (supports both click mode and pointer drag-and-drop)
+    // Interactive placement / shop-fusion / crystal / glove / shovel highlights
     const previewTool =
       this.externalDrag?.payload ?? (this.tool.kind !== 'select' ? this.tool : null);
     const previewCell = this.externalDrag ? this.externalDrag.cell : this.hoverCell;
@@ -593,13 +700,19 @@ export class GrasslandBattleScene extends Phaser.Scene {
       const rect = this.getCellRect(previewCell);
       const occupant = this.findDefenderAtCell(previewCell);
       if (previewTool.kind === 'place') {
-        const ok = !occupant;
-        this.overlayGraphics.fillStyle(ok ? 0x22c55e : 0xef4444, 0.28);
+        const cardFusionOut = occupant
+          ? this.controller.getCardFusionOutputId(previewTool.definitionId, occupant.id)
+          : null;
+        const ok = !occupant || cardFusionOut !== null;
+        const boxColor = cardFusionOut ? 0xfacc15 : ok ? 0x22c55e : 0xef4444;
+        const borderColor = cardFusionOut ? 0xfef08a : ok ? 0x4ade80 : 0xf87171;
+        this.overlayGraphics.fillStyle(boxColor, 0.28);
         this.overlayGraphics.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
-        this.overlayGraphics.lineStyle(2.5, ok ? 0x4ade80 : 0xf87171, 0.95);
+        this.overlayGraphics.lineStyle(2.5, borderColor, 0.95);
         this.overlayGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
 
-        const pngKey = DEFENDER_SPRITE_ASSETS[previewTool.definitionId]?.key;
+        const ghostDefId = cardFusionOut ?? previewTool.definitionId;
+        const pngKey = DEFENDER_SPRITE_ASSETS[ghostDefId]?.key;
         const procKey = PLAYTEST_PIXEL_TEXTURE_KEYS.ironGolem;
         const ghostKey =
           this.visualStyle === 'pixel-art' && pngKey && this.hasTexture(pngKey)
@@ -614,8 +727,17 @@ export class GrasslandBattleScene extends Phaser.Scene {
             ghostKey,
             64,
             64,
-            ok ? 0.68 : 0.36,
+            cardFusionOut ? 0.85 : ok ? 0.68 : 0.36,
             ok ? undefined : 0xf87171,
+          );
+        }
+        if (cardFusionOut) {
+          this.putLabel(
+            rect.x + rect.w / 2,
+            rect.y + 14,
+            `FUSE -> ${cardFusionOut.replace(/_/g, ' ').toUpperCase()}`,
+            '#FEF08A',
+            '10px',
           );
         }
       } else if (previewTool.kind === 'crystal' && occupant) {
@@ -623,13 +745,51 @@ export class GrasslandBattleScene extends Phaser.Scene {
         this.overlayGraphics.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
         this.overlayGraphics.lineStyle(3, 0x38bdf8, 1);
         this.overlayGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+      } else if (previewTool.kind === 'shovel' && occupant) {
+        this.overlayGraphics.fillStyle(0xef4444, 0.32);
+        this.overlayGraphics.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+        this.overlayGraphics.lineStyle(3, 0xf87171, 1);
+        this.overlayGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+        this.putLabel(rect.x + rect.w / 2, rect.y + 14, 'REMOVE', '#FECACA', '11px');
+      } else if (previewTool.kind === 'glove') {
+        const pickedId =
+          previewTool.kind === 'glove' && 'pickedDefenderId' in previewTool
+            ? previewTool.pickedDefenderId
+            : undefined;
+        if (pickedId) {
+          if (!occupant) {
+            this.overlayGraphics.fillStyle(0x34d399, 0.25);
+            this.overlayGraphics.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+            this.overlayGraphics.lineStyle(2.5, 0x6ee7b7, 0.95);
+            this.overlayGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+            this.putLabel(rect.x + rect.w / 2, rect.y + 14, 'MOVE HERE', '#A7F3D0', '10px');
+          }
+        } else if (occupant) {
+          this.overlayGraphics.fillStyle(0xfacc15, 0.25);
+          this.overlayGraphics.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+          this.overlayGraphics.lineStyle(3, 0xfef08a, 1);
+          this.overlayGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+          this.putLabel(rect.x + rect.w / 2, rect.y + 14, 'PICK UP', '#FEF08A', '10px');
+        }
       }
     }
 
-    if (this.dragState?.kind === 'defender-fuse') {
+    const activeGloveSourceId =
+      this.dragState?.kind === 'glove-drag'
+        ? this.dragState.sourceId
+        : this.tool.kind === 'glove'
+          ? this.tool.pickedDefenderId
+          : undefined;
+    if (activeGloveSourceId) {
+      const srcDef = snap.defenders.find(d => d.id === activeGloveSourceId);
+      if (srcDef) {
+        const sr = this.getCellRect({ row: srcDef.row, column: srcDef.column });
+        this.overlayGraphics.lineStyle(3, 0x38bdf8, 0.95);
+        this.overlayGraphics.strokeRect(sr.x + 3, sr.y + 3, sr.w - 6, sr.h - 6);
+      }
       for (const candidate of snap.defenders) {
-        if (candidate.id === this.dragState.sourceId) continue;
-        const outId = this.controller.getFusionOutputId(this.dragState.sourceId, candidate.id);
+        if (candidate.id === activeGloveSourceId) continue;
+        const outId = this.controller.getFusionOutputId(activeGloveSourceId, candidate.id);
         if (!outId) continue;
         const r = this.getCellRect({ row: candidate.row, column: candidate.column });
         this.overlayGraphics.fillStyle(0xfacc15, 0.28);
@@ -674,7 +834,8 @@ export class GrasslandBattleScene extends Phaser.Scene {
 
     for (const def of snap.defenders) {
       const rect = this.getCellRect({ row: def.row, column: def.column });
-      const cx = rect.x + rect.w / 2;
+      const baseCx = rect.x + rect.w / 2;
+      const cx = baseCx + this.attackTracker.getDefenderOffsetX(def.id);
       const isHovering = def.definitionId === 'blaze' || def.definitionId === 'infernal_archon';
       const bob = isHovering
         ? Math.sin(t * 0.005 + def.column) * 4
@@ -682,9 +843,9 @@ export class GrasslandBattleScene extends Phaser.Scene {
       const cy = rect.y + rect.h / 2 + bob - 2;
       const size = def.tier === 2 ? 78 : 70;
 
-      // Subtle ground shadow
+      // Subtle ground shadow (anchored to tile center)
       this.unitGraphics.fillStyle(0x020617, 0.35);
-      this.unitGraphics.fillEllipse(cx, rect.y + rect.h / 2 + 30, size * 0.65, 12);
+      this.unitGraphics.fillEllipse(baseCx, rect.y + rect.h / 2 + 30, size * 0.65, 12);
 
       // Buff aura ring behind unit
       if (def.buffDamagePct > 0 || def.buffAttackSpeedPct > 0) {
@@ -779,6 +940,13 @@ export class GrasslandBattleScene extends Phaser.Scene {
 
       if (enemy.isFrozen && usePng && this.hasTexture(iceBlockKey)) {
         this.putFx(ex, ey, iceBlockKey, 66, 66, 0.72);
+      }
+
+      if (this.attackTracker.isEnemyHitFlashing(enemy.id)) {
+        this.fxGraphics.fillStyle(0xffffff, 0.42);
+        this.fxGraphics.fillCircle(ex, ey, 24);
+        this.fxGraphics.lineStyle(2.5, 0xfef08a, 0.9);
+        this.fxGraphics.strokeCircle(ex, ey, 26);
       }
 
       if (enemy.isVulnerable) {
@@ -962,27 +1130,47 @@ export class GrasslandBattleScene extends Phaser.Scene {
   }
 
   private renderDragOverlay(): void {
-    if (!this.dragState || this.dragState.kind !== 'defender-fuse') return;
+    let sourceId: string | undefined;
+    let srcCell: Cell | undefined;
+    let endX = 0;
+    let endY = 0;
+
+    if (this.dragState?.kind === 'glove-drag') {
+      sourceId = this.dragState.sourceId;
+      srcCell = this.dragState.sourceCell;
+      endX = this.dragState.currentX;
+      endY = this.dragState.currentY;
+    } else if (this.tool.kind === 'glove' && this.tool.pickedDefenderId && this.hoverCell) {
+      const pickedId = this.tool.pickedDefenderId;
+      const picked = this.snapshot.defenders.find(d => d.id === pickedId);
+      if (picked) {
+        sourceId = picked.id;
+        srcCell = { row: picked.row, column: picked.column };
+        const hr = this.getCellRect(this.hoverCell);
+        endX = hr.x + hr.w / 2;
+        endY = hr.y + hr.h / 2;
+      }
+    }
+
+    if (!sourceId || !srcCell) return;
+
     this.fxGraphics.lineStyle(3, 0xfacc15, 0.9);
-    const srcRect = this.getCellRect(this.dragState.sourceCell);
-    this.fxGraphics.lineBetween(
-      srcRect.x + srcRect.w / 2,
-      srcRect.y + srcRect.h / 2,
-      this.dragState.currentX,
-      this.dragState.currentY,
-    );
+    const srcRect = this.getCellRect(srcCell);
+    this.fxGraphics.lineBetween(srcRect.x + srcRect.w / 2, srcRect.y + srcRect.h / 2, endX, endY);
 
     if (this.hoverCell) {
       const target = this.findDefenderAtCell(this.hoverCell);
-      if (target && target.id !== this.dragState.sourceId) {
-        const outId = this.controller.getFusionOutputId(this.dragState.sourceId, target.id);
+      if (target && target.id !== sourceId) {
+        const outId = this.controller.getFusionOutputId(sourceId, target.id);
         this.putLabel(
-          this.dragState.currentX,
-          this.dragState.currentY - 26,
+          endX,
+          endY - 26,
           outId ? `FUSE -> ${outId.replace(/_/g, ' ').toUpperCase()}` : 'INVALID / LOCKED FUSION',
           outId ? '#4ADE80' : '#F87171',
           '12px',
         );
+      } else if (!target) {
+        this.putLabel(endX, endY - 26, 'MOVE DEFENDER (0 EN)', '#6EE7B7', '12px');
       }
     }
   }
@@ -990,7 +1178,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
   private updateHintText(): void {
     if (this.tool.kind === 'place') {
       this.hintText.setText(
-        `SUMMON MODE (${this.tool.definitionId.replace(/_/g, ' ').toUpperCase()}): Click an empty cell to place — Right-click to cancel`,
+        `SUMMON / FUSE (${this.tool.definitionId.replace(/_/g, ' ').toUpperCase()}): Click empty cell to place, or click compatible Defender to Fuse — Right-click to cancel`,
       );
       return;
     }
@@ -1000,8 +1188,22 @@ export class GrasslandBattleScene extends Phaser.Scene {
       );
       return;
     }
+    if (this.tool.kind === 'glove') {
+      this.hintText.setText(
+        this.tool.pickedDefenderId
+          ? 'FUSION GLOVE: Click an empty cell to MOVE, or click a compatible Defender to FUSE (15s CD) — Right-click to cancel'
+          : 'FUSION GLOVE: Drag a Defender (or click to pick up) to Move or Fuse — Right-click to cancel',
+      );
+      return;
+    }
+    if (this.tool.kind === 'shovel') {
+      this.hintText.setText(
+        'SHOVEL MODE: Click any Defender on the grid to remove it (0% refund) — Right-click to cancel',
+      );
+      return;
+    }
     this.hintText.setText(
-      'Click Energy/Crystals to collect · Select a Base Defender card above to Summon · Drag two Tier-1 Defenders together to Fuse (Free, any distance)',
+      'Select/Drag Shop Card onto empty cell to Summon or compatible Defender to Fuse · Use Fusion Glove (Move/Fuse) or Shovel (Remove)',
     );
   }
 }

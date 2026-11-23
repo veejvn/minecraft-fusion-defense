@@ -59,6 +59,7 @@ export interface PlaytestDefenderView {
   readonly buffAttackSpeedPct: number;
   readonly hasRedirectAura: boolean;
   readonly targetId: string | null;
+  readonly attackCount: number;
   readonly badges: readonly PlaytestStatusBadge[];
 }
 
@@ -79,6 +80,7 @@ export interface PlaytestEnemyView {
   readonly isVulnerable: boolean;
   readonly burnCount: number;
   readonly targetId: string | null;
+  readonly attackCount: number;
   readonly badges: readonly PlaytestStatusBadge[];
 }
 
@@ -965,6 +967,7 @@ export class PlaytestController {
           targetId: entityCombat?.targetId !== null && entityCombat?.targetId !== undefined
             ? String(entityCombat.targetId)
             : null,
+          attackCount: entityCombat?.attackCount ?? 0,
           badges,
         });
       } else {
@@ -1019,6 +1022,7 @@ export class PlaytestController {
           targetId: entityCombat?.targetId !== null && entityCombat?.targetId !== undefined
             ? String(entityCombat.targetId)
             : null,
+          attackCount: entityCombat?.attackCount ?? 0,
           badges,
         });
       }

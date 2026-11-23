@@ -1228,6 +1228,8 @@ export function buildRuntimeInputsFromPreset(
         { x: 0.75, y: 0.5 },
       ],
     },
+    enableRandomEnergyItems: false,
+    enableRandomCrystalItems: false,
   };
 
   const combatInput: CombatSessionInput = {

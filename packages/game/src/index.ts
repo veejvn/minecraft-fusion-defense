@@ -21,6 +21,7 @@ export {
   ENEMY_SPRITE_ASSETS,
   ITEM_SPRITE_ASSETS,
   MAP_TILE_ASSETS,
+  OPTIONAL_TOOL_SPRITE_ASSETS,
   getDefenderAsset,
   getEffectAsset,
   getEnemyAsset,
@@ -35,12 +36,14 @@ export type {
   CampaignSnapshot,
   CampaignSpeed,
   CampaignToast,
+  GloveCooldownView,
   SavedBattleSummary,
 } from './campaign/campaign-controller';
 
 export {
   CAMPAIGN_DEFENDER_CATALOG,
   CAMPAIGN_ENEMY_CATALOG,
+  CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
   CAMPAIGN_ITEM_URLS,
   CAMPAIGN_RECIPE_CATALOG,
   GRASSLAND_CAMPAIGN_WAVES,

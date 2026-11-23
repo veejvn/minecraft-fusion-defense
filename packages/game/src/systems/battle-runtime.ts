@@ -286,9 +286,17 @@ export class BattleRuntime {
         applyCombatCommand(state, combatSession, command, event.id);
         return;
       }
-      if (command.type === 'fuse') {
+      if (command.type === 'fuse' || command.type === 'summon-fuse') {
         if (!state.fusion || !fusionSession) throw new Error('Fusion session unavailable');
-        applyFusionCommand(state, fusionSession, combatSession, command, event.id);
+        applyFusionCommand(
+          state,
+          fusionSession,
+          combatSession,
+          command,
+          event.id,
+          session,
+          this.clock.tick,
+        );
         if (state.fusion.outcome?.eventId === event.id && state.fusion.outcome.status === 'APPLIED') {
           this.pendingCheckpointReason = 'fuse';
         }
@@ -341,6 +349,13 @@ export class BattleRuntime {
           registerCombatEntity(state, combatSession, state.nextEntityId - 1n);
         }
         this.pendingCheckpointReason = 'summon';
+      }
+      if (
+        command.type === 'move-defender' &&
+        state.resources.outcome?.eventId === event.id &&
+        state.resources.outcome.status === 'APPLIED'
+      ) {
+        this.pendingCheckpointReason = 'manual';
       }
       if (
         command.type === 'wave-reward' &&
@@ -528,6 +543,8 @@ export class BattleRuntime {
         (command.type === 'collect' ||
           command.type === 'claim' ||
           command.type === 'fuse' ||
+          command.type === 'summon-fuse' ||
+          command.type === 'move-defender' ||
           command.type === 'activate-ability'))
     ) {
       return { status: 'REJECTED', reason: this.terminal ? 'terminal' : 'paused' } as const;

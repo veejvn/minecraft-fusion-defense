@@ -1,5 +1,10 @@
 import * as Phaser from 'phaser';
 import type { Cell } from '../battlefield/grid';
+import { EFFECT_SPRITE_ASSETS } from '../assets/asset-manifest';
+import {
+  BasicAttackVisualTracker,
+  renderBasicAttackEffects,
+} from '../assets/basic-attack-vfx';
 import {
   PLAYTEST_PIXEL_TEXTURE_KEYS,
   registerPlaytestPixelTextures,
@@ -69,6 +74,7 @@ const ALL_PLAYTEST_AI_ASSETS = [
   PLAYTEST_AI_GRASS_ASSET,
   ...Object.values(PLAYTEST_AI_DEFENDER_ASSETS),
   ...Object.values(PLAYTEST_AI_ENEMY_ASSETS),
+  ...Object.values(EFFECT_SPRITE_ASSETS),
 ] as const;
 
 interface GridGeometry {
@@ -175,6 +181,7 @@ export class PlaytestScene extends Phaser.Scene {
   private hoverCell: Cell | null = null;
   private hoverCrystalOrb = false;
   private needsRender = true;
+  private readonly attackTracker = new BasicAttackVisualTracker();
 
   private bgGraphics!: Phaser.GameObjects.Graphics;
   private gridOverlayGraphics!: Phaser.GameObjects.Graphics;
@@ -199,6 +206,8 @@ export class PlaytestScene extends Phaser.Scene {
   private tileSpritePoolCursor = 0;
   private unitSpritePool: Phaser.GameObjects.Image[] = [];
   private unitSpritePoolCursor = 0;
+  private fxSpritePool: Phaser.GameObjects.Image[] = [];
+  private fxSpritePoolCursor = 0;
 
   constructor(controller: PlaytestController, onFirstRender: () => void) {
     super({ key: 'PlaytestScene' });
@@ -222,6 +231,7 @@ export class PlaytestScene extends Phaser.Scene {
     this.dragState = null;
     this.hoverCell = null;
     this.hoverCrystalOrb = false;
+    this.attackTracker.reset();
     this.needsRender = true;
     this.snapshot = this.controller.getSnapshot();
   }
@@ -262,8 +272,18 @@ export class PlaytestScene extends Phaser.Scene {
     this.createStaticLabels();
 
     this.snapshot = this.controller.getSnapshot();
+    this.attackTracker.syncFromSnapshot(
+      this.snapshot.defenders,
+      this.snapshot.enemies,
+      getGridGeometry(this.snapshot.showAuxLanes),
+    );
     this.unsubscribe = this.controller.subscribe(next => {
       this.snapshot = next;
+      this.attackTracker.syncFromSnapshot(
+        next.defenders,
+        next.enemies,
+        getGridGeometry(next.showAuxLanes),
+      );
       this.needsRender = true;
     });
 
@@ -287,6 +307,7 @@ export class PlaytestScene extends Phaser.Scene {
       this.labelPool = [];
       this.tileSpritePool = [];
       this.unitSpritePool = [];
+      this.fxSpritePool = [];
       this.columnTexts = [];
     };
 
@@ -300,7 +321,9 @@ export class PlaytestScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     this.controller.stepMs(delta);
+    const hasBasicAttackAnims = this.attackTracker.advance(delta, this.snapshot.paused);
     const hasAnimations =
+      hasBasicAttackAnims ||
       this.snapshot.items.length > 0 ||
       this.snapshot.projectiles.length > 0 ||
       this.snapshot.flashes.length > 0 ||
@@ -399,6 +422,7 @@ export class PlaytestScene extends Phaser.Scene {
   private resetSpritePools(): void {
     this.tileSpritePoolCursor = 0;
     this.unitSpritePoolCursor = 0;
+    this.fxSpritePoolCursor = 0;
   }
 
   private hideUnusedPooledSprites(): void {
@@ -407,6 +431,9 @@ export class PlaytestScene extends Phaser.Scene {
     }
     for (let i = this.unitSpritePoolCursor; i < this.unitSpritePool.length; i++) {
       this.unitSpritePool[i].setVisible(false);
+    }
+    for (let i = this.fxSpritePoolCursor; i < this.fxSpritePool.length; i++) {
+      this.fxSpritePool[i].setVisible(false);
     }
   }
 
@@ -488,6 +515,31 @@ export class PlaytestScene extends Phaser.Scene {
       tint,
     );
     this.unitSpritePoolCursor += 1;
+    return img;
+  }
+
+  private acquireFxSprite(
+    x: number,
+    y: number,
+    textureKey: string,
+    displayW: number,
+    displayH: number,
+    alpha = 1,
+    tint?: number,
+  ): Phaser.GameObjects.Image {
+    const img = this.acquirePooledSprite(
+      this.fxSpritePool,
+      this.fxSpritePoolCursor,
+      18,
+      x,
+      y,
+      textureKey,
+      displayW,
+      displayH,
+      alpha,
+      tint,
+    );
+    this.fxSpritePoolCursor += 1;
     return img;
   }
 
@@ -735,6 +787,13 @@ export class PlaytestScene extends Phaser.Scene {
     this.renderDefenders(snap, geom);
     this.renderEnemies(snap, geom);
     this.renderProjectiles(snap, geom);
+    renderBasicAttackEffects(
+      this.attackTracker,
+      this.fxGraphics,
+      this.visualStyle !== 'blocks',
+      key => this.hasLoadedTexture(key),
+      (x, y, key, size, alpha, tint) => this.acquireFxSprite(x, y, key, size, size, alpha, tint),
+    );
     this.renderItems(snap, geom);
     this.renderFlashes(snap, geom);
     this.renderDragAndHover(snap, geom);
@@ -982,12 +1041,13 @@ export class PlaytestScene extends Phaser.Scene {
 
       if (usePixelSprite) {
         const textureKey = useAiSprite ? aiEntry.key : PLAYTEST_PIXEL_TEXTURE_KEYS.ironGolem;
-        const centerX = rect.x + rect.w / 2;
+        const baseCenterX = rect.x + rect.w / 2;
+        const centerX = baseCenterX + this.attackTracker.getDefenderOffsetX(def.id);
         const shadowY = rect.y + rect.h - 28;
         const isFloating = Boolean(useAiSprite && aiEntry.floating);
         this.unitGraphics.fillStyle(0x020617, isFloating ? 0.24 : 0.38);
         this.unitGraphics.fillEllipse(
-          centerX,
+          baseCenterX,
           shadowY,
           geom.rows === 1 ? (isFloating ? 50 : 74) : isFloating ? 36 : 52,
           geom.rows === 1 ? (isFloating ? 14 : 18) : isFloating ? 10 : 12,
@@ -1157,6 +1217,13 @@ export class PlaytestScene extends Phaser.Scene {
         this.unitGraphics.strokeRoundedRect(ex - size / 2, ey - size / 2, size, size, 7);
 
         this.acquireLabel(ex, ey, enemy.shortLabel, '#FFFFFF', geom.rows === 1 ? '13px' : '11px');
+      }
+
+      if (this.attackTracker.isEnemyHitFlashing(enemy.id)) {
+        this.fxGraphics.fillStyle(0xffffff, 0.42);
+        this.fxGraphics.fillCircle(ex, ey, size * 0.38);
+        this.fxGraphics.lineStyle(2.5, 0xfef08a, 0.9);
+        this.fxGraphics.strokeCircle(ex, ey, size * 0.42);
       }
 
       // HP bar above enemy

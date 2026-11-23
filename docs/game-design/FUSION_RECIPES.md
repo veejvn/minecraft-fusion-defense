@@ -19,7 +19,14 @@ Fusion combines two valid living Defender instances by dragging Source onto Targ
 
 ## 2. Confirmed mechanics
 
-- **Fusion costs 0 Energy** and **0 Power Crystal**. No Energy availability check, deduction or refund. Summoning the two inputs still costs Energy normally.
+- **Fusion costs 0 Energy** and **0 Power Crystal** when fusing two placed Defenders via the **Fusion Glove** (15s Game-Time cooldown; can also Move a Defender to an empty cell). Players may also **drag or click a Base Defender shop card directly onto a compatible Tier-1 Defender** (`summon-fuse`), paying that shop card's normal Energy cost and triggering its card cooldown without needing the Glove.
+- **Shovel Tool:** Removes any living Defender immediately (0 Energy, 0% Energy refund, 0s cooldown) to free a grid cell.
+
+### Pending Tool Sprites (`2026-11-23` Image Session Brief)
+| Asset ID | Đường dẫn đích (`apps/web/public/assets/...`) | Kích thước | Mô tả hình ảnh |
+| --- | --- | --- | --- |
+| `fusion_glove` | `/assets/sprites/items/fusion_glove.png` | `64×64` | Golden-diamond Minecraft pixel-art enchanted gauntlet/glove icon with subtle cyan energy rune at the cuff, crisp dark outline, transparent background. |
+| `shovel` | `/assets/sprites/items/shovel.png` | `64×64` | Crisp Minecraft pixel-art iron & oak wooden shovel icon angled diagonally (45°), dark outline, transparent background. |
 - **No distance limit or lane restriction.** Source and Target may occupy any two distinct valid cells in the 5 × 9 battlefield, including opposite corners and different lanes.
 - **Order-independent matching:** A + B yields the same output as B + A. The output's position depends on which instance is Target.
 - Source and Target must be distinct, alive, unlocked Defender instances matching an approved, enabled and unlocked Recipe's input IDs and Tiers; game state must be `PLAYING`. Initial seven recipes use Tier-1 inputs; this is not an engine-wide Tier ceiling. Initial Base Defenders: Iron Golem/Skeleton; initial Recipes: Skeleton Sniper/Steel Guardian — Confirmed.

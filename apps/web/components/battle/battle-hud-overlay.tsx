@@ -12,7 +12,8 @@ import type {
 
 interface HudDragGesture {
   readonly payload: ExternalDragPayload;
-  readonly spriteUrl: string;
+  readonly spriteUrl?: string;
+  readonly svgKind?: 'glove' | 'shovel';
   readonly label: string;
   readonly startX: number;
   readonly startY: number;
@@ -23,6 +24,63 @@ interface HudDragGesture {
 }
 
 const DRAG_ACTIVATION_PX = 8;
+const USE_GENERATED_TOOL_PNGS = true;
+
+function PixelToolIcon({ kind, size = 28 }: { readonly kind: 'glove' | 'shovel'; readonly size?: number }) {
+  if (USE_GENERATED_TOOL_PNGS) {
+    const src =
+      kind === 'glove'
+        ? '/assets/sprites/items/fusion_glove.png'
+        : '/assets/sprites/items/shovel.png';
+    return (
+      <img
+        src={src}
+        alt={kind === 'glove' ? 'Fusion Glove' : 'Shovel'}
+        width={size}
+        height={size}
+        draggable={false}
+        className="mfd-pixel"
+      />
+    );
+  }
+  if (kind === 'glove') {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 16 16"
+        shapeRendering="crispEdges"
+        aria-hidden="true"
+      >
+        <rect x="4" y="2" width="2" height="6" fill="#FACC15" />
+        <rect x="6" y="1" width="2" height="7" fill="#FDE047" />
+        <rect x="8" y="2" width="2" height="6" fill="#FACC15" />
+        <rect x="10" y="3" width="2" height="5" fill="#EAB308" />
+        <rect x="2" y="6" width="2" height="4" fill="#FDE047" />
+        <rect x="4" y="7" width="8" height="4" fill="#CA8A04" />
+        <rect x="4" y="11" width="7" height="3" fill="#38BDF8" />
+        <rect x="6" y="8" width="4" height="2" fill="#7DD3FC" />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      shapeRendering="crispEdges"
+      aria-hidden="true"
+    >
+      <rect x="10" y="1" width="5" height="5" fill="#CBD5E1" />
+      <rect x="11" y="2" width="3" height="3" fill="#F8FAFC" />
+      <rect x="8" y="5" width="3" height="3" fill="#94A3B8" />
+      <rect x="6" y="7" width="3" height="3" fill="#92400E" />
+      <rect x="4" y="9" width="3" height="3" fill="#B45309" />
+      <rect x="2" y="11" width="3" height="3" fill="#78350F" />
+      <rect x="1" y="12" width="2" height="3" fill="#475569" />
+    </svg>
+  );
+}
 
 interface BattleHudOverlayProps {
   readonly snapshot: CampaignSnapshot;
@@ -117,14 +175,16 @@ export function BattleHudOverlay({
   const startHudDrag = (
     e: React.PointerEvent<HTMLButtonElement>,
     payload: ExternalDragPayload,
-    spriteUrl: string,
+    spriteUrl: string | undefined,
     label: string,
+    svgKind?: 'glove' | 'shovel',
   ) => {
     if (e.button !== 0 || snapshot.status !== 'playing') return;
     suppressNextClickRef.current = false;
     const initial: HudDragGesture = {
       payload,
       spriteUrl,
+      svgKind,
       label,
       startX: e.clientX,
       startY: e.clientY,
@@ -214,8 +274,8 @@ export function BattleHudOverlay({
           )}
         </div>
 
-        {/* Base Defender Selection & Drag Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        {/* Base Defender Selection & Drag Bar + Glove & Shovel */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
           {snapshot.baseDefenderCards.map(card => {
             const selected = activeTool.kind === 'place' && activeTool.definitionId === card.id;
             const unavailable = !card.unlocked || !card.canAfford || card.onCooldown || snapshot.status !== 'playing';
@@ -239,7 +299,7 @@ export function BattleHudOverlay({
                   onSelectTool(selected ? { kind: 'select' } : { kind: 'place', definitionId: card.id });
                 }}
                 style={{
-                  padding: '4px 8px',
+                  padding: '4px 7px',
                   borderColor: selected
                     ? '#facc15'
                     : card.unlocked && card.canAfford && !card.onCooldown
@@ -250,7 +310,7 @@ export function BattleHudOverlay({
                 }}
                 title={
                   card.unlocked
-                    ? `${card.name} (${card.cost} EN, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto battlefield.`
+                    ? `${card.name} (${card.cost} EN, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto empty cell or compatible Defender to Fuse.`
                     : `Locked: ${card.requirement}`
                 }
               >
@@ -263,8 +323,8 @@ export function BattleHudOverlay({
                 <img
                   src={card.spriteUrl}
                   alt={card.name}
-                  width={30}
-                  height={30}
+                  width={28}
+                  height={28}
                   draggable={false}
                   className="mfd-pixel"
                   style={{ filter: card.unlocked ? 'none' : 'grayscale(100%)' }}
@@ -290,6 +350,82 @@ export function BattleHudOverlay({
               </button>
             );
           })}
+
+          {/* Fusion Glove (Move or Fuse placed Defenders, 0 EN, cooldown) */}
+          <button
+            type="button"
+            className="mfd-btn mfd-defender-card"
+            disabled={snapshot.gloveCooldown.onCooldown || snapshot.status !== 'playing'}
+            onPointerDown={e => {
+              if (!snapshot.gloveCooldown.onCooldown) {
+                startHudDrag(e, { kind: 'glove' }, undefined, 'Fusion Glove', 'glove');
+              }
+            }}
+            onClick={() => {
+              if (suppressNextClickRef.current) {
+                suppressNextClickRef.current = false;
+                return;
+              }
+              if (snapshot.gloveCooldown.onCooldown) return;
+              onSelectTool(activeTool.kind === 'glove' ? { kind: 'select' } : { kind: 'glove' });
+            }}
+            style={{
+              padding: '4px 7px',
+              borderColor: activeTool.kind === 'glove' ? '#facc15' : snapshot.gloveCooldown.onCooldown ? '#475569' : '#38bdf8',
+              background: activeTool.kind === 'glove' ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
+              opacity: snapshot.gloveCooldown.onCooldown && activeTool.kind !== 'glove' ? 0.78 : 1,
+            }}
+            title={`Fusion Glove (0 EN, ${snapshot.gloveCooldown.totalSeconds}s CD): Move a Defender or Fuse two Tier-1 Defenders`}
+          >
+            {snapshot.gloveCooldown.onCooldown && (
+              <>
+                <div className="mfd-cd-curtain" style={{ height: `${snapshot.gloveCooldown.progressPct}%` }} />
+                <div className="mfd-cd-badge">{snapshot.gloveCooldown.remainingSeconds.toFixed(1)}s</div>
+              </>
+            )}
+            <PixelToolIcon kind="glove" size={26} />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Glove</div>
+              <div
+                style={{
+                  fontSize: 10,
+                  lineHeight: 1.15,
+                  color: snapshot.gloveCooldown.onCooldown ? '#FACC15' : '#38BDF8',
+                }}
+              >
+                {snapshot.gloveCooldown.onCooldown
+                  ? `CD ${snapshot.gloveCooldown.remainingSeconds.toFixed(1)}s`
+                  : 'MOVE/FUSE'}
+              </div>
+            </div>
+          </button>
+
+          {/* Shovel (Remove Defender, 0 EN, 0% refund, 0s cooldown) */}
+          <button
+            type="button"
+            className="mfd-btn mfd-defender-card"
+            disabled={snapshot.status !== 'playing'}
+            onPointerDown={e => startHudDrag(e, { kind: 'shovel' }, undefined, 'Shovel', 'shovel')}
+            onClick={() => {
+              if (suppressNextClickRef.current) {
+                suppressNextClickRef.current = false;
+                return;
+              }
+              onSelectTool(activeTool.kind === 'shovel' ? { kind: 'select' } : { kind: 'shovel' });
+            }}
+            style={{
+              padding: '4px 7px',
+              borderColor: activeTool.kind === 'shovel' ? '#f87171' : '#64748b',
+              background: activeTool.kind === 'shovel' ? 'rgba(185, 28, 28, 0.35)' : '#0f172a',
+            }}
+            title="Shovel: Click or drag onto any Defender to remove it (0% refund)"
+          >
+            <PixelToolIcon kind="shovel" size={26} />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Shovel</div>
+              <div style={{ fontSize: 10, lineHeight: 1.15, color: '#FCA5A5' }}>REMOVE</div>
+            </div>
+          </button>
         </div>
 
         {/* Wave Status & Match Controls */}
@@ -343,21 +479,27 @@ export function BattleHudOverlay({
         </div>
       </div>
 
-      {/* Floating Cursor Ghost while dragging card or crystal */}
+      {/* Floating Cursor Ghost while dragging card, crystal, glove, or shovel */}
       {dragGesture?.active && (
         <div
           className="mfd-drag-ghost"
           style={{ left: dragGesture.currentX, top: dragGesture.currentY }}
           aria-hidden="true"
         >
-          <img
-            src={dragGesture.spriteUrl}
-            alt={dragGesture.label}
-            width={64}
-            height={64}
-            className="mfd-pixel"
-            style={{ opacity: 0.9 }}
-          />
+          {dragGesture.svgKind ? (
+            <div style={{ opacity: 0.92 }}>
+              <PixelToolIcon kind={dragGesture.svgKind} size={56} />
+            </div>
+          ) : (
+            <img
+              src={dragGesture.spriteUrl}
+              alt={dragGesture.label}
+              width={64}
+              height={64}
+              className="mfd-pixel"
+              style={{ opacity: 0.9 }}
+            />
+          )}
         </div>
       )}
 

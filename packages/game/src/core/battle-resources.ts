@@ -34,6 +34,7 @@ export interface ResourceState {
   readonly processedClaims: Set<string>;
   outcome: { eventId: string; status: 'APPLIED' | 'REJECTED'; reason?: string } | null;
   summonCooldownUntilTick?: Map<string, number>;
+  gloveCooldownUntilTick?: number;
 }
 
 export function createResourceState(): ResourceState {
@@ -46,6 +47,7 @@ export function createResourceState(): ResourceState {
 
 export type ResourceCommand =
   | { readonly type: 'summon'; readonly definitionId: string; readonly cell: Cell }
+  | { readonly type: 'move-defender'; readonly defenderId: EntityId; readonly targetCell: Cell }
   | { readonly type: 'collect'; readonly id: ItemId }
   | { readonly type: 'enemy-reward'; readonly sourceId: EntityId; readonly definitionId: string;
       readonly lane: number; readonly position: number }
@@ -122,8 +124,12 @@ function runTimer(ctx: Context, timer: Timer): void {
       state.initialized = true;
       state.energy = count(state.energy + ENERGY_GRANT);
       ctx.schedule({ type: 'periodic-energy', period: 1 }, deadline(3, config.rate));
-      nextCrystalAttempt(ctx);
-      ctx.schedule({ type: 'energy-spawn', period: 1 }, deadline(config.energyItems.intervalSeconds, config.rate));
+      if (config.enableRandomCrystalItems) {
+        nextCrystalAttempt(ctx);
+      }
+      if (config.enableRandomEnergyItems) {
+        ctx.schedule({ type: 'energy-spawn', period: 1 }, deadline(config.energyItems.intervalSeconds, config.rate));
+      }
       return;
     case 'periodic-energy': {
       state.energy = count(state.energy + ENERGY_GRANT);
@@ -188,6 +194,54 @@ function applyResourceCommand(ctx: Context, command: ResourceCommand): string | 
       for (const [id, item] of state.items) {
         if (state.crystals === CRYSTAL_CAP) break;
         if (item.kind === 'crystal' && itemOnCell(item.position, command.cell)) collect(state, id);
+      }
+      return;
+    }
+    case 'move-defender': {
+      if (state.terminal || battle.combat?.terminal) return 'terminal';
+      let targetIndex: number;
+      try {
+        targetIndex = cellIndex(command.targetCell);
+      } catch (error) {
+        if (error instanceof RangeError) return 'invalid-cell';
+        throw error;
+      }
+      const defender = battle.entities.get(command.defenderId);
+      if (!defender || defender.kind !== 'defender') return 'invalid-target';
+      if (battle.combat) {
+        const cState = battle.combat.entities.get(command.defenderId);
+        if (!cState || cState.hp <= 0) return 'entity-dead';
+      }
+      if (
+        defender.cell.row === command.targetCell.row &&
+        defender.cell.column === command.targetCell.column
+      ) {
+        return 'same-cell';
+      }
+      if (battle.occupancy[targetIndex] !== null) return 'occupied-cell';
+      if (config.fusionGloveCooldownSeconds > 0) {
+        const readyTick = state.gloveCooldownUntilTick ?? 0;
+        if (ctx.tick < readyTick) return 'glove-on-cooldown';
+      }
+      const oldIndex = cellIndex(defender.cell);
+      if (battle.occupancy[oldIndex] !== defender.id) throw new Error('Inconsistent defender occupancy');
+      battle.occupancy[oldIndex] = null;
+      battle.occupancy[targetIndex] = defender.id;
+      battle.entities.set(defender.id, {
+        ...defender,
+        cell: { row: command.targetCell.row, column: command.targetCell.column },
+      });
+      if (battle.combat) {
+        const cState = battle.combat.entities.get(defender.id);
+        if (cState) cState.targetId = null;
+      }
+      for (const [id, item] of state.items) {
+        if (state.crystals === CRYSTAL_CAP) break;
+        if (item.kind === 'crystal' && itemOnCell(item.position, command.targetCell)) collect(state, id);
+      }
+      if (config.fusionGloveCooldownSeconds > 0) {
+        state.gloveCooldownUntilTick =
+          ctx.tick + deadline(config.fusionGloveCooldownSeconds, config.rate);
       }
       return;
     }

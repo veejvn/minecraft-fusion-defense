@@ -21,6 +21,9 @@ export interface ResourceSessionInput {
     // The supplied list defines the distribution. Repeated positions have greater weight.
     readonly positions: readonly Point[];
   };
+  readonly enableRandomEnergyItems?: boolean;
+  readonly enableRandomCrystalItems?: boolean;
+  readonly fusionGloveCooldownSeconds?: number;
 }
 
 export function count(value: number): number {
@@ -89,10 +92,34 @@ export function validateResourceSession(input: ResourceSessionInput, rate: numbe
   deadline(energy.intervalSeconds, rate);
   deadline(3, rate);
   deadline(10, rate);
+  if (
+    (config.enableRandomEnergyItems !== undefined && typeof config.enableRandomEnergyItems !== 'boolean') ||
+    (config.enableRandomCrystalItems !== undefined && typeof config.enableRandomCrystalItems !== 'boolean')
+  ) {
+    throw new TypeError('Invalid random resource spawn flag');
+  }
+  if (config.fusionGloveCooldownSeconds !== undefined) {
+    if (
+      typeof config.fusionGloveCooldownSeconds !== 'number' ||
+      !Number.isFinite(config.fusionGloveCooldownSeconds) ||
+      config.fusionGloveCooldownSeconds < 0
+    ) {
+      throw new RangeError('Invalid Fusion Glove cooldown');
+    }
+    if (config.fusionGloveCooldownSeconds > 0) deadline(config.fusionGloveCooldownSeconds, rate);
+  }
   const minInterval = count(Math.ceil(30 * rate));
   const maxInterval = count(Math.floor(60 * rate));
   if (minInterval < 1 || minInterval > maxInterval) throw new RangeError('No eligible Crystal interval');
-  return freezeData({ ...config, rate, minInterval, maxInterval });
+  return freezeData({
+    ...config,
+    enableRandomEnergyItems: config.enableRandomEnergyItems ?? true,
+    enableRandomCrystalItems: config.enableRandomCrystalItems ?? true,
+    fusionGloveCooldownSeconds: config.fusionGloveCooldownSeconds ?? 0,
+    rate,
+    minInterval,
+    maxInterval,
+  });
 }
 
 export type ResourceSession = ReturnType<typeof validateResourceSession>;

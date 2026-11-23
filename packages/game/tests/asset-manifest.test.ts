@@ -12,22 +12,23 @@ import {
   getEffectAsset,
   getEnemyAsset,
 } from '../src/assets/asset-manifest';
+import { BASIC_ATTACK_VFX_BY_DEFENDER } from '../src/assets/basic-attack-vfx';
 
 const REPO_PUBLIC_DIR = resolve(__dirname, '../../../apps/web/public');
 
-describe('T-12.1 Asset Manifest Coverage (47 Pixel-Art PNGs)', () => {
-  it('registers all 20 Defenders, 4 Enemies, 2 Items, 4 Map Tiles, and 17 Effects with unique keys and URLs', () => {
+describe('T-12.1 Asset Manifest Coverage (49 Pixel-Art PNGs)', () => {
+  it('registers all 20 Defenders, 4 Enemies, 4 Items/Tools, 4 Map Tiles, and 17 Effects with unique keys and URLs', () => {
     expect(Object.keys(DEFENDER_SPRITE_ASSETS)).toHaveLength(20);
     expect(Object.keys(ENEMY_SPRITE_ASSETS)).toHaveLength(4);
-    expect(Object.keys(ITEM_SPRITE_ASSETS)).toHaveLength(2);
+    expect(Object.keys(ITEM_SPRITE_ASSETS)).toHaveLength(4);
     expect(Object.keys(MAP_TILE_ASSETS)).toHaveLength(4);
     expect(Object.keys(EFFECT_SPRITE_ASSETS)).toHaveLength(17);
-    expect(ALL_GAME_ASSETS).toHaveLength(47);
+    expect(ALL_GAME_ASSETS).toHaveLength(49);
 
     const keys = new Set(ALL_GAME_ASSETS.map(entry => entry.key));
     const urls = new Set(ALL_GAME_ASSETS.map(entry => entry.url));
-    expect(keys.size).toBe(47);
-    expect(urls.size).toBe(47);
+    expect(keys.size).toBe(49);
+    expect(urls.size).toBe(49);
 
     expect(getDefenderAsset('iron_ranger')?.url).toBe('/assets/sprites/defenders/iron_ranger.png');
     expect(getEnemyAsset('vindicator')?.url).toBe('/assets/sprites/enemies/vindicator.png');
@@ -39,6 +40,14 @@ describe('T-12.1 Asset Manifest Coverage (47 Pixel-Art PNGs)', () => {
     for (const entry of ALL_GAME_ASSETS) {
       const diskPath = resolve(REPO_PUBLIC_DIR, entry.url.replace(/^\//, ''));
       expect(existsSync(diskPath), `Missing PNG file: ${entry.url}`).toBe(true);
+    }
+  });
+
+  it('registers basic attack VFX specs for all 20 Defenders', () => {
+    const defenderIds = Object.keys(DEFENDER_SPRITE_ASSETS);
+    expect(Object.keys(BASIC_ATTACK_VFX_BY_DEFENDER)).toHaveLength(20);
+    for (const id of defenderIds) {
+      expect(BASIC_ATTACK_VFX_BY_DEFENDER[id], `Missing basic attack VFX spec for ${id}`).toBeDefined();
     }
   });
 });
