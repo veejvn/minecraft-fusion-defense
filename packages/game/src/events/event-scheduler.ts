@@ -5,6 +5,14 @@ export class EventScheduler<S, P, R> {
 
   constructor(private readonly engine: TransactionEngine<S, P, R>) {}
 
+  /** Synchronize the scheduler's high-water tick after restoring a checkpoint. */
+  restore(lastTick: number): void {
+    if (!Number.isSafeInteger(lastTick) || lastTick < -1) {
+      throw new RangeError('Invalid scheduler tick');
+    }
+    this.lastTick = lastTick;
+  }
+
   runTick(tick: number, options: TransactionOptions = {}): TransactionResult[] {
     if (!Number.isSafeInteger(tick) || tick < 0) throw new RangeError('Invalid scheduler tick');
     if (tick <= this.lastTick) return [];

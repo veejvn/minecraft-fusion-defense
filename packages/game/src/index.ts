@@ -38,3 +38,56 @@ export type {
   PlaytestMode,
   PlaytestPresetConfig,
 } from './playtest/playtest-presets';
+
+export {
+  BrowserLocalStorageAdapter,
+  InMemoryStorageAdapter,
+  type PersistenceStorageAdapter,
+} from './persistence/storage-adapter';
+
+export {
+  SAVE_SCHEMA_VERSION,
+  SnapshotValidationError,
+  type BattleCheckpointEnvelope,
+  type CheckpointSemanticContext,
+  type CheckpointTriggerReason,
+  type DecodedBattleCheckpoint,
+  type SnapshotValidationErrorCode,
+} from './persistence/snapshot-codec';
+
+export {
+  ACTIVE_BATTLE_STORAGE_KEY,
+  CheckpointManager,
+  MAX_RAM_CHECKPOINTS,
+  type CheckpointManagerOptions,
+  type CheckpointRecord,
+  type RecoveredCheckpointMatch,
+} from './persistence/checkpoint-manager';
+
+export {
+  PROGRESSION_SCHEMA_VERSION,
+  PROGRESSION_STORAGE_KEY,
+  ProgressionStore,
+  ProgressionValidationError,
+  STARTER_DEFENDER_IDS,
+  STARTER_RECIPE_IDS,
+  applyProgressionUnlocks,
+  createStarterProgressionProfile,
+  getAchievementsView,
+  getDefenderCollectionView,
+  type AchievementView,
+  type BattleOutcomeInput,
+  type DefenderCollectionEntry,
+  type ProgressionEnvelope,
+  type ProgressionProfile,
+  type ProgressionStoreOptions,
+  type ProgressionValidationErrorCode,
+  type RecordBattleOutcomeResult,
+} from './persistence/progression-store';
+
+export type {
+  BattlePersistenceMeta,
+  BattlePersistenceOptions,
+  BattleRecoveryResult,
+  CheckpointRestoreResult,
+} from './systems/battle-runtime';

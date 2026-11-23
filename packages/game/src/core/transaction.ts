@@ -55,6 +55,20 @@ export class TransactionEngine<S, P, R> {
     return structuredClone({ state: this.state, queue: this.queue.snapshot(), rng: this.rng });
   }
 
+  /** Atomically restore transaction state from a validated snapshot without partial mutation on error. */
+  restore(snapshot: SimulationSnapshot<S, P, R>): void {
+    if (this.executing) {
+      throw new Error('Cannot restore transaction state while executing');
+    }
+    const nextQueue = new EventQueue(snapshot.queue);
+    const nextCloned = structuredClone({ state: snapshot.state, rng: snapshot.rng });
+    this.state = nextCloned.state;
+    this.queue = nextQueue;
+    this.rng = nextCloned.rng;
+    this.stopped = false;
+    this.diagnostic = null;
+  }
+
   get failed(): boolean { return this.stopped; }
   get failureDiagnostic(): FailureDiagnostic | null { return this.diagnostic && structuredClone(this.diagnostic); }
   peekDue(tick: number): SimulationEvent<P> | undefined { return this.queue.peekDue(tick); }

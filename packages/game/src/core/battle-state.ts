@@ -10,6 +10,7 @@ export interface BattleState {
   readonly occupancy: (EntityId | null)[];
   readonly entities: Map<EntityId, RuntimeEntity>;
   nextEntityId: EntityId;
+  matchKills: number;
   readonly resources?: ResourceState;
   readonly combat?: CombatState;
   readonly fusion?: FusionState;
@@ -26,6 +27,7 @@ export function createBattleState(): BattleState {
     occupancy: Array<EntityId | null>(BATTLEFIELD_ROWS * BATTLEFIELD_COLUMNS).fill(null),
     entities: new Map(),
     nextEntityId: 0n,
+    matchKills: 0,
   };
 }
 

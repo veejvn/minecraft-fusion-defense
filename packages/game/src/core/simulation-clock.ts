@@ -20,8 +20,27 @@ export class SimulationClock {
     this.maxCatchUpTicks = config.maxCatchUpTicks;
   }
 
+  get isPaused(): boolean { return this.paused; }
+  get accumulator(): number { return this.accumulatorMs; }
+
   setPaused(paused: boolean): void {
     this.paused = paused;
+  }
+
+  /** Restore clock tick, accumulator remainder, and pause state atomically. */
+  restore(state: { tick: number; paused?: boolean; accumulatorMs?: number }): void {
+    if (!Number.isSafeInteger(state.tick) || state.tick < 0) {
+      throw new RangeError('Invalid clock tick');
+    }
+    const acc = state.accumulatorMs ?? 0;
+    if (typeof acc !== 'number' || !Number.isFinite(acc) || acc < 0 || acc >= this.tickDurationMs) {
+      throw new RangeError('Invalid clock accumulatorMs');
+    }
+    this.tick = state.tick;
+    this.accumulatorMs = Object.is(acc, -0) ? 0 : acc;
+    if (state.paused !== undefined) {
+      this.paused = Boolean(state.paused);
+    }
   }
 
   advance(elapsedMs: number, onTick: (tick: number) => void): number {

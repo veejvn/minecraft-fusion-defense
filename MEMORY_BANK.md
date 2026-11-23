@@ -1,7 +1,7 @@
 # MEMORY_BANK — Minecraft Fusion Defense
 
-**Cập nhật lần cuối:** 2026-11-21T20:49:00+07:00  
-**Nhánh Git hiện tại:** `main` (commit `0040ac5` + Bản triển khai `T-10B` One-Lane Playtest Sandbox tại working tree)
+**Cập nhật lần cuối:** 2026-11-23T09:29:00+07:00  
+**Nhánh Git hiện tại:** `main` (đang chuẩn bị commit `T-10B` + `T-11` hoàn chỉnh & báo cáo nghiệm thu `T-11`)
 
 ---
 
@@ -54,7 +54,7 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 | **T-08** | Fusion mechanics | **Đã code & commit local tại `061d2ee`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** `docs/reports/T-08-FINAL-ACCEPTANCE.md`; 110/110 game tests (25 tests `battle-fusion.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa push lên GitHub nên AC-20 remote CI đang pending. Chỉ số combat của 7 Fusion Defenders vẫn `TBD` (dùng test fixtures). |
 | **T-09** | Grassland 5 Waves, Victory/Defeat | **Đã code & commit local tại `3378dd7`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** `docs/reports/T-09-FINAL-ACCEPTANCE.md`; 126/126 game tests (16 tests `battle-waves.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa push lên GitHub nên AC-20 remote CI đang pending. Dữ liệu Wave 1–5 và reward vẫn `TBD` (dùng test fixtures). |
 | **T-10** | Special abilities | **Đã code & commit local tại `0040ac5`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI; `ABILITY_CATALOG.md` đã nâng cấp Confirmed v2.0 (2026-11-21); đã hoàn tất `T-10B` 1-Lane Playtest Sandbox (`/playtest`):** `playtest-presets.ts`, `playtest-controller.ts`, `PlaytestScene`, `createPlaytestGame`, `PlaytestHost`, `/playtest`, `playtest-controller.test.ts`; phục vụ Owner chơi thử & tinh chỉnh chỉ số thực tế trước khi chốt `GAME_BALANCING.md` / `T-11`. |
-| **T-11** | Save & Resume, persistent progression | Chưa bắt đầu. |
+| **T-11** | Save & Resume, persistent progression | **Đã code & nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** Kế hoạch v1.0 (`D-76`–`D-85 = A`), báo cáo nghiệm thu `docs/reports/T-11-FINAL-ACCEPTANCE.md`; 174/174 game tests (19 tests `battle-persistence.test.ts`), 25/25 game-data tests, typecheck & build PASS; gồm `G02–G05` Checkpoint/Recovery, Save & Resume qua reload/close và `ProgressionStore` (chỉ tính Victory, starter + milestone unlocks + 7 recipes + Achievements/Collection views). |
 | **T-12** | UI, assets và playable integration | Chưa bắt đầu (có thể làm song song từng phần khi interface ổn định). |
 | **T-13** | MVP QA & local acceptance | Chưa bắt đầu. |
 
@@ -84,15 +84,17 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
   - Lập kế hoạch T-09 v1.0 (`D-49`–`D-58 = A`, commit `e276e21`), điều phối 4 subagents triển khai & kiểm toán độc lập T-09 (`packages/game/src/waves/*`, `battle-state.ts`, `battle-runtime.ts`, `battle-waves.test.ts`), và lập báo cáo nghiệm thu `docs/reports/T-09-FINAL-ACCEPTANCE.md` + đồng bộ `ROADMAP.md` (commit local `3378dd7`, chưa push).
   - Rà soát `docs/game-design/ABILITY_CATALOG.md`, `docs/decisions/PGD-01-STEEL-GUARDIAN.md`, `docs/decisions/PGD-02/systems/G08.md`, `G09.md`, `docs/decisions/PGD-02/contracts/G09-TECHNICAL-CONTRACT.md` và các phụ lục G09; lập và nâng cấp kế hoạch **T-10 Approved v1.0** tại `docs/development/T-10-SPECIAL-ABILITIES-IMPLEMENTATION-PLAN.md` (commit `ddd6d4f`).
   - Điều phối 4 subagents triển khai & kiểm toán độc lập **T-10** (`packages/game/src/abilities/*`, tích hợp `battle-state.ts`, `combat-*`, `fusion-engine.ts`, `battle-runtime.ts`, `packages/game/tests/battle-abilities.test.ts`), chạy kiểm chứng (`148/148` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck`, `pnpm build` PASS) và lập báo cáo nghiệm thu `docs/reports/T-10-FINAL-ACCEPTANCE.md` + đồng bộ `docs/product/ROADMAP.md` (đang ở working tree local, chưa commit/push).
-  - Theo xác nhận trực tiếp của Owner (`2026-11-21`), nâng cấp `docs/game-design/ABILITY_CATALOG.md` lên **Confirmed v2.0** (chốt 1 Power Crystal, 0s cooldown, UX kéo-thả Crystal, cơ chế 12 Special Abilities theo G09, mã lỗi & schema T-10; chỉ giữ VFX/Animation/UI Events ở T-12 là TBD) và đánh dấu **`DOCSYNC-01` RESOLVED** trong `docs/decisions/PGD-02/audits/GAP_REGISTER.md`. Owner cũng đề xuất tạo **map chơi thử 1 hàng ngang (1-lane playtest)** để trải nghiệm thực tế và tinh chỉnh cân bằng chỉ số trước khi tiếp tục các bước sau.
+  - Theo xác nhận trực tiếp của Owner (`2026-11-21`), nâng cấp `docs/game-design/ABILITY_CATALOG.md` lên **Confirmed v2.0** (chốt 1 Power Crystal, 0s cooldown, UX kéo-thả Crystal, cơ chế 12 Special Abilities theo G09, mã lỗi & schema T-10; chỉ giữ VFX/Animation/UI Events ở T-12 là TBD) và đánh dấu **`DOCSYNC-01` RESOLVED** trong `docs/decisions/PGD-02/audits/GAP_REGISTER.md` (commit `0040ac5`).
+  - Lập kế hoạch & triển khai **T-10B (One-Lane Playtest Sandbox tại `/playtest`)** (`D-69`–`D-75 = A`, `PlaytestController`, `PlaytestScene`, `PlaytestHost` với bố cục full-width & modal ẩn/hiện).
+  - Lập kế hoạch **T-11 Approved v1.0** (`D-76`–`D-85 = A`) tại `docs/development/T-11-SAVE-RESUME-PROGRESSION-IMPLEMENTATION-PLAN.md`, điều phối 4 subagents triển khai & kiểm toán độc lập `packages/game/src/persistence/*`, tích hợp `BattleRuntime` (sửa lỗi đồng bộ `EventScheduler.lastTick` khi khôi phục), viết 19 tests `packages/game/tests/battle-persistence.test.ts` (`174/174` `@mfd/game`, `25/25` `@mfd/game-data`, `typecheck` 3/3, `next build` PASS), và lập báo cáo nghiệm thu `docs/reports/T-11-FINAL-ACCEPTANCE.md` + đồng bộ `docs/product/ROADMAP.md`.
 
 ---
 
 ## 5. Kế hoạch cho phiên làm việc tiếp theo (Next Session Plan)
 
-1. **Thiết kế / Triển khai Map Chơi Thử 1 Hàng Ngang (1-Lane Playtest Sandbox — theo đề xuất Owner):**
-   - Tận dụng `BattleRuntime` (T-05–T-10) đã hoàn chỉnh để dựng một route chơi thử cục bộ (`/playtest` trong `apps/web`, giữ nguyên `/` cho `HelloScene` và `test:production` / `test:e2e`) cho phép chạy wave trên 1 lane (`row = 0` hiển thị nổi bật), đặt/gỡ/Fusion cả 12 Defender, kích hoạt thử 12 Special Abilities, quan sát chỉ số thực tế & tinh chỉnh thông số trước khi chốt `GAME_BALANCING.md` / `ENTITY_CATALOG.md`.
-2. **Đóng cổng AC-20 cho T-08, T-09 & T-10:**
-   - Sau khi commit và push lên GitHub `main`, kiểm tra workflow CI thực tế để đóng `AC-20` sang **PASS** hoàn toàn.
-3. **Chuyển sang T-11 (Save & Resume, Persistent Progression):**
-   - Sau khi Owner chốt chỉ số qua playtest (hoặc song song khi Owner cho phép), rà soát `docs/decisions/PGD-02/` (`G02–G05`) và skill `save-systems` để lập kế hoạch **T-11 Draft v0.1**.
+1. **Chuyển sang T-12 (UI, Assets & Playable Integration):**
+   - Lập kế hoạch **T-12 Draft v0.1** (Main Menu, Level Selection, Settings, Defender Collection, Achievements, Save/Resume Continue flow, Pixel Art assets & Gameplay HUD/5-Lane Battlefield tích hợp đầy đủ `BattleRuntime` + `ProgressionStore`).
+2. **T-13 (MVP QA) & Tinh chỉnh cân bằng cuối cùng (`GAME_BALANCING.md` / `ENTITY_CATALOG.md`):**
+   - Sau khi hoàn chỉnh giao diện playable (T-12) và QA (T-13), quay lại cân bằng thực tế trên sandbox/level để chốt số liệu chính thức.
+3. **Đóng cổng AC-20 trên Remote CI:**
+   - Sau khi push `main` lên GitHub, kiểm tra workflow CI thực tế cho T-08–T-11.

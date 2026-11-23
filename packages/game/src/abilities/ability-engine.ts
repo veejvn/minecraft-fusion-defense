@@ -7,6 +7,7 @@ import {
   type CombatState,
 } from '../combat/combat-state';
 import { applyBattleCommand, type BattleState } from '../core/battle-state';
+import { count } from '../core/resource-session';
 import type { EntityId } from '../entities/runtime-entity';
 import {
   ticksFromSeconds,
@@ -308,6 +309,7 @@ export function resolveCombatDeaths(
       applyBattleCommand(battle, { type: 'remove', id });
       unregisterCombatEntity(combat, id);
       cleanupEntityAbilityState(battle, id, 'death');
+      battle.matchKills = count((battle.matchKills ?? 0) + 1);
       enqueueReward(rewardInfo);
     } else {
       applyBattleCommand(battle, { type: 'remove', id });
