@@ -29,7 +29,7 @@ export type PlaytestSpeed = 0.5 | 1 | 2 | 4;
 
 /** Status pill rendered on unit cards and canvas overlays. */
 export interface PlaytestStatusBadge {
-  readonly kind: 'slow' | 'stun' | 'freeze' | 'burn' | 'buff' | 'shield' | 'redirect';
+  readonly kind: 'slow' | 'stun' | 'freeze' | 'burn' | 'buff' | 'shield' | 'redirect' | 'vulnerable';
   readonly label: string;
 }
 
@@ -76,6 +76,7 @@ export interface PlaytestEnemyView {
   readonly slowPct: number;
   readonly isStunned: boolean;
   readonly isFrozen: boolean;
+  readonly isVulnerable: boolean;
   readonly burnCount: number;
   readonly targetId: string | null;
   readonly badges: readonly PlaytestStatusBadge[];
@@ -971,6 +972,7 @@ export class PlaytestController {
         let slowPct = 0;
         let isStunned = false;
         let isFrozen = false;
+        let isVulnerable = false;
         let burnCount = 0;
 
         if (abilities) {
@@ -982,6 +984,8 @@ export class PlaytestController {
               isStunned = true;
             } else if (status.kind === 'freeze') {
               isFrozen = true;
+            } else if (status.kind === 'vulnerable') {
+              isVulnerable = true;
             } else if (status.kind === 'burn') {
               burnCount += 1;
             }
@@ -991,6 +995,7 @@ export class PlaytestController {
         const badges: PlaytestStatusBadge[] = [];
         if (isFrozen) badges.push({ kind: 'freeze', label: 'FREEZE' });
         if (isStunned) badges.push({ kind: 'stun', label: 'STUN' });
+        if (isVulnerable) badges.push({ kind: 'vulnerable', label: 'MARKED +40%' });
         if (slowPct > 0) badges.push({ kind: 'slow', label: `SLOW -${Math.round(slowPct * 100)}%` });
         if (burnCount > 0) {
           badges.push({ kind: 'burn', label: burnCount > 1 ? `BURN x${burnCount}` : 'BURN' });
@@ -1009,6 +1014,7 @@ export class PlaytestController {
           slowPct,
           isStunned,
           isFrozen,
+          isVulnerable,
           burnCount,
           targetId: entityCombat?.targetId !== null && entityCombat?.targetId !== undefined
             ? String(entityCombat.targetId)

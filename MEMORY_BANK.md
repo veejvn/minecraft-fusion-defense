@@ -1,7 +1,7 @@
 # MEMORY_BANK — Minecraft Fusion Defense
 
-**Cập nhật lần cuối:** 2026-11-23T09:47:00+07:00  
-**Nhánh Git hiện tại:** `main` (commit `03c18ae` cho `T-11`; vừa lập kế hoạch `T-12` Draft v0.1 tại `docs/development/T-12-UI-ASSETS-PLAYABLE-INTEGRATION-IMPLEMENTATION-PLAN.md`)
+**Cập nhật lần cuối:** 2026-11-23T17:15:00+07:00  
+**Nhánh Git hiện tại:** `main` (vừa hoàn tất triển khai toàn bộ **`T-12` UI, 47 Pixel-Art Assets, 15 Fusion Recipes, 20 Special Abilities v2.2 & 5×9 Grassland Playable Integration**, đã kiểm chứng xanh 100% toàn bộ test/build local; chưa commit/push)
 
 ---
 
@@ -55,7 +55,7 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 | **T-09** | Grassland 5 Waves, Victory/Defeat | **Đã code & commit local tại `3378dd7`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** `docs/reports/T-09-FINAL-ACCEPTANCE.md`; 126/126 game tests (16 tests `battle-waves.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa push lên GitHub nên AC-20 remote CI đang pending. Dữ liệu Wave 1–5 và reward vẫn `TBD` (dùng test fixtures). |
 | **T-10** | Special abilities | **Đã code & commit local tại `0040ac5`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI; `ABILITY_CATALOG.md` đã nâng cấp Confirmed v2.0 (2026-11-21); đã hoàn tất `T-10B` 1-Lane Playtest Sandbox (`/playtest`):** `playtest-presets.ts`, `playtest-controller.ts`, `PlaytestScene`, `createPlaytestGame`, `PlaytestHost`, `/playtest`, `playtest-controller.test.ts`; phục vụ Owner chơi thử & tinh chỉnh chỉ số thực tế trước khi chốt `GAME_BALANCING.md` / `T-11`. |
 | **T-11** | Save & Resume, persistent progression | **Đã code & commit tại `03c18ae`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** Kế hoạch v1.0 (`D-76`–`D-85 = A`), báo cáo nghiệm thu `docs/reports/T-11-FINAL-ACCEPTANCE.md`; 174/174 game tests (19 tests `battle-persistence.test.ts`), 25/25 game-data tests, typecheck, build & 6/6 E2E tests PASS. |
-| **T-12** | UI, assets và playable integration | **Đã kiểm kê asset hiện có & lập kế hoạch Draft v0.1 (`docs/development/T-12-UI-ASSETS-PLAYABLE-INTEGRATION-IMPLEMENTATION-PLAN.md`):** Đã có 10 file `64×64` PNG trong `apps/web/public/playtest-preview/` (5 Base Defenders, 4 Enemies, 1 Grassland tile) + procedural pixel-art (`procedural-pixel-art.ts`). Cần tạo thêm 7 Tier-2 Fusion Defenders (Batch A) + chuẩn hóa sang `/assets/` (Batch B/C/D) ở phiên tạo asset, và chờ Owner chốt `D-86`–`D-95`. |
+| **T-12** | UI, assets và playable integration | **Đã code & kiểm chứng xanh toàn bộ local (`D-86`–`D-95 = A`):** Plan v1.0 (`T-12-UI-ASSETS-PLAYABLE-INTEGRATION-IMPLEMENTATION-PLAN.md`); 47 PNG assets (`apps/web/public/assets/`); mở rộng `AbilityEngine`/`ProgressionStore` lên **15 Fusion Recipes / 20 Special Abilities v2.2**; hoàn thiện `asset-manifest.ts`, `grassland-campaign-config.ts`, `campaign-controller.ts`, `GrasslandBattleScene` (`5×9`), `createCampaignGame`, `GameShell` (Main Menu, Level Selection, Defender Collection, Achievements, Settings, How to Play, BattleHudOverlay, Save/Resume Continue flow). Kiểm chứng PASS: `181/181` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck`, `pnpm build`, `6/6` `test:e2e`, `1/1` `test:production`. |
 | **T-13** | MVP QA & local acceptance | Chưa bắt đầu. |
 
 ---
@@ -87,18 +87,16 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
   - Theo xác nhận trực tiếp của Owner (`2026-11-21`), nâng cấp `docs/game-design/ABILITY_CATALOG.md` lên **Confirmed v2.0** (chốt 1 Power Crystal, 0s cooldown, UX kéo-thả Crystal, cơ chế 12 Special Abilities theo G09, mã lỗi & schema T-10; chỉ giữ VFX/Animation/UI Events ở T-12 là TBD) và đánh dấu **`DOCSYNC-01` RESOLVED** trong `docs/decisions/PGD-02/audits/GAP_REGISTER.md` (commit `0040ac5`).
   - Lập kế hoạch & triển khai **T-10B (One-Lane Playtest Sandbox tại `/playtest`)** (`D-69`–`D-75 = A`, `PlaytestController`, `PlaytestScene`, `PlaytestHost` với bố cục full-width & modal ẩn/hiện).
   - Lập kế hoạch **T-11 Approved v1.0** (`D-76`–`D-85 = A`) tại `docs/development/T-11-SAVE-RESUME-PROGRESSION-IMPLEMENTATION-PLAN.md`, điều phối 4 subagents triển khai & kiểm toán độc lập `packages/game/src/persistence/*`, tích hợp `BattleRuntime` (sửa lỗi đồng bộ `EventScheduler.lastTick` khi khôi phục), viết 19 tests `packages/game/tests/battle-persistence.test.ts` (`174/174` `@mfd/game`, `25/25` `@mfd/game-data`, `typecheck` 3/3, `next build`, `6/6` Playwright E2E PASS), lập báo cáo nghiệm thu `docs/reports/T-11-FINAL-ACCEPTANCE.md` + đồng bộ `docs/product/ROADMAP.md` và commit tại `03c18ae`.
-  - Kiểm kê toàn bộ asset hiện có trong repo (`apps/web/public/playtest-preview/*.png`, `packages/game/src/playtest/procedural-pixel-art.ts`, `apps/web/public/assets/`) và lập kế hoạch **T-12 Draft v0.1** tại `docs/development/T-12-UI-ASSETS-PLAYABLE-INTEGRATION-IMPLEMENTATION-PLAN.md` (tách riêng **Asset Production Manifest** theo 4 Batches A/B/C/D cho phiên chuyên tạo asset của Owner và **6 Slices tích hợp UI & 5×9 Playable Battlefield** kèm 10 quyết định kỹ thuật `D-86`–`D-95`).
+  - Kiểm kê toàn bộ asset hiện có, nâng cấp chính thức **8 Fusion Recipes Tier-2 còn lại** (tổng **15 Fusion Recipes / 20 Defenders / 20 Special Abilities** `Confirmed v2.2`) kèm rà soát/refactor 6 kỹ năng (`blizzard`, `inferno` lobbed arc, `wildfire_rush` 5 sói lửa 5 lane, `siege_volley`, `thermal_collapse` Sốc Nhiệt, `predator_mark` Vulnerable `+40%`).
+  - Xác nhận đủ **47 Pixel-Art PNG assets** trong `apps/web/public/assets/` (20 Defenders, 4 Enemies, 2 Items, 4 Map Tiles, 17 Effects/VFX), chốt `D-86`–`D-95 = A` (`T-12 Approved v1.0`), và triển khai toàn bộ **`T-12` (`T-12.1`..`T-12.6`)**: mở rộng `AbilityEngine`/`ProgressionStore`, tạo `asset-manifest.ts`, `grassland-campaign-config.ts`, `campaign-controller.ts`, `GrasslandBattleScene`, `createCampaignGame`, nâng cấp `PlaytestScene`, xây dựng đầy đủ React Screen Stack (`MainMenuScreen`, `LevelSelectScreen`, `DefenderCollectionScreen`, `AchievementsScreen`, `SettingsModal`, `HowToPlayModal`, `BattleHudOverlay`, `CampaignHost`, `GameShell`), và cập nhật E2E Playwright (`181/181` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck`, `pnpm build`, `6/6` `test:e2e`, `1/1` `test:production` PASS).
 
 ---
 
 ## 5. Kế hoạch cho phiên làm việc tiếp theo (Next Session Plan)
 
-1. **Thực thi tạo Asset (ở phiên chuyên tạo Asset của Owner theo Mục 3 của Plan T-12):**
-   - Tạo **Batch A (7 Tier-2 Fusion Defenders `64×64` transparent PNG)**: `steel_guardian`, `frost_guardian`, `ice_golem`, `skeleton_sniper`, `inferno_archer`, `flame_fang`, `alpha_wolf` vào `apps/web/public/assets/sprites/defenders/`.
-   - Chuẩn hóa **Batch B** (promote 5 Base Defenders, 4 Enemies, Grassland tile từ `playtest-preview/` sang `apps/web/public/assets/`) và tùy chọn **Batch C/D** (`energy_orb`, `power_crystal`, projectiles, shield overlays, base gate/spawn tiles).
-2. **Chốt `D-86`–`D-95` và triển khai code `T-12` (`T-12.1`..`T-12.6`):**
-   - Xây dựng `asset-manifest.ts`, `GrasslandCampaignConfig` + `CampaignController`, `GrasslandBattleScene` (5×9 Grid), các màn hình `Main Menu`, `Level Selection`, `Defender Collection`, `Achievements`, `Settings & How to Play`, `BattleHudOverlay`, `Save/Resume Continue flow` và bộ test Vitest + Playwright E2E.
-3. **T-13 (MVP QA) & Tinh chỉnh cân bằng cuối cùng (`GAME_BALANCING.md` / `ENTITY_CATALOG.md`):**
-   - Sau khi hoàn chỉnh giao diện playable (T-12) và QA (T-13), quay lại cân bằng thực tế trên sandbox/level để chốt số liệu chính thức.
-4. **Đóng cổng AC-20 trên Remote CI:**
+1. **Nghiệm thu `T-12` (`docs/reports/T-12-FINAL-ACCEPTANCE.md`) & Commit:**
+   - Lập báo cáo nghiệm thu `T-12` (20/20 gates) nếu Owner yêu cầu, commit + push.
+2. **Chuyển sang `T-13` (MVP QA, Manual Playthrough 5 Waves & Tinh chỉnh Cân bằng cuối cùng):**
+   - Owner chơi thử trực tiếp tại `/` và `/playtest`, chốt bảng số liệu cân bằng chính thức (`GAME_BALANCING.md` / `ENTITY_CATALOG.md`) và hoàn tất nghiệm thu MVP.
+3. **Đóng cổng AC-20 trên Remote CI:**
    - Sau khi push `main` lên GitHub, kiểm tra workflow CI thực tế cho T-08–T-12.

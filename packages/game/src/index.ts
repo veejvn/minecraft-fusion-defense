@@ -4,7 +4,48 @@ export type { GameHandle } from './create-game';
 export { createPlaytestGame } from './create-playtest-game';
 export type { PlaytestGameHandle } from './create-playtest-game';
 
+export { createCampaignGame } from './create-campaign-game';
+export type { CampaignGameHandle } from './create-campaign-game';
+
 export type { PlaytestTool, PlaytestVisualStyle } from './scenes/playtest-scene';
+export type { CampaignTool, CampaignVisualStyle } from './scenes/grassland-battle-scene';
+
+export {
+  ALL_GAME_ASSETS,
+  DEFENDER_SPRITE_ASSETS,
+  EFFECT_SPRITE_ASSETS,
+  ENEMY_SPRITE_ASSETS,
+  ITEM_SPRITE_ASSETS,
+  MAP_TILE_ASSETS,
+  getDefenderAsset,
+  getEffectAsset,
+  getEnemyAsset,
+  type SpriteAssetEntry,
+} from './assets/asset-manifest';
+
+export { CampaignController } from './campaign/campaign-controller';
+export type {
+  BaseDefenderCardView,
+  CampaignBattleStatus,
+  CampaignControllerOptions,
+  CampaignSnapshot,
+  CampaignSpeed,
+  CampaignToast,
+  SavedBattleSummary,
+} from './campaign/campaign-controller';
+
+export {
+  CAMPAIGN_DEFENDER_CATALOG,
+  CAMPAIGN_ENEMY_CATALOG,
+  CAMPAIGN_ITEM_URLS,
+  CAMPAIGN_RECIPE_CATALOG,
+  GRASSLAND_CAMPAIGN_WAVES,
+  GRASSLAND_WAVE_CRYSTALS,
+  createGrasslandCampaignInputs,
+  type CampaignDefenderCatalogItem,
+  type CampaignEnemyCatalogItem,
+  type CampaignRecipeCatalogItem,
+} from './campaign/grassland-campaign-config';
 
 export { PlaytestController } from './playtest/playtest-controller';
 export type {

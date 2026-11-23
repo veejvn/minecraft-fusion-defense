@@ -1,15 +1,15 @@
 **Repository path:** `docs/development/T-12-UI-ASSETS-PLAYABLE-INTEGRATION-IMPLEMENTATION-PLAN.md`  
 **Project:** Minecraft Fusion Defense  
 **Task:** `T-12` — UI, Assets & Playable Integration (Main Menu, Level Selection, Settings, Defender Collection, Achievements, Save/Resume Continue Flow, Pixel-Art Assets & 5×9 Grassland Battlefield Integration)  
-**Status:** Draft v0.1 — Pending Owner Decision on `D-86`–`D-95` (Separate Asset Creation Manifest & Code Integration Slices)  
+**Status:** Approved v1.0 — Owner confirmed `D-86`–`D-95` = Phương án A, all 47 PNG assets verified, and full 15 Fusion Recipes / 20 Special Abilities (`ABILITY_CATALOG.md v2.2`) approved (`2026-11-23`)  
 **Date:** `2026-11-23`  
-**Authority:** [Documentation Policy](../DOCUMENTATION_POLICY.md), [Roadmap §2 & §3A](../product/ROADMAP.md), [MVP Scope](../product/MVP_SCOPE.md), [GDD §11–§15](../game-design/GDD.md), [Gameplay Mechanics](../game-design/GAMEPLAY_MECHANICS.md), [Entity Catalog](../game-design/ENTITY_CATALOG.md), [Fusion Recipes](../game-design/FUSION_RECIPES.md), [Ability Catalog v2.0](../game-design/ABILITY_CATALOG.md), [Asset Guidelines](../assets/ASSET_GUIDELINES.md), [Sprite Guidelines](../assets/SPRITE_GUIDELINES.md), [T-11 Save/Resume & Progression Plan](T-11-SAVE-RESUME-PROGRESSION-IMPLEMENTATION-PLAN.md).
+**Authority:** [Documentation Policy](../DOCUMENTATION_POLICY.md), [Roadmap §2 & §3A](../product/ROADMAP.md), [MVP Scope](../product/MVP_SCOPE.md), [GDD §11–§15](../game-design/GDD.md), [Gameplay Mechanics](../game-design/GAMEPLAY_MECHANICS.md), [Entity Catalog](../game-design/ENTITY_CATALOG.md), [Fusion Recipes v2.0](../game-design/FUSION_RECIPES.md), [Ability Catalog v2.2](../game-design/ABILITY_CATALOG.md), [Asset Guidelines](../assets/ASSET_GUIDELINES.md), [Sprite Guidelines](../assets/SPRITE_GUIDELINES.md), [T-11 Save/Resume & Progression Plan](T-11-SAVE-RESUME-PROGRESSION-IMPLEMENTATION-PLAN.md).
 
 ---
 
 ## 1. Mục tiêu và Phạm vi (`T-12`)
 
-`T-12` kết nối toàn bộ phần lõi simulation/runtime đã nghiệm thu ở `T-04`..`T-11` (`BattleRuntime`, Summon/Resources, Combat/Targeting, Fusion, Grassland 5 Waves, 12 Special Abilities, Save/Resume Checkpoint & Persistent Progression) với giao diện người chơi (React UI screens + Phaser 5×9 Grassland Battlefield Scene) và bộ **Minecraft-style Pixel-Art Assets** theo đúng phạm vi Functional MVP:
+`T-12` kết nối toàn bộ phần lõi simulation/runtime đã nghiệm thu ở `T-04`..`T-11` (`BattleRuntime`, Summon/Resources, Combat/Targeting, Fusion, Grassland 5 Waves, **20 Special Abilities v2.2**, **15 Tier-2 Fusion Recipes**, Save/Resume Checkpoint & Persistent Progression) với giao diện người chơi (React UI screens + Phaser 5×9 Grassland Battlefield Scene) và bộ **47 Minecraft-style Pixel-Art Assets** theo đúng phạm vi Functional MVP:
 
 1. **Kiểm kê & Chuẩn hóa Asset Pipeline (Tách riêng cho Phiên Tạo Asset của Owner):**
    - Kiểm kê toàn bộ asset đã tạo ở phiên trước (`apps/web/public/playtest-preview/` và `packages/game/src/playtest/procedural-pixel-art.ts`).
@@ -26,7 +26,7 @@
      - Click thu thập `Energy Item` và `Power Crystal Item` (ưu tiên nhặt Item trước khi chọn Defender nếu trùng ô theo `GAMEPLAY_MECHANICS.md` §18).
      - Chọn hoặc kéo-thả Base Defender đã mở khóa từ HUD Selection Bar xuống ô trống để `Summon`.
      - Kéo-thả `Source Defender` (Tier-1) đè lên `Target Defender` (Tier-1) trên Grid 5×9 để thực hiện `Fusion` miễn phí không giới hạn khoảng cách (`T-08`), đặt Tier-2 tại `Target Cell`.
-     - Kéo-thả `Power Crystal` từ HUD lên một Defender đang sống trên Grid để kích hoạt `Special Ability` (`T-10`) với đầy đủ 12 hiệu ứng G09 và thông báo lỗi tiếng Anh rõ ràng khi bị từ chối (`Insufficient Crystals`, `No Valid Target`, `Shield Already Active`, v.v.).
+     - Kéo-thả `Power Crystal` từ HUD lên một Defender đang sống trên Grid để kích hoạt `Special Ability` (`T-10` / v2.2) với đầy đủ **20 hiệu ứng kỹ năng** và thông báo lỗi tiếng Anh rõ ràng khi bị từ chối (`Insufficient Crystals`, `No Valid Target`, v.v.).
    - Tích hợp `Pause Overlay`, `Pending Wave Reward Claim` khi kho Crystal đầy (`5/5`), `Victory Screen` (cập nhật `ProgressionStore`, hiển thị Defender/Recipe vừa mở khóa, xóa active checkpoint) và `Defeat Screen` (không cộng progression, xóa active checkpoint, cho phép Retry hoặc về Main Menu).
    - Tự động lưu checkpoint (`CheckpointManager`) sau mỗi command hợp lệ, mỗi khi chuyển Wave và khi Pause/Unload để hỗ trợ **Save & Resume** sau khi reload trình duyệt.
 
@@ -172,9 +172,9 @@ Copy/promote 10 file PNG đã có từ `apps/web/public/playtest-preview/` sang 
 
 ---
 
-## 4. Các Quyết định Kỹ thuật Đề xuất (`D-86` đến `D-95`)
+## 4. Các Quyết định Kỹ thuật Đã Chốt (`D-86` đến `D-95` = Phương án A, `2026-11-23`)
 
-Để quá trình tạo asset ở phiên khác và quá trình lập trình tích hợp UI/Gameplay ở phiên sau khớp tuyệt đối với nhau, đề xuất chốt 10 quyết định kỹ thuật `D-86`..`D-95` (khuyến nghị **Phương án A** cho toàn bộ):
+Toàn bộ 10 quyết định kỹ thuật `D-86`..`D-95` đã được Owner chốt theo **Phương án A**:
 
 ### `D-86` — Chuẩn thư mục Asset, Manifest và Cơ chế Fallback an toàn
 - **Phương án A (Khuyến nghị):**
@@ -203,7 +203,7 @@ Copy/promote 10 file PNG đã có từ `apps/web/public/playtest-preview/` sang 
 - **Phương án A (Khuyến nghị):**
   - Khi mở `Main Menu` và `Level Selection`, hệ thống đọc `CheckpointManager.hasActiveCheckpoint()` (`mfd.active_battle.v1`) và `ProgressionStore.load()` (`mfd.progression.v1`) qua `BrowserLocalStorageAdapter` (`T-11`):
     - Nếu có trận đang lưu dở (`status === 'in_progress'`), hiển thị nổi bật nút **"Continue Saved Battle (Wave X/5)"** bên cạnh nút **"Start New Battle"**.
-    - Nếu chọn **Start New Battle**, khởi tạo `BattleRuntime` với trạng thái unlock từ `ProgressionStore.applyProgressionUnlocks()` (mặc định ban đầu mở `iron_golem`, `skeleton`, `steel_guardian`, `skeleton_sniper`) và ghi checkpoint ban đầu.
+    - Nếu chọn **Start New Battle**, khởi tạo `BattleRuntime` với trạng thái unlock từ `ProgressionStore.applyProgressionUnlocks()` (mặc định ban đầu mở `iron_golem`, `skeleton` và 3 recipe `fusion_skeleton_sniper`, `fusion_steel_guardian`, `fusion_iron_ranger`) và ghi checkpoint ban đầu.
     - Trong trận đấu, `CheckpointManager.saveFromRuntime(runtime)` được gọi tự động sau mỗi player command thành công (`summon`, `fuse`, `activateAbility`, `collectItem`, `claimPendingWaveReward`), tại mỗi đầu Wave mới, và khi bấm `Pause` hoặc `beforeunload`.
     - Khi trận đấu kết thúc ở `Victory`, gọi `ProgressionStore.recordVictory({ enemyKills })` + `CheckpointManager.clear()`, đồng thời hiển thị danh sách Defender & Fusion Recipe vừa được mở khóa ngay trên `Victory Modal`.
     - Khi trận đấu kết thúc ở `Defeat`, gọi `CheckpointManager.clear()` (không cộng tiến độ unlock theo đúng luật `ROADMAP.md` §2).
@@ -237,14 +237,14 @@ Copy/promote 10 file PNG đã có từ `apps/web/public/playtest-preview/` sang 
 - **Phương án A (Khuyến nghị):**
   - **`Defender Collection`:** Chia 3 tab trực quan bằng tiếng Anh:
     1. *Base Defenders (5)* — Hiển thị sprite pixel-art `64×64`, Role, Energy Cost, Stats, Special Ability (`1 Crystal`) và trạng thái `Unlocked` / `Locked (Requirement)`.
-    2. *Fusion Defenders (7)* — Hiển thị sprite pixel-art `64×64` của 7 Tier-2 Defenders, công thức `Ingredient A + Ingredient B = Result`, Stats và Special Ability.
-    3. *Fusion Recipes Matrix (7)* — Bảng tra cứu nhanh 7 công thức ghép để người chơi mới dễ nắm bắt.
+    2. *Fusion Defenders (15)* — Hiển thị sprite pixel-art `64×64` của 15 Tier-2 Defenders, công thức `Ingredient A + Ingredient B = Result`, Stats và Special Ability.
+    3. *Fusion Recipes Matrix (15)* — Bảng tra cứu nhanh 15 công thức ghép để người chơi mới dễ nắm bắt.
   - **`Achievements & Milestones`:** Hiển thị thẻ thống kê `Total Grassland Victories`, `Cumulative Enemy Kills (in Victories)` và 5 mốc tiến độ có thanh progress bar rõ ràng:
-    1. *First Line of Defense* (Unlocked at start: Iron Golem, Skeleton, Steel Guardian, Skeleton Sniper).
-    2. *First Grassland Victory* (`1 / 1 Victory` → Unlocks **Snow Golem**, **Ice Golem**, **Frost Guardian**).
-    3. *Wolf Pack Hunter* (`50 / 50 Cumulative Enemy Kills in Victories` → Unlocks **Wolf**, **Alpha Wolf**).
-    4. *Blazing Veteran* (`5 / 5 Grassland Victories` → Unlocks **Blaze**, **Inferno Archer**, **Flame Fang**).
-    5. *Master of Fusion* (Unlock all 5 Base Defenders & 7 Fusion Recipes).
+    1. *First Line of Defense* (Unlocked at start: Iron Golem, Skeleton, Steel Guardian, Skeleton Sniper, Iron Ranger).
+    2. *First Grassland Victory* (`1 / 1 Victory` → Unlocks **Snow Golem**, **Ice Golem**, **Frost Guardian**, **Frostbite Ranger**).
+    3. *Wolf Pack Hunter* (`50 / 50 Cumulative Enemy Kills in Victories` → Unlocks **Wolf**, **Alpha Wolf**, **Ironfang Guardian**, **Bonefang Hunter**).
+    4. *Blazing Veteran* (`5 / 5 Grassland Victories` → Unlocks **Blaze**, **Infernal Archon**, **Magma Colossus**, **Inferno Archer**, **Flame Fang**).
+    5. *Master of Fusion* (Unlock all 5 Base Defenders & 15 Fusion Recipes, bao gồm **Frostfang** và **Steam Warden**).
 - **Phương án B:** Chỉ hiển thị danh sách chữ đơn giản không có sprite preview hay công thức Fusion.
 
 ### `D-94` — Màn hình `Settings` & `Basic In-Game Instructions`
@@ -254,7 +254,7 @@ Copy/promote 10 file PNG đã có từ `apps/web/public/playtest-preview/` sang 
     - Tuỳ chọn hiển thị (*Visual Style*: `Pixel Art 64×64 (Default)` / `Procedural Pixel Fallback`, *Show Grid Coordinates*).
     - Tuỳ chọn âm thanh placeholder (*SFX / Music Mute toggles* — ghi chú rõ `Audio optional in MVP`).
     - Quản lý dữ liệu local (*Clear Active Saved Battle*, *Reset All Unlock Progression* kèm hộp thoại xác nhận).
-    - Nút mở nhanh **Developer Sandbox (`/playtest`)** hoặc **Unlock All Units (Testing Toggle)** tùy chọn trong mục Developer/Internal Testing để Owner tiện kiểm thử cả luồng cày cuốc chuẩn lẫn luồng mở full 12 Defenders.
+    - Nút mở nhanh **Developer Sandbox (`/playtest`)** hoặc **Unlock All Units (Testing Toggle)** tùy chọn trong mục Developer/Internal Testing để Owner tiện kiểm thử cả luồng cày cuốc chuẩn lẫn luồng mở full 20 Defenders.
 - **Phương án B:** Chỉ có màn hình Settings trống với một nút Back.
 
 ### `D-95` — Chiến lược Kiểm thử Tự động cho `T-12` (Vitest + Playwright E2E)

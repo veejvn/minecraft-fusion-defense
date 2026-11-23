@@ -34,9 +34,10 @@ export interface ActiveStatusInstance {
   targetEntityId: EntityId;
   sourceEntityId: EntityId;
   abilityId: string;
-  kind: 'slow' | 'stun' | 'freeze' | 'burn' | 'buff';
+  kind: 'slow' | 'stun' | 'freeze' | 'burn' | 'buff' | 'vulnerable';
   remainingTicks: number;
   slowPct?: number;
+  damageTakenBonusPct?: number;
   isZoneDerived?: boolean;
   zoneShieldId?: bigint;
   burnDamagePerTick?: number;
@@ -93,12 +94,14 @@ export type ActiveProjectile =
       x: number;
       speedPerTick: number;
       damage: number;
+      targetMaxHpBonusPct?: number;
       damageType: AbilityDamageType;
       pierce: boolean;
       armorPiercing: boolean;
       shieldPiercing: boolean;
       hitEnemyIds: Set<EntityId>;
       applyStatus?: AttachedStatusSpec;
+      applyStatuses?: AttachedStatusSpec[];
     }
   | {
       projectileId: bigint;
@@ -182,6 +185,19 @@ export function getDefenderDamageModifiers(abilities: AbilityState | undefined, 
   }
   if (bonusSum <= 0) return [];
   return [damage => damage * (1 + bonusSum)];
+}
+
+/** Return the damage-taken multiplier from the strongest active `'vulnerable'` mark on an Enemy. */
+export function getEnemyDamageTakenMultiplier(abilities: AbilityState | undefined, entityId: EntityId): number {
+  if (!abilities) return 1;
+  let maxBonus = 0;
+  for (const status of abilities.statuses) {
+    if (status.targetEntityId === entityId && status.kind === 'vulnerable' && status.remainingTicks > 0) {
+      const bonus = status.damageTakenBonusPct ?? 0;
+      if (bonus > maxBonus) maxBonus = bonus;
+    }
+  }
+  return maxBonus > 0 ? 1 + maxBonus : 1;
 }
 
 /** Compute additive Attack Speed multiplier across all active Buffs on the Defender. */

@@ -1192,7 +1192,7 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
   });
 
   describe('AC-10 Starter persistent progression profile', () => {
-    it('initializes fresh ProgressionStore with 0 victories, 0 victory kills, iron_golem & skeleton, and fusion_skeleton_sniper & fusion_steel_guardian', () => {
+    it('initializes fresh ProgressionStore with 0 victories, 0 victory kills, iron_golem & skeleton, and starter recipes (skeleton_sniper, steel_guardian, iron_ranger)', () => {
       const store = new ProgressionStore({ storage: new InMemoryStorageAdapter() });
       const profile = store.getProfile();
 
@@ -1204,12 +1204,16 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
         recordedBattleIds: [],
       });
       expect(profile.unlockedDefenderIds).toEqual(['iron_golem', 'skeleton']);
-      expect(profile.unlockedRecipeIds).toEqual(['fusion_skeleton_sniper', 'fusion_steel_guardian']);
+      expect(profile.unlockedRecipeIds).toEqual([
+        'fusion_skeleton_sniper',
+        'fusion_steel_guardian',
+        'fusion_iron_ranger',
+      ]);
     });
   });
 
   describe('AC-11 First Grassland Victory unlock', () => {
-    it('increments totalVictories to 1 and unlocks snow_golem + cascading recipes fusion_ice_golem and fusion_frost_guardian', () => {
+    it('increments totalVictories to 1 and unlocks snow_golem + cascading snow_golem recipes', () => {
       const storage = new InMemoryStorageAdapter();
       const store = new ProgressionStore({ storage });
 
@@ -1221,11 +1225,12 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
       expect(profile.unlockedDefenderIds).toContain('snow_golem');
       expect(profile.unlockedRecipeIds).toContain('fusion_ice_golem');
       expect(profile.unlockedRecipeIds).toContain('fusion_frost_guardian');
+      expect(profile.unlockedRecipeIds).toContain('fusion_frostbite_ranger');
     });
   });
 
   describe('AC-12 50 Cumulative Victory Kills unlock', () => {
-    it('unlocks wolf + cascading recipe fusion_alpha_wolf once cumulative victory kills reach >= 50 across Victory matches', () => {
+    it('unlocks wolf + cascading wolf recipes once cumulative victory kills reach >= 50 across Victory matches', () => {
       const storage = new InMemoryStorageAdapter();
       const store = new ProgressionStore({ storage });
 
@@ -1235,20 +1240,23 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
       expect(store.getProfile().unlockedDefenderIds).not.toContain('wolf');
       expect(store.getProfile().unlockedRecipeIds).not.toContain('fusion_alpha_wolf');
 
-      // Match 2: 5 waves * 5 kills = 25 kills (cumulative 50 -> wolf + fusion_alpha_wolf unlocked!)
+      // Match 2: 5 waves * 5 kills = 25 kills (cumulative 50 -> wolf + cascading wolf recipes unlocked!)
       playVictoryMatch({ battleId: 'kills_v2', killsPerWave: 5, progressionStore: store, storage });
       expect(store.getProfile().totalVictoryKills).toBe(50);
       expect(store.getProfile().unlockedDefenderIds).toContain('wolf');
       expect(store.getProfile().unlockedRecipeIds).toContain('fusion_alpha_wolf');
+      expect(store.getProfile().unlockedRecipeIds).toContain('fusion_ironfang_guardian');
+      expect(store.getProfile().unlockedRecipeIds).toContain('fusion_bonefang_hunter');
+      expect(store.getProfile().unlockedRecipeIds).toContain('fusion_frostfang');
     });
   });
 
   describe('AC-13 5 Grassland Victories unlock', () => {
-    it('unlocks blaze + cascading recipes fusion_inferno_archer and fusion_flame_fang (when wolf is unlocked) at 5 victories', () => {
+    it('unlocks blaze + cascading blaze recipes cleanly at 5 victories', () => {
       const storage = new InMemoryStorageAdapter();
       const store = new ProgressionStore({ storage });
 
-      // Case A: Reach 5 victories with fewer than 50 kills -> blaze + fusion_inferno_archer unlock, fusion_flame_fang waits for wolf.
+      // Case A: Reach 5 victories with fewer than 50 kills -> blaze + infernal_archon/magma_colossus/steam_warden/inferno_archer unlock, flame_fang waits for wolf.
       for (let i = 1; i <= 4; i++) {
         const res = store.recordBattleOutcome({ battleId: `v_${i}`, result: 'victory', enemiesKilled: 5 });
         expect(res.profile.unlockedDefenderIds).not.toContain('blaze');
@@ -1256,15 +1264,26 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
       const fifth = store.recordBattleOutcome({ battleId: 'v_5', result: 'victory', enemiesKilled: 5 });
       expect(fifth.profile.totalVictories).toBe(5);
       expect(fifth.newlyUnlocked.defenders).toEqual(['blaze']);
-      expect(fifth.newlyUnlocked.recipes).toEqual(['fusion_inferno_archer']);
+      expect(fifth.newlyUnlocked.recipes).toEqual([
+        'fusion_infernal_archon',
+        'fusion_magma_colossus',
+        'fusion_steam_warden',
+        'fusion_inferno_archer',
+      ]);
       expect(fifth.profile.unlockedRecipeIds).not.toContain('fusion_flame_fang');
 
-      // Reaching >= 50 cumulative victory kills unlocks wolf + cascading fusion_alpha_wolf + fusion_flame_fang!
+      // Reaching >= 50 cumulative victory kills unlocks wolf + remaining wolf/blaze recipes!
       const sixth = store.recordBattleOutcome({ battleId: 'v_6', result: 'victory', enemiesKilled: 25 });
       expect(sixth.newlyUnlocked.defenders).toEqual(['wolf']);
-      expect(sixth.newlyUnlocked.recipes).toEqual(['fusion_alpha_wolf', 'fusion_flame_fang']);
+      expect(sixth.newlyUnlocked.recipes).toEqual([
+        'fusion_alpha_wolf',
+        'fusion_ironfang_guardian',
+        'fusion_bonefang_hunter',
+        'fusion_frostfang',
+        'fusion_flame_fang',
+      ]);
 
-      // Case B: If wolf is already unlocked before 5th victory, 5th victory unlocks blaze + both recipes immediately.
+      // Case B: If wolf is already unlocked before 5th victory, 5th victory unlocks blaze + all blaze recipes including flame_fang.
       const storeB = new ProgressionStore({ storage: new InMemoryStorageAdapter() });
       storeB.recordBattleOutcome({ battleId: 'b_1', result: 'victory', enemiesKilled: 50 }); // unlocks snow_golem + wolf
       for (let i = 2; i <= 4; i++) {
@@ -1272,7 +1291,13 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
       }
       const fifthB = storeB.recordBattleOutcome({ battleId: 'b_5', result: 'victory', enemiesKilled: 1 });
       expect(fifthB.newlyUnlocked.defenders).toEqual(['blaze']);
-      expect(fifthB.newlyUnlocked.recipes).toEqual(['fusion_inferno_archer', 'fusion_flame_fang']);
+      expect(fifthB.newlyUnlocked.recipes).toEqual([
+        'fusion_infernal_archon',
+        'fusion_magma_colossus',
+        'fusion_steam_warden',
+        'fusion_inferno_archer',
+        'fusion_flame_fang',
+      ]);
     });
   });
 
@@ -1381,11 +1406,11 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
         reason: 'recipe-unavailable',
       });
 
-      // 2. Win battle #1 -> snow_golem & fusion_ice_golem & fusion_frost_guardian unlock permanently.
+      // 2. Win battle #1 -> snow_golem & snow_golem recipes unlock permanently.
       const firstWin = store.recordBattleOutcome({ battleId: 'win_1', result: 'victory', enemiesKilled: 5 });
       expect(firstWin.newlyUnlocked).toEqual({
         defenders: ['snow_golem'],
-        recipes: ['fusion_ice_golem', 'fusion_frost_guardian'],
+        recipes: ['fusion_ice_golem', 'fusion_frost_guardian', 'fusion_frostbite_ranger'],
       });
 
       // Second win does not emit duplicate rewards and never re-locks anything.
@@ -1414,7 +1439,7 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
   });
 
   describe('AC-16 getAchievementsView() & getDefenderCollectionView()', () => {
-    it('tracks victory/kill milestones accurately and exposes locked/unlocked metadata for all 12 Defenders and 7 Recipes', () => {
+    it('tracks victory/kill milestones accurately and exposes locked/unlocked metadata for all 20 Defenders and 15 Recipes', () => {
       const store = new ProgressionStore({ storage: new InMemoryStorageAdapter() });
 
       // Starter state checks.
@@ -1426,11 +1451,12 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
       ]);
 
       const starterCollection = getDefenderCollectionView(store.getProfile());
-      expect(starterCollection).toHaveLength(12);
+      expect(starterCollection).toHaveLength(20);
       expect(starterCollection.filter(e => e.classification === 'base')).toHaveLength(5);
-      expect(starterCollection.filter(e => e.classification === 'fusion')).toHaveLength(7);
+      expect(starterCollection.filter(e => e.classification === 'fusion')).toHaveLength(15);
       expect(starterCollection.filter(e => e.unlocked).map(e => e.id).sort()).toEqual([
         'iron_golem',
+        'iron_ranger',
         'skeleton',
         'skeleton_sniper',
         'steel_guardian',
@@ -1445,7 +1471,7 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
         expect.objectContaining({ id: 'grassland_veteran_5_victories', current: 1, target: 5, completed: false }),
       ]);
 
-      // After 5 total victories and >= 50 kills -> all 12 defenders and 7 recipes unlocked.
+      // After 5 total victories and >= 50 kills -> all 20 defenders and 15 recipes unlocked.
       for (let i = 2; i <= 5; i++) {
         store.recordBattleOutcome({ battleId: `ach_${i}`, result: 'victory', enemiesKilled: 10 });
       }
@@ -1456,6 +1482,11 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
 
       const finalCollection = getDefenderCollectionView(store.getProfile());
       expect(finalCollection.every(e => e.unlocked)).toBe(true);
+
+      // reset() clears storage and returns starter profile.
+      const resetProfile = store.reset();
+      expect(resetProfile.totalVictories).toBe(0);
+      expect(resetProfile.unlockedDefenderIds).toEqual(['iron_golem', 'skeleton']);
     });
   });
 

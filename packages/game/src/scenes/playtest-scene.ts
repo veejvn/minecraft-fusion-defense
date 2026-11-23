@@ -41,6 +41,21 @@ const PLAYTEST_AI_DEFENDER_ASSETS: Readonly<Record<string, AiSpriteEntry>> = {
   skeleton: { key: 'mfd-ai64-skeleton', url: '/playtest-preview/ai-skeleton-64.png', size1Lane: 96, size5Lane: 68 },
   wolf: { key: 'mfd-ai64-wolf', url: '/playtest-preview/ai-wolf-64.png', size1Lane: 92, size5Lane: 64 },
   blaze: { key: 'mfd-ai64-blaze', url: '/playtest-preview/ai-blaze-64.png', size1Lane: 96, size5Lane: 68, floating: true },
+  skeleton_sniper: { key: 'mfd-def-skeleton_sniper', url: '/assets/sprites/defenders/skeleton_sniper.png', size1Lane: 98, size5Lane: 70 },
+  steel_guardian: { key: 'mfd-def-steel_guardian', url: '/assets/sprites/defenders/steel_guardian.png', size1Lane: 108, size5Lane: 76 },
+  iron_ranger: { key: 'mfd-def-iron_ranger', url: '/assets/sprites/defenders/iron_ranger.png', size1Lane: 98, size5Lane: 70 },
+  ice_golem: { key: 'mfd-def-ice_golem', url: '/assets/sprites/defenders/ice_golem.png', size1Lane: 100, size5Lane: 72 },
+  frost_guardian: { key: 'mfd-def-frost_guardian', url: '/assets/sprites/defenders/frost_guardian.png', size1Lane: 106, size5Lane: 74 },
+  frostbite_ranger: { key: 'mfd-def-frostbite_ranger', url: '/assets/sprites/defenders/frostbite_ranger.png', size1Lane: 98, size5Lane: 70 },
+  alpha_wolf: { key: 'mfd-def-alpha_wolf', url: '/assets/sprites/defenders/alpha_wolf.png', size1Lane: 98, size5Lane: 70 },
+  ironfang_guardian: { key: 'mfd-def-ironfang_guardian', url: '/assets/sprites/defenders/ironfang_guardian.png', size1Lane: 98, size5Lane: 70 },
+  bonefang_hunter: { key: 'mfd-def-bonefang_hunter', url: '/assets/sprites/defenders/bonefang_hunter.png', size1Lane: 96, size5Lane: 68 },
+  frostfang: { key: 'mfd-def-frostfang', url: '/assets/sprites/defenders/frostfang.png', size1Lane: 96, size5Lane: 68 },
+  infernal_archon: { key: 'mfd-def-infernal_archon', url: '/assets/sprites/defenders/infernal_archon.png', size1Lane: 102, size5Lane: 72, floating: true },
+  magma_colossus: { key: 'mfd-def-magma_colossus', url: '/assets/sprites/defenders/magma_colossus.png', size1Lane: 108, size5Lane: 76 },
+  steam_warden: { key: 'mfd-def-steam_warden', url: '/assets/sprites/defenders/steam_warden.png', size1Lane: 102, size5Lane: 72 },
+  inferno_archer: { key: 'mfd-def-inferno_archer', url: '/assets/sprites/defenders/inferno_archer.png', size1Lane: 98, size5Lane: 70 },
+  flame_fang: { key: 'mfd-def-flame_fang', url: '/assets/sprites/defenders/flame_fang.png', size1Lane: 96, size5Lane: 68 },
 };
 
 const PLAYTEST_AI_ENEMY_ASSETS: Readonly<Record<string, AiSpriteEntry>> = {

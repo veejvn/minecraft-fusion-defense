@@ -13,7 +13,11 @@ export const PROGRESSION_SCHEMA_VERSION = 1;
 const MAX_RECORDED_BATTLE_IDS = 200;
 
 export const STARTER_DEFENDER_IDS = ['iron_golem', 'skeleton'] as const;
-export const STARTER_RECIPE_IDS = ['fusion_skeleton_sniper', 'fusion_steel_guardian'] as const;
+export const STARTER_RECIPE_IDS = [
+  'fusion_skeleton_sniper',
+  'fusion_steel_guardian',
+  'fusion_iron_ranger',
+] as const;
 
 export interface ProgressionProfile {
   totalVictories: number;
@@ -167,6 +171,15 @@ const FUSION_RECIPE_RULES: readonly FusionRecipeCatalogRule[] = [
     requirement: 'Unlocked at start',
   },
   {
+    recipeId: 'fusion_iron_ranger',
+    outputDefenderId: 'iron_ranger',
+    outputName: 'Iron Ranger',
+    inputDefenderIds: ['iron_golem', 'skeleton'],
+    requiredBaseDefenders: ['iron_golem', 'skeleton'],
+    starter: true,
+    requirement: 'Unlocked at start',
+  },
+  {
     recipeId: 'fusion_ice_golem',
     outputDefenderId: 'ice_golem',
     outputName: 'Ice Golem',
@@ -185,6 +198,15 @@ const FUSION_RECIPE_RULES: readonly FusionRecipeCatalogRule[] = [
     requirement: 'Unlock Iron Golem and Snow Golem',
   },
   {
+    recipeId: 'fusion_frostbite_ranger',
+    outputDefenderId: 'frostbite_ranger',
+    outputName: 'Frostbite Ranger',
+    inputDefenderIds: ['snow_golem', 'skeleton'],
+    requiredBaseDefenders: ['snow_golem', 'skeleton'],
+    starter: false,
+    requirement: 'Unlock Snow Golem and Skeleton',
+  },
+  {
     recipeId: 'fusion_alpha_wolf',
     outputDefenderId: 'alpha_wolf',
     outputName: 'Alpha Wolf',
@@ -192,6 +214,60 @@ const FUSION_RECIPE_RULES: readonly FusionRecipeCatalogRule[] = [
     requiredBaseDefenders: ['wolf'],
     starter: false,
     requirement: 'Unlock Wolf',
+  },
+  {
+    recipeId: 'fusion_ironfang_guardian',
+    outputDefenderId: 'ironfang_guardian',
+    outputName: 'Ironfang Guardian',
+    inputDefenderIds: ['iron_golem', 'wolf'],
+    requiredBaseDefenders: ['iron_golem', 'wolf'],
+    starter: false,
+    requirement: 'Unlock Iron Golem and Wolf',
+  },
+  {
+    recipeId: 'fusion_bonefang_hunter',
+    outputDefenderId: 'bonefang_hunter',
+    outputName: 'Bonefang Hunter',
+    inputDefenderIds: ['skeleton', 'wolf'],
+    requiredBaseDefenders: ['skeleton', 'wolf'],
+    starter: false,
+    requirement: 'Unlock Skeleton and Wolf',
+  },
+  {
+    recipeId: 'fusion_frostfang',
+    outputDefenderId: 'frostfang',
+    outputName: 'Frostfang',
+    inputDefenderIds: ['snow_golem', 'wolf'],
+    requiredBaseDefenders: ['snow_golem', 'wolf'],
+    starter: false,
+    requirement: 'Unlock Snow Golem and Wolf',
+  },
+  {
+    recipeId: 'fusion_infernal_archon',
+    outputDefenderId: 'infernal_archon',
+    outputName: 'Infernal Archon',
+    inputDefenderIds: ['blaze', 'blaze'],
+    requiredBaseDefenders: ['blaze'],
+    starter: false,
+    requirement: 'Unlock Blaze',
+  },
+  {
+    recipeId: 'fusion_magma_colossus',
+    outputDefenderId: 'magma_colossus',
+    outputName: 'Magma Colossus',
+    inputDefenderIds: ['iron_golem', 'blaze'],
+    requiredBaseDefenders: ['iron_golem', 'blaze'],
+    starter: false,
+    requirement: 'Unlock Iron Golem and Blaze',
+  },
+  {
+    recipeId: 'fusion_steam_warden',
+    outputDefenderId: 'steam_warden',
+    outputName: 'Steam Warden',
+    inputDefenderIds: ['snow_golem', 'blaze'],
+    requiredBaseDefenders: ['snow_golem', 'blaze'],
+    starter: false,
+    requirement: 'Unlock Snow Golem and Blaze',
   },
   {
     recipeId: 'fusion_inferno_archer',
@@ -495,6 +571,14 @@ export class ProgressionStore {
     return cloneProfile(this.profile);
   }
 
+  /** Reset persistent progression back to the confirmed starter state and clear stored keys. */
+  reset(): ProgressionProfile {
+    this.storage.removeItem(this.storageKey);
+    this.storage.removeItem(backupKey(this.storageKey));
+    this.profile = createStarterProgressionProfile();
+    return this.getProfile();
+  }
+
   /**
    * Commit a completed battle outcome. Only `'victory'` results increment wins/kills and
    * evaluate unlocks; `'defeat'` and duplicate `battleId` commits grant zero progression.
@@ -594,7 +678,7 @@ export function getAchievementsView(profile: ProgressionProfile): readonly Achie
   ];
 }
 
-/** Build the read-only Defender Collection view covering all 5 Base and 7 Fusion Defenders. */
+/** Build the read-only Defender Collection view covering all 5 Base and 15 Fusion Defenders. */
 export function getDefenderCollectionView(
   profile: ProgressionProfile,
 ): readonly DefenderCollectionEntry[] {

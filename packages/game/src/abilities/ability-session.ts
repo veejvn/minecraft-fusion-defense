@@ -12,11 +12,31 @@ const TARGET_SCOPES = new Set<AbilityTargetScope>([
   'all-enemies',
   'melee-enemy',
   'area-3x3-closest-enemy',
+  'area-3x3-self',
+  'front-3-cells',
+  'first-enemy-per-lane',
+  'highest-hp-same-lane',
   'ally-3x3',
 ]);
 
-const INSTANT_DAMAGE_SCOPES = new Set(['same-lane-enemies', 'all-enemies'] as const);
-const STATUS_EFFECT_SCOPES = new Set(['self', 'same-lane-enemies', 'all-enemies', 'ally-3x3'] as const);
+const INSTANT_DAMAGE_SCOPES = new Set([
+  'same-lane-enemies',
+  'all-enemies',
+  'area-3x3-self',
+  'front-3-cells',
+  'first-enemy-per-lane',
+  'highest-hp-same-lane',
+] as const);
+const STATUS_EFFECT_SCOPES = new Set([
+  'self',
+  'same-lane-enemies',
+  'all-enemies',
+  'area-3x3-self',
+  'front-3-cells',
+  'first-enemy-per-lane',
+  'highest-hp-same-lane',
+  'ally-3x3',
+] as const);
 
 export type AbilityDamageType = 'physical' | 'fire' | 'ice';
 
@@ -27,12 +47,17 @@ export type AbilityTargetScope =
   | 'all-enemies'
   | 'melee-enemy'
   | 'area-3x3-closest-enemy'
+  | 'area-3x3-self'
+  | 'front-3-cells'
+  | 'first-enemy-per-lane'
+  | 'highest-hp-same-lane'
   | 'ally-3x3';
 
 export type AttachedStatusSpec =
   | { readonly kind: 'slow'; readonly slowPct: number; readonly durationSeconds: number }
   | { readonly kind: 'stun'; readonly durationSeconds: number }
   | { readonly kind: 'freeze'; readonly durationSeconds: number }
+  | { readonly kind: 'vulnerable'; readonly damageTakenBonusPct: number; readonly durationSeconds: number }
   | {
       readonly kind: 'burn';
       readonly damageMultiplierPerSecond: number;
@@ -50,17 +75,37 @@ export type AttachedStatusSpec =
 export type AbilityEffectDefinition =
   | {
       readonly kind: 'instant-damage';
-      readonly scope: 'same-lane-enemies' | 'all-enemies';
+      readonly scope:
+        | 'same-lane-enemies'
+        | 'all-enemies'
+        | 'area-3x3-self'
+        | 'front-3-cells'
+        | 'first-enemy-per-lane'
+        | 'highest-hp-same-lane';
+      readonly radius?: number;
+      readonly frontCells?: number;
       readonly damageMultiplier: number;
+      readonly bonusDamageMultiplierIfChilled?: number;
+      readonly bonusDamageMultiplierIfBurnOrFreeze?: number;
       readonly damageType: AbilityDamageType;
       readonly armorPiercing?: boolean;
       readonly shieldPiercing?: boolean;
       readonly applyStatus?: AttachedStatusSpec;
+      readonly applyStatuses?: readonly AttachedStatusSpec[];
     }
   | {
       readonly kind: 'status';
-      readonly scope: 'self' | 'same-lane-enemies' | 'all-enemies' | 'ally-3x3';
+      readonly scope:
+        | 'self'
+        | 'same-lane-enemies'
+        | 'all-enemies'
+        | 'area-3x3-self'
+        | 'front-3-cells'
+        | 'first-enemy-per-lane'
+        | 'highest-hp-same-lane'
+        | 'ally-3x3';
       readonly radius?: number;
+      readonly frontCells?: number;
       readonly status: AttachedStatusSpec;
     }
   | {
@@ -82,22 +127,26 @@ export type AbilityEffectDefinition =
       readonly count: number;
       readonly intervalSeconds: number;
       readonly damageMultiplier: number;
+      readonly targetMaxHpBonusPct?: number;
       readonly damageType: AbilityDamageType;
       readonly projectileSpeed: number;
       readonly pierce: boolean;
       readonly armorPiercing?: boolean;
       readonly shieldPiercing?: boolean;
       readonly applyStatus?: AttachedStatusSpec;
+      readonly applyStatuses?: readonly AttachedStatusSpec[];
     }
   | {
       readonly kind: 'projectile';
       readonly damageMultiplier: number;
+      readonly targetMaxHpBonusPct?: number;
       readonly damageType: AbilityDamageType;
       readonly projectileSpeed: number;
       readonly pierce: boolean;
       readonly armorPiercing?: boolean;
       readonly shieldPiercing?: boolean;
       readonly applyStatus?: AttachedStatusSpec;
+      readonly applyStatuses?: readonly AttachedStatusSpec[];
     }
   | {
       readonly kind: 'multihit-melee';
@@ -116,6 +165,7 @@ export type AbilityEffectDefinition =
       readonly intervalSeconds: number;
       readonly travelSeconds: number;
       readonly radius: number;
+      readonly sameLaneOnly?: boolean;
       readonly damageMultiplier: number;
       readonly damageType: AbilityDamageType;
       readonly armorPiercing?: boolean;
@@ -209,6 +259,10 @@ function validateAttachedStatus(status: unknown, rate: number): void {
     case 'freeze':
       ticksFromSeconds(positiveFinite(spec.durationSeconds, 'freeze durationSeconds'), rate);
       return;
+    case 'vulnerable':
+      nonNegativeFinite(spec.damageTakenBonusPct, 'vulnerable damageTakenBonusPct');
+      ticksFromSeconds(positiveFinite(spec.durationSeconds, 'vulnerable durationSeconds'), rate);
+      return;
     case 'burn':
       nonNegativeFinite(spec.damageMultiplierPerSecond, 'burn damageMultiplierPerSecond');
       ticksFromSeconds(positiveFinite(spec.durationSeconds, 'burn durationSeconds'), rate);
@@ -230,18 +284,40 @@ function validateAttachedStatus(status: unknown, rate: number): void {
 function validateDamageOptions(
   effect: {
     readonly damageMultiplier: number;
+    readonly bonusDamageMultiplierIfChilled?: number;
+    readonly bonusDamageMultiplierIfBurnOrFreeze?: number;
+    readonly targetMaxHpBonusPct?: number;
     readonly damageType: AbilityDamageType;
     readonly armorPiercing?: boolean;
     readonly shieldPiercing?: boolean;
     readonly applyStatus?: AttachedStatusSpec;
+    readonly applyStatuses?: readonly AttachedStatusSpec[];
   },
   rate: number,
 ): void {
   nonNegativeFinite(effect.damageMultiplier, 'effect damageMultiplier');
+  if (effect.bonusDamageMultiplierIfChilled !== undefined) {
+    nonNegativeFinite(effect.bonusDamageMultiplierIfChilled, 'effect bonusDamageMultiplierIfChilled');
+  }
+  if (effect.bonusDamageMultiplierIfBurnOrFreeze !== undefined) {
+    nonNegativeFinite(
+      effect.bonusDamageMultiplierIfBurnOrFreeze,
+      'effect bonusDamageMultiplierIfBurnOrFreeze',
+    );
+  }
+  if (effect.targetMaxHpBonusPct !== undefined) {
+    nonNegativeFinite(effect.targetMaxHpBonusPct, 'effect targetMaxHpBonusPct');
+  }
   validateDamageType(effect.damageType);
   optionalBoolean(effect.armorPiercing, 'armorPiercing');
   optionalBoolean(effect.shieldPiercing, 'shieldPiercing');
   if (effect.applyStatus !== undefined) validateAttachedStatus(effect.applyStatus, rate);
+  if (effect.applyStatuses !== undefined) {
+    if (!Array.isArray(effect.applyStatuses)) {
+      throw new TypeError('Expected array for applyStatuses');
+    }
+    for (const status of effect.applyStatuses) validateAttachedStatus(status, rate);
+  }
 }
 
 function validateEffect(effect: unknown, rate: number): void {
@@ -252,6 +328,8 @@ function validateEffect(effect: unknown, rate: number): void {
       if (!INSTANT_DAMAGE_SCOPES.has(def.scope)) {
         throw new TypeError(`Invalid instant-damage scope: ${String(def.scope)}`);
       }
+      if (def.radius !== undefined) safeIntAtLeast(def.radius, 0, 'instant-damage radius');
+      if (def.frontCells !== undefined) safeIntAtLeast(def.frontCells, 1, 'instant-damage frontCells');
       validateDamageOptions(def, rate);
       return;
     case 'status':
@@ -259,6 +337,7 @@ function validateEffect(effect: unknown, rate: number): void {
         throw new TypeError(`Invalid status scope: ${String(def.scope)}`);
       }
       if (def.radius !== undefined) safeIntAtLeast(def.radius, 0, 'status radius');
+      if (def.frontCells !== undefined) safeIntAtLeast(def.frontCells, 1, 'status frontCells');
       validateAttachedStatus(def.status, rate);
       return;
     case 'shield':
@@ -302,6 +381,7 @@ function validateEffect(effect: unknown, rate: number): void {
       ticksFromSeconds(positiveFinite(def.intervalSeconds, 'multihit-falling-area intervalSeconds'), rate);
       ticksFromSeconds(nonNegativeFinite(def.travelSeconds, 'multihit-falling-area travelSeconds'), rate);
       safeIntAtLeast(def.radius, 0, 'multihit-falling-area radius');
+      optionalBoolean(def.sameLaneOnly, 'multihit-falling-area sameLaneOnly');
       validateDamageOptions(def, rate);
       return;
     default:

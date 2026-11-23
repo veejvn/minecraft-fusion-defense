@@ -19,6 +19,7 @@ import {
 } from './ability-session';
 import {
   getDefenderDamageModifiers,
+  getEnemyDamageTakenMultiplier,
   isUnitDisabled,
   type AbilityCommand,
   type AbilityState,
@@ -235,6 +236,9 @@ export function applyDamagePipeline(
     const fireRes = Math.max(0, Math.min(1, mitigation?.fireResistancePct ?? 0));
     dmg = Math.max(0, dmg * (1 - fireRes));
   }
+  if (targetEntity.kind === 'enemy') {
+    dmg *= getEnemyDamageTakenMultiplier(ctx.battle.abilities, targetId);
+  }
   if (!Number.isFinite(dmg)) throw new RangeError('Non-finite mitigated damage');
   if (dmg === 0) return { hitConfirmed: true, damageApplied: 0 };
 
@@ -347,6 +351,118 @@ function listLivingEnemyIds(
   return ids;
 }
 
+function listLivingEnemyIdsInArea(
+  battle: BattleWithAbilities,
+  combat: CombatState,
+  center: Cell,
+  radius: number,
+): EntityId[] {
+  const ids: EntityId[] = [];
+  for (const [id, entity] of battle.entities) {
+    if (entity.kind !== 'enemy') continue;
+    const cState = combat.entities.get(id);
+    if (!cState || cState.hp <= 0) continue;
+    const col = clampColumn(Math.floor(entity.position));
+    if (Math.abs(entity.lane - center.row) <= radius && Math.abs(col - center.column) <= radius) {
+      ids.push(id);
+    }
+  }
+  ids.sort(compareEntityIds);
+  return ids;
+}
+
+function listLivingEnemyIdsInFrontCells(
+  battle: BattleWithAbilities,
+  combat: CombatState,
+  origin: Cell,
+  frontCells: number,
+): EntityId[] {
+  const ids: EntityId[] = [];
+  const minX = origin.column;
+  const maxX = origin.column + frontCells;
+  for (const [id, entity] of battle.entities) {
+    if (entity.kind !== 'enemy') continue;
+    if (entity.lane !== origin.row) continue;
+    const cState = combat.entities.get(id);
+    if (!cState || cState.hp <= 0) continue;
+    if (entity.position >= minX && entity.position <= maxX) {
+      ids.push(id);
+    }
+  }
+  ids.sort(compareEntityIds);
+  return ids;
+}
+
+function listFirstEnemyPerLane(battle: BattleWithAbilities, combat: CombatState): EntityId[] {
+  const byLane = new Map<number, { id: EntityId; position: number }>();
+  for (const [id, entity] of battle.entities) {
+    if (entity.kind !== 'enemy') continue;
+    const cState = combat.entities.get(id);
+    if (!cState || cState.hp <= 0) continue;
+    const current = byLane.get(entity.lane);
+    if (
+      !current ||
+      entity.position < current.position ||
+      (entity.position === current.position && id < current.id)
+    ) {
+      byLane.set(entity.lane, { id, position: entity.position });
+    }
+  }
+  return Array.from(byLane.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(entry => entry[1].id);
+}
+
+function findHighestHpEnemyInLane(
+  battle: BattleWithAbilities,
+  combat: CombatState,
+  lane: number,
+): EntityId | null {
+  let best: { id: EntityId; hp: number; position: number } | null = null;
+  for (const [id, entity] of battle.entities) {
+    if (entity.kind !== 'enemy' || entity.lane !== lane) continue;
+    const cState = combat.entities.get(id);
+    if (!cState || cState.hp <= 0) continue;
+    if (
+      !best ||
+      cState.hp > best.hp ||
+      (cState.hp === best.hp &&
+        (entity.position < best.position || (entity.position === best.position && id < best.id)))
+    ) {
+      best = { id, hp: cState.hp, position: entity.position };
+    }
+  }
+  return best ? best.id : null;
+}
+
+function isEnemyChilled(abilities: AbilityState | undefined, entityId: EntityId): boolean {
+  if (!abilities) return false;
+  for (const status of abilities.statuses) {
+    if (
+      status.targetEntityId === entityId &&
+      status.remainingTicks > 0 &&
+      (status.kind === 'slow' || status.kind === 'freeze')
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function isEnemyBurnOrFrozen(abilities: AbilityState | undefined, entityId: EntityId): boolean {
+  if (!abilities) return false;
+  for (const status of abilities.statuses) {
+    if (
+      status.targetEntityId === entityId &&
+      status.remainingTicks > 0 &&
+      (status.kind === 'burn' || status.kind === 'freeze')
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function listLivingAllyIdsInRadius(
   battle: BattleWithAbilities,
   combat: CombatState,
@@ -414,6 +530,7 @@ function applyStatusToTarget(
   const rate = ctx.abilitySession?.rate ?? ctx.session.rate;
   let durationTicks = 0;
   let slowPct: number | undefined;
+  let damageTakenBonusPct: number | undefined;
   let burnDamagePerTick: number | undefined;
   let burnTickIntervalTicks: number | undefined;
   let attackSpeedBonusPct: number | undefined;
@@ -426,6 +543,10 @@ function applyStatusToTarget(
       break;
     case 'stun':
       durationTicks = ticksFromSeconds(spec.durationSeconds, rate);
+      break;
+    case 'vulnerable':
+      durationTicks = ticksFromSeconds(spec.durationSeconds, rate);
+      damageTakenBonusPct = spec.damageTakenBonusPct;
       break;
     case 'freeze': {
       const targetDef = targetEntity.kind === 'defender'
@@ -472,6 +593,7 @@ function applyStatusToTarget(
     existing.isZoneDerived = false;
     existing.zoneShieldId = undefined;
     existing.slowPct = slowPct;
+    existing.damageTakenBonusPct = damageTakenBonusPct;
     existing.burnDamagePerTick = burnDamagePerTick;
     existing.burnTickIntervalTicks = burnTickIntervalTicks;
     existing.burnNextTickRemaining = burnTickIntervalTicks;
@@ -489,6 +611,7 @@ function applyStatusToTarget(
     kind: spec.kind,
     remainingTicks: durationTicks,
     ...(slowPct !== undefined ? { slowPct } : {}),
+    ...(damageTakenBonusPct !== undefined ? { damageTakenBonusPct } : {}),
     ...(burnDamagePerTick !== undefined ? { burnDamagePerTick } : {}),
     ...(burnTickIntervalTicks !== undefined
       ? { burnTickIntervalTicks, burnNextTickRemaining: burnTickIntervalTicks }
@@ -580,6 +703,7 @@ function hasEligibleTarget(
     case 'ally-3x3':
       return true;
     case 'same-lane-enemies':
+    case 'highest-hp-same-lane':
       return listLivingEnemyIds(ctx.battle, ctx.combat, defenderCell.row).length > 0;
     case 'same-lane-enemy-in-range':
       return (
@@ -594,7 +718,12 @@ function hasEligibleTarget(
       );
     case 'all-enemies':
     case 'area-3x3-closest-enemy':
+    case 'first-enemy-per-lane':
       return listLivingEnemyIds(ctx.battle, ctx.combat).length > 0;
+    case 'area-3x3-self':
+      return listLivingEnemyIdsInArea(ctx.battle, ctx.combat, defenderCell, 1).length > 0;
+    case 'front-3-cells':
+      return listLivingEnemyIdsInFrontCells(ctx.battle, ctx.combat, defenderCell, 3).length > 0;
     case 'melee-enemy': {
       const range = getMeleeScopeRange(ability, ownerDef);
       const effectiveDef = range === ownerDef.attackRange ? ownerDef : { ...ownerDef, attackRange: range };
@@ -631,12 +760,18 @@ function spawnLaneProjectile(
     x,
     speedPerTick: effect.projectileSpeed / ctx.abilitySession.rate,
     damage: attackDamage * effect.damageMultiplier,
+    ...(effect.targetMaxHpBonusPct !== undefined
+      ? { targetMaxHpBonusPct: effect.targetMaxHpBonusPct }
+      : {}),
     damageType: effect.damageType,
     pierce: effect.pierce,
     armorPiercing: Boolean(effect.armorPiercing),
     shieldPiercing: Boolean(effect.shieldPiercing),
     hitEnemyIds: new Set(),
     ...(effect.applyStatus ? { applyStatus: { ...effect.applyStatus } } : {}),
+    ...(effect.applyStatuses && effect.applyStatuses.length > 0
+      ? { applyStatuses: effect.applyStatuses.map(status => ({ ...status })) }
+      : {}),
   });
 }
 
@@ -771,16 +906,35 @@ function fireCadenceShot(
       return true;
     }
     case 'multihit-falling-area': {
-      const anyEnemy = findClosestLivingEnemy(ctx.battle, ctx.combat);
-      if (!anyEnemy) return false;
-      const center = lockedCenterCell ?? { row: anyEnemy.lane, column: anyEnemy.column };
-      const inAreaEnemy = findClosestLivingEnemy(ctx.battle, ctx.combat, {
-        center,
-        radius: effect.radius,
-      });
-      const impactCell: Cell = inAreaEnemy
-        ? { row: inAreaEnemy.lane, column: inAreaEnemy.column }
-        : { row: center.row, column: center.column };
+      let impactCell: Cell;
+      if (effect.sameLaneOnly) {
+        let closestSameLane: { lane: number; position: number; id: EntityId } | null = null;
+        for (const [id, entity] of ctx.battle.entities) {
+          if (entity.kind !== 'enemy' || entity.lane !== ownerEntity.cell.row) continue;
+          const cState = ctx.combat.entities.get(id);
+          if (!cState || cState.hp <= 0) continue;
+          if (
+            !closestSameLane ||
+            entity.position < closestSameLane.position ||
+            (entity.position === closestSameLane.position && id < closestSameLane.id)
+          ) {
+            closestSameLane = { lane: entity.lane, position: entity.position, id };
+          }
+        }
+        if (!closestSameLane) return false;
+        impactCell = { row: closestSameLane.lane, column: clampColumn(Math.floor(closestSameLane.position)) };
+      } else {
+        const anyEnemy = findClosestLivingEnemy(ctx.battle, ctx.combat);
+        if (!anyEnemy) return false;
+        const center = lockedCenterCell ?? { row: anyEnemy.lane, column: anyEnemy.column };
+        const inAreaEnemy = findClosestLivingEnemy(ctx.battle, ctx.combat, {
+          center,
+          radius: effect.radius,
+        });
+        impactCell = inAreaEnemy
+          ? { row: inAreaEnemy.lane, column: inAreaEnemy.column }
+          : { row: center.row, column: center.column };
+      }
 
       const attackDamage = getDefenderAttackDamage(ctx.battle, ctx.session, ownerId);
       const travelTicks = ticksFromSeconds(effect.travelSeconds, ctx.abilitySession.rate);
@@ -825,27 +979,69 @@ function executeImmediateEffect(
 
   switch (effect.kind) {
     case 'instant-damage': {
-      const targets = listLivingEnemyIds(
-        ctx.battle,
-        ctx.combat,
-        effect.scope === 'same-lane-enemies' ? ownerCell.row : undefined,
-      );
-      const rawDamage = attackDamage * effect.damageMultiplier;
+      let targets: EntityId[];
+      switch (effect.scope) {
+        case 'same-lane-enemies':
+          targets = listLivingEnemyIds(ctx.battle, ctx.combat, ownerCell.row);
+          break;
+        case 'all-enemies':
+          targets = listLivingEnemyIds(ctx.battle, ctx.combat);
+          break;
+        case 'area-3x3-self':
+          targets = listLivingEnemyIdsInArea(ctx.battle, ctx.combat, ownerCell, effect.radius ?? 1);
+          break;
+        case 'front-3-cells':
+          targets = listLivingEnemyIdsInFrontCells(
+            ctx.battle,
+            ctx.combat,
+            ownerCell,
+            effect.frontCells ?? 3,
+          );
+          break;
+        case 'first-enemy-per-lane':
+          targets = listFirstEnemyPerLane(ctx.battle, ctx.combat);
+          break;
+        case 'highest-hp-same-lane': {
+          const topId = findHighestHpEnemyInLane(ctx.battle, ctx.combat, ownerCell.row);
+          targets = topId !== null ? [topId] : [];
+          break;
+        }
+      }
+      const statusesToApply: AttachedStatusSpec[] = [];
+      if (effect.applyStatus) statusesToApply.push(effect.applyStatus);
+      if (effect.applyStatuses) statusesToApply.push(...effect.applyStatuses);
+
       for (const enemyId of targets) {
+        let multiplier = effect.damageMultiplier;
+        if (
+          effect.bonusDamageMultiplierIfChilled !== undefined &&
+          isEnemyChilled(ctx.battle.abilities, enemyId)
+        ) {
+          multiplier += effect.bonusDamageMultiplierIfChilled;
+        }
+        if (
+          effect.bonusDamageMultiplierIfBurnOrFreeze !== undefined &&
+          isEnemyBurnOrFrozen(ctx.battle.abilities, enemyId)
+        ) {
+          multiplier += effect.bonusDamageMultiplierIfBurnOrFreeze;
+        }
+        const rawDamage = attackDamage * multiplier;
         const res = applyDamagePipeline(ctx, enemyId, rawDamage, {
           damageType: effect.damageType,
           armorPiercing: effect.armorPiercing,
           shieldPiercing: effect.shieldPiercing,
         });
-        if (res.hitConfirmed && effect.applyStatus) {
-          applyStatusToTarget(
-            ctx,
-            enemyId,
-            ownerId,
-            ability.id,
-            effect.applyStatus,
-            attackDamage,
-          );
+        if (res.hitConfirmed && statusesToApply.length > 0) {
+          for (const statusSpec of statusesToApply) {
+            applyStatusToTarget(
+              ctx,
+              enemyId,
+              ownerId,
+              ability.id,
+              statusSpec,
+              attackDamage,
+            );
+          }
         }
       }
       return;
@@ -862,6 +1058,25 @@ function executeImmediateEffect(
         case 'all-enemies':
           targets = listLivingEnemyIds(ctx.battle, ctx.combat);
           break;
+        case 'area-3x3-self':
+          targets = listLivingEnemyIdsInArea(ctx.battle, ctx.combat, ownerCell, effect.radius ?? 1);
+          break;
+        case 'front-3-cells':
+          targets = listLivingEnemyIdsInFrontCells(
+            ctx.battle,
+            ctx.combat,
+            ownerCell,
+            effect.frontCells ?? 3,
+          );
+          break;
+        case 'first-enemy-per-lane':
+          targets = listFirstEnemyPerLane(ctx.battle, ctx.combat);
+          break;
+        case 'highest-hp-same-lane': {
+          const topId = findHighestHpEnemyInLane(ctx.battle, ctx.combat, ownerCell.row);
+          targets = topId !== null ? [topId] : [];
+          break;
+        }
         case 'ally-3x3':
           targets = listLivingAllyIdsInRadius(ctx.battle, ctx.combat, ownerCell, effect.radius ?? 1);
           break;
@@ -950,7 +1165,7 @@ function executeImmediateEffect(
     case 'multihit-melee':
     case 'multihit-falling-area': {
       let lockedCenterCell: Cell | undefined;
-      if (effect.kind === 'multihit-falling-area') {
+      if (effect.kind === 'multihit-falling-area' && !effect.sameLaneOnly) {
         if (targetCell) {
           lockedCenterCell = { row: targetCell.row, column: targetCell.column };
         } else {
@@ -1149,26 +1364,36 @@ function applyLaneProjectileHits(
   candidates: readonly { readonly id: EntityId }[],
 ): boolean {
   if (candidates.length === 0) return true;
-  const burnSourceDamage = proj.applyStatus?.kind === 'burn'
+  const statusesToApply: AttachedStatusSpec[] = [];
+  if (proj.applyStatus) statusesToApply.push(proj.applyStatus);
+  if (proj.applyStatuses) statusesToApply.push(...proj.applyStatuses);
+  const burnSourceDamage = statusesToApply.some(status => status.kind === 'burn')
     ? resolveProjectileBurnSourceDamage(ctx, proj)
     : 0;
 
   for (const candidate of candidates) {
     proj.hitEnemyIds.add(candidate.id);
-    const res = applyDamagePipeline(ctx, candidate.id, proj.damage, {
+    const targetCombat = ctx.combat.entities.get(candidate.id);
+    const bonusMaxHpDamage =
+      proj.targetMaxHpBonusPct !== undefined && targetCombat
+        ? targetCombat.maxHp * proj.targetMaxHpBonusPct
+        : 0;
+    const res = applyDamagePipeline(ctx, candidate.id, proj.damage + bonusMaxHpDamage, {
       damageType: proj.damageType,
       armorPiercing: proj.armorPiercing,
       shieldPiercing: proj.shieldPiercing,
     });
-    if (res.hitConfirmed && proj.applyStatus) {
-      applyStatusToTarget(
-        ctx,
-        candidate.id,
-        proj.sourceId,
-        proj.abilityId,
-        proj.applyStatus,
-        burnSourceDamage,
-      );
+    if (res.hitConfirmed && statusesToApply.length > 0) {
+      for (const statusSpec of statusesToApply) {
+        applyStatusToTarget(
+          ctx,
+          candidate.id,
+          proj.sourceId,
+          proj.abilityId,
+          statusSpec,
+          burnSourceDamage,
+        );
+      }
     }
     if (!proj.pierce) return false;
   }

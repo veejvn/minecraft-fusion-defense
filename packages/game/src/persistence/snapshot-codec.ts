@@ -137,7 +137,14 @@ const VALID_WAVE_STATUSES = new Set<WavePhaseStatus>([
   'between-waves',
   'completed',
 ]);
-const VALID_STATUS_KINDS = new Set<ActiveStatusInstance['kind']>(['slow', 'stun', 'freeze', 'burn', 'buff']);
+const VALID_STATUS_KINDS = new Set<ActiveStatusInstance['kind']>([
+  'slow',
+  'stun',
+  'freeze',
+  'burn',
+  'buff',
+  'vulnerable',
+]);
 const VALID_DAMAGE_TYPES = new Set(['physical', 'fire', 'ice']);
 const EXPECTED_OCCUPANCY_LENGTH = BATTLEFIELD_ROWS * BATTLEFIELD_COLUMNS;
 const FNV1A_OFFSET_BASIS = 0x811c9dc5;

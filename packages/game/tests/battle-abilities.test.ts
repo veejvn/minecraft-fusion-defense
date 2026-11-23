@@ -1686,3 +1686,277 @@ describe('AC-17 Deterministic replay, snapshot isolation & backward compatibilit
     expect(live.snapshot()).toEqual(baseline);
   });
 });
+
+describe('Abilities v2.2 scopes, bonuses, vulnerable marks, and same-lane lobbed fireballs', () => {
+  it('supports front-3-cells chilled bonus (winter_pounce), area-3x3-self thermal shock (thermal_collapse), and vulnerable +40% (predator_mark)', () => {
+    const resource = resourceFixture({
+      defenders: [
+        ...resourceFixture().defenders,
+        { id: 'frostfang', classification: 'fusion', summonEnergyCost: 0, unlocked: true },
+        { id: 'steam_warden', classification: 'fusion', summonEnergyCost: 0, unlocked: true },
+        { id: 'bonefang_hunter', classification: 'fusion', summonEnergyCost: 0, unlocked: true },
+      ],
+    });
+    const combat = combatFixture({
+      defenders: [
+        ...combatFixture().defenders,
+        { id: 'frostfang', maxHp: 200, damage: 20, attackSpeed: 1, attackRange: 1, targeting: 'CLOSEST_TO_BASE' },
+        { id: 'steam_warden', maxHp: 300, damage: 20, attackSpeed: 1, attackRange: 3, targeting: 'CLOSEST_TO_BASE' },
+        { id: 'bonefang_hunter', maxHp: 200, damage: 20, attackSpeed: 1, attackRange: 1, targeting: 'CLOSEST_TO_BASE' },
+      ],
+    });
+    const abilities: AbilityDefinition[] = [
+      ...abilityFixture().abilities,
+      {
+        id: 'winter_pounce',
+        ownerDefenderId: 'frostfang',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: true,
+        targetScope: 'front-3-cells',
+        effects: [
+          {
+            kind: 'instant-damage',
+            scope: 'front-3-cells',
+            frontCells: 3,
+            damageMultiplier: 2.5,
+            bonusDamageMultiplierIfChilled: 1.5,
+            damageType: 'ice',
+            applyStatus: { kind: 'slow', slowPct: 0.5, durationSeconds: 4 },
+          },
+        ],
+      },
+      {
+        id: 'thermal_collapse',
+        ownerDefenderId: 'steam_warden',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: true,
+        targetScope: 'area-3x3-self',
+        effects: [
+          {
+            kind: 'instant-damage',
+            scope: 'area-3x3-self',
+            radius: 1,
+            damageMultiplier: 2.5,
+            bonusDamageMultiplierIfBurnOrFreeze: 1.5,
+            damageType: 'fire',
+            armorPiercing: true,
+            applyStatus: { kind: 'slow', slowPct: 0.5, durationSeconds: 5 },
+          },
+        ],
+      },
+      {
+        id: 'predator_mark',
+        ownerDefenderId: 'bonefang_hunter',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: true,
+        targetScope: 'highest-hp-same-lane',
+        effects: [
+          { kind: 'status', scope: 'self', status: { kind: 'buff', attackSpeedBonusPct: 0.5, attackDamageBonusPct: 0, durationSeconds: 6 } },
+          { kind: 'status', scope: 'highest-hp-same-lane', status: { kind: 'vulnerable', damageTakenBonusPct: 0.4, durationSeconds: 6 } },
+          { kind: 'instant-damage', scope: 'highest-hp-same-lane', damageMultiplier: 2.5, damageType: 'physical', armorPiercing: true },
+        ],
+      },
+    ];
+
+    const game = new BattleRuntime(
+      { ticksPerSecond: 10, maxCatchUpTicks: 250 },
+      resource,
+      combat,
+      undefined,
+      undefined,
+      { abilities },
+    );
+
+    game.enqueue({ type: 'wave-reward', sourceId: 'wave_1' }, 1);
+    game.enqueue({ type: 'wave-reward', sourceId: 'wave_2' }, 1);
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'snow_golem', cell: { row: 0, column: 0 } } }, 1); // 0n
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'frostfang', cell: { row: 0, column: 1 } } }, 1); // 1n
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'steam_warden', cell: { row: 2, column: 3 } } }, 1); // 2n
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'bonefang_hunter', cell: { row: 4, column: 0 } } }, 1); // 3n
+    // 4n: in front-3-cells of frostfang (x=3.5) and will be chilled by snow_golem first.
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 0, position: 3.5 } }, 1); // 4n
+    // 5n: out of front-3-cells range of frostfang (x=6.5).
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 0, position: 6.5 } }, 1); // 5n
+    // 6n: in 3x3 around steam_warden (lane 1, pos 4.2 -> col 4, within |r-2|<=1,|c-3|<=1).
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 1, position: 4.2 } }, 1); // 6n
+    // 7n: in lane 4 for bonefang_hunter (predator_mark: +40% dmg taken -> 20 * 2.5 * 1.4 = 70 dmg!).
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_armored', lane: 4, position: 5.5 } }, 1); // 7n
+
+    step(game); // tick 1
+    // Slow 4n & 5n via Snow Golem blizzard, then strike with Frostfang -> 4n gets 4.0x AD = 80 dmg, 5n untouched!
+    game.enqueue({ type: 'activate-ability', defenderId: 0n }, 2);
+    game.enqueue({ type: 'activate-ability', defenderId: 1n }, 2);
+    // Freeze 6n artificially via status push after tick 2? Wait: first test Thermal Collapse baseline (2.5x = 50 dmg), then test Burn/Freeze (+1.5x).
+    game.enqueue({ type: 'activate-ability', defenderId: 2n }, 2);
+    // Bonefang Hunter marks 7n (+40% vulnerable) and strikes 2.5x armorPiercing -> 50 * 1.4 = 70 dmg!
+    game.enqueue({ type: 'activate-ability', defenderId: 3n }, 2);
+    step(game); // tick 2
+
+    const s2 = game.snapshot();
+    expect(s2.combat?.entities.get(4n)?.hp).toBe(920); // 1000 - 80
+    expect(s2.combat?.entities.get(5n)?.hp).toBe(1000); // outside front-3-cells
+    expect(s2.combat?.entities.get(6n)?.hp).toBe(950); // 1000 - 50 (no burn/freeze yet)
+    expect(s2.combat?.entities.get(7n)?.hp).toBe(930); // 1000 - 70 (+40% vulnerable applied!)
+    expect(s2.abilities?.statuses.some(st => st.targetEntityId === 7n && st.kind === 'vulnerable')).toBe(true);
+    expect(s2.abilities?.statuses.some(st => st.targetEntityId === 3n && st.kind === 'buff')).toBe(true);
+  });
+
+  it('supports first-enemy-per-lane (wildfire_rush), % max HP projectile (siege_volley), multi-status projectile (glacier_barrage), and sameLaneOnly lobbed fireballs (inferno)', () => {
+    const resource = resourceFixture({
+      defenders: [
+        ...resourceFixture().defenders,
+        { id: 'iron_ranger', classification: 'fusion', summonEnergyCost: 0, unlocked: true },
+        { id: 'frostbite_ranger', classification: 'fusion', summonEnergyCost: 0, unlocked: true },
+      ],
+    });
+    const combat = combatFixture({
+      defenders: [
+        ...combatFixture().defenders,
+        { id: 'iron_ranger', maxHp: 200, damage: 20, attackSpeed: 0.5, attackRange: 9, targeting: 'CLOSEST_TO_BASE' },
+        { id: 'frostbite_ranger', maxHp: 180, damage: 20, attackSpeed: 1, attackRange: 9, targeting: 'CLOSEST_TO_BASE' },
+      ],
+    });
+    const abilities: AbilityDefinition[] = [
+      ...abilityFixture().abilities.filter(a => a.id !== 'wildfire_rush' && a.id !== 'inferno'),
+      {
+        id: 'inferno',
+        ownerDefenderId: 'blaze',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: true,
+        targetScope: 'same-lane-enemies',
+        effects: [
+          {
+            kind: 'multihit-falling-area',
+            count: 4,
+            intervalSeconds: 0.2,
+            travelSeconds: 0.1,
+            radius: 0,
+            sameLaneOnly: true,
+            damageMultiplier: 1.25,
+            damageType: 'fire',
+            armorPiercing: true,
+            applyStatus: {
+              kind: 'burn',
+              damageMultiplierPerSecond: 0.25,
+              durationSeconds: 5,
+              tickIntervalSeconds: 1,
+              damageType: 'fire',
+            },
+          },
+        ],
+      },
+      {
+        id: 'wildfire_rush',
+        ownerDefenderId: 'flame_fang',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: true,
+        targetScope: 'first-enemy-per-lane',
+        effects: [
+          {
+            kind: 'instant-damage',
+            scope: 'first-enemy-per-lane',
+            damageMultiplier: 2.5,
+            damageType: 'fire',
+            armorPiercing: true,
+            applyStatus: {
+              kind: 'burn',
+              damageMultiplierPerSecond: 0.5,
+              durationSeconds: 6,
+              tickIntervalSeconds: 1,
+              damageType: 'fire',
+            },
+          },
+        ],
+      },
+      {
+        id: 'siege_volley',
+        ownerDefenderId: 'iron_ranger',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: true,
+        targetScope: 'same-lane-enemy-in-range',
+        effects: [
+          {
+            kind: 'projectile',
+            damageMultiplier: 4.5,
+            targetMaxHpBonusPct: 0.2,
+            damageType: 'physical',
+            projectileSpeed: 20,
+            pierce: false,
+            armorPiercing: true,
+            applyStatus: { kind: 'stun', durationSeconds: 1 },
+          },
+        ],
+      },
+      {
+        id: 'glacier_barrage',
+        ownerDefenderId: 'frostbite_ranger',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: false,
+        targetScope: 'self',
+        effects: [
+          {
+            kind: 'projectile',
+            damageMultiplier: 3,
+            damageType: 'ice',
+            projectileSpeed: 20,
+            pierce: true,
+            applyStatuses: [
+              { kind: 'freeze', durationSeconds: 2.5 },
+              { kind: 'slow', slowPct: 0.5, durationSeconds: 5 },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const game = new BattleRuntime(
+      { ticksPerSecond: 10, maxCatchUpTicks: 250 },
+      resource,
+      combat,
+      undefined,
+      undefined,
+      { abilities },
+    );
+
+    game.enqueue({ type: 'wave-reward', sourceId: 'wave_1' }, 1);
+    game.enqueue({ type: 'wave-reward', sourceId: 'wave_2' }, 1);
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'flame_fang', cell: { row: 0, column: 0 } } }, 1); // 0n (dmg 25 -> 62.5 fire)
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'iron_ranger', cell: { row: 1, column: 0 } } }, 1); // 1n (dmg 20 -> 90 + 200 = 290)
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'frostbite_ranger', cell: { row: 2, column: 0 } } }, 1); // 2n (dmg 20 -> 60 + freeze + slow)
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'blaze', cell: { row: 3, column: 0 } } }, 1); // 3n (dmg 20 -> 25 fire lob)
+
+    // Lane 0: two enemies (only frontmost 4n hit by wildfire_rush!)
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 0, position: 4.5 } }, 1); // 4n
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 0, position: 7.5 } }, 1); // 5n
+    // Lane 1: armored enemy for iron_ranger
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_armored', lane: 1, position: 3.5 } }, 1); // 6n
+    // Lane 2: enemy for frostbite_ranger
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 2, position: 3.5 } }, 1); // 7n
+    // Lane 3: enemy for blaze sameLaneOnly lobbed arc
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 3, position: 5.5 } }, 1); // 8n
+
+    step(game); // tick 1
+    game.enqueue({ type: 'activate-ability', defenderId: 0n }, 2);
+    game.enqueue({ type: 'activate-ability', defenderId: 1n }, 2);
+    game.enqueue({ type: 'activate-ability', defenderId: 2n }, 2);
+    game.enqueue({ type: 'activate-ability', defenderId: 3n }, 2);
+    step(game, 6); // advance through projectile crossing & lobbed fireballs
+
+    const s = game.snapshot();
+    expect(s.combat?.entities.get(4n)?.hp).toBe(937.5); // wildfire_rush hits first enemy on lane 0 (1000 - 62.5)
+    expect(s.combat?.entities.get(5n)?.hp).toBe(1000); // second enemy in lane 0 untouched by wildfire_rush
+    expect(s.combat?.entities.get(6n)?.hp).toBe(647.5); // 1000 - 62.5 (wildfire_rush) - 290 (siege_volley) = 647.5
+    expect(s.abilities?.statuses.some(st => st.targetEntityId === 6n && st.kind === 'stun')).toBe(true);
+    expect(s.combat?.entities.get(7n)?.hp).toBe(857.5); // 1000 - 20 (normal attack) - 62.5 (wildfire_rush) - 60 (glacier_barrage) = 857.5
+    expect(s.abilities?.statuses.some(st => st.targetEntityId === 7n && st.kind === 'freeze')).toBe(true);
+    expect(s.abilities?.statuses.some(st => st.targetEntityId === 7n && st.kind === 'slow')).toBe(true);
+    expect(s.combat?.entities.get(8n)?.hp).toBeLessThan(937.5); // blaze same-lane lobbed fireballs + wildfire_rush landed on lane 3
+  });
+});

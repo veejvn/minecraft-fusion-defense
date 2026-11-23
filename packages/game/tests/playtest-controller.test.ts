@@ -8,14 +8,14 @@ import {
 } from '../src/playtest/playtest-presets';
 
 describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
-  it('initializes with 12 Defenders, 4 Enemies, 7 Recipes, and 12 Confirmed v2.0 Abilities in both modes', () => {
+  it('initializes with 20 Defenders, 4 Enemies, 15 Recipes, and 20 Confirmed v2.2 Abilities in both modes', () => {
     const preset = createDefaultPlaytestPreset();
-    expect(PLAYTEST_DEFENDER_META).toHaveLength(12);
+    expect(PLAYTEST_DEFENDER_META).toHaveLength(20);
     expect(PLAYTEST_ENEMY_META).toHaveLength(4);
-    expect(PLAYTEST_FUSION_RECIPES_META).toHaveLength(7);
-    expect(preset.defenders).toHaveLength(12);
+    expect(PLAYTEST_FUSION_RECIPES_META).toHaveLength(15);
+    expect(preset.defenders).toHaveLength(20);
     expect(preset.enemies).toHaveLength(4);
-    expect(preset.abilities).toHaveLength(12);
+    expect(preset.abilities).toHaveLength(20);
     expect(preset.waves).toHaveLength(5);
 
     const sandbox = new PlaytestController({ mode: 'sandbox' });
@@ -190,7 +190,7 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
     expect(controller.getSnapshot().enemies[0].isStunned).toBe(true);
 
     controller.activateAbility(byId('blaze').id);
-    controller.stepMs(50);
+    controller.stepMs(300); // wait 6 ticks so lobbed fireball (travelSeconds = 0.25s = 5 ticks) lands & applies Burn
     expect(controller.getSnapshot().enemies[0].burnCount).toBe(1);
 
     controller.activateAbility(byId('inferno_archer').id, { row: 0, column: 8 });
