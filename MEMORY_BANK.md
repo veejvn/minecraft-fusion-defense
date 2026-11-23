@@ -1,7 +1,7 @@
 # MEMORY_BANK — Minecraft Fusion Defense
 
-**Cập nhật lần cuối:** 2026-11-21T17:42:00+07:00  
-**Nhánh Git hiện tại:** `main` (commit `ddd6d4f` + code/test/nghiệm thu T-10 tại working tree)
+**Cập nhật lần cuối:** 2026-11-21T20:49:00+07:00  
+**Nhánh Git hiện tại:** `main` (commit `0040ac5` + Bản triển khai `T-10B` One-Lane Playtest Sandbox tại working tree)
 
 ---
 
@@ -53,7 +53,7 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
 | **T-07** | Enemy movement, combat, targeting | **Owner-accepted kỹ thuật (20/20 gates PASS):** Code tại `7b7c37d` (push via `6b0ee0b`), CI run `44877738893` **success**; báo cáo nghiệm thu `docs/reports/T-07-FINAL-ACCEPTANCE.md` và đã cập nhật `ROADMAP.md`. Combat stats/behaviors vẫn `TBD` (dùng test fixtures). |
 | **T-08** | Fusion mechanics | **Đã code & commit local tại `061d2ee`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** `docs/reports/T-08-FINAL-ACCEPTANCE.md`; 110/110 game tests (25 tests `battle-fusion.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa push lên GitHub nên AC-20 remote CI đang pending. Chỉ số combat của 7 Fusion Defenders vẫn `TBD` (dùng test fixtures). |
 | **T-09** | Grassland 5 Waves, Victory/Defeat | **Đã code & commit local tại `3378dd7`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI:** `docs/reports/T-09-FINAL-ACCEPTANCE.md`; 126/126 game tests (16 tests `battle-waves.test.ts`), 25/25 game-data tests, typecheck & build PASS; chưa push lên GitHub nên AC-20 remote CI đang pending. Dữ liệu Wave 1–5 và reward vẫn `TBD` (dùng test fixtures). |
-| **T-10** | Special abilities | **Đã code local, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ commit/push CI; `ABILITY_CATALOG.md` đã nâng cấp Confirmed v2.0 (2026-11-21):** Kế hoạch v1.0 tại `ddd6d4f`, báo cáo nghiệm thu `docs/reports/T-10-FINAL-ACCEPTANCE.md`; 148/148 game tests (22 tests `battle-abilities.test.ts`), 25/25 game-data tests, typecheck & build PASS; `DOCSYNC-01` đã resolved. Thông số gốc từng Entity (`HP/ATK/Armor`) & VFX (T-12) vẫn TBD chờ playtest 1-lane để tinh chỉnh. |
+| **T-10** | Special abilities | **Đã code & commit local tại `0040ac5`, nghiệm thu kỹ thuật local 19/20 PASS + AC-20 chờ push CI; `ABILITY_CATALOG.md` đã nâng cấp Confirmed v2.0 (2026-11-21); đã hoàn tất `T-10B` 1-Lane Playtest Sandbox (`/playtest`):** `playtest-presets.ts`, `playtest-controller.ts`, `PlaytestScene`, `createPlaytestGame`, `PlaytestHost`, `/playtest`, `playtest-controller.test.ts`; phục vụ Owner chơi thử & tinh chỉnh chỉ số thực tế trước khi chốt `GAME_BALANCING.md` / `T-11`. |
 | **T-11** | Save & Resume, persistent progression | Chưa bắt đầu. |
 | **T-12** | UI, assets và playable integration | Chưa bắt đầu (có thể làm song song từng phần khi interface ổn định). |
 | **T-13** | MVP QA & local acceptance | Chưa bắt đầu. |
