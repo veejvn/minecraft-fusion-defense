@@ -128,4 +128,60 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     expect(afterWinSnap.unlockedRecipeIds).toContain('fusion_frost_guardian');
     expect(afterWinSnap.unlockedRecipeIds).toContain('fusion_frostbite_ranger');
   });
+
+  it('enforces base defender summon cooldowns, freezes cooldown on pause, and persists across resume', () => {
+    const storage = new InMemoryStorageAdapter();
+    const controller = new CampaignController({ storage });
+    controller.startNewBattle({ battleId: 'camp_cooldown_1', unlockAll: true });
+
+    // Advance 20.5s and collect periodic Energy orbs to ensure >= 150 Energy before testing cooldowns.
+    for (let i = 0; i < 410; i++) {
+      controller.stepMs(50);
+      for (const item of controller.getSnapshot().items) {
+        if (item.kind === 'energy') {
+          controller.collectItem(item.id);
+        }
+      }
+    }
+    expect(controller.getSnapshot().energy).toBeGreaterThanOrEqual(150);
+
+    expect(controller.summonDefender('skeleton', { row: 0, column: 0 })).toBe(true);
+    const afterFirst = controller.getSnapshot();
+    const skeletonCard = afterFirst.baseDefenderCards.find(c => c.id === 'skeleton')!;
+    expect(skeletonCard.cooldownTotalSeconds).toBe(4);
+    expect(skeletonCard.onCooldown).toBe(true);
+    expect(skeletonCard.cooldownRemainingSeconds).toBeCloseTo(4, 1);
+    expect(afterFirst.flashes.some(f => f.kind === 'summon' && f.cell?.row === 0 && f.cell?.column === 0)).toBe(true);
+
+    // Second immediate Skeleton summon is rejected by cooldown even though Energy >= 50.
+    expect(controller.getSnapshot().energy).toBeGreaterThanOrEqual(100);
+    expect(controller.summonDefender('skeleton', { row: 1, column: 0 })).toBe(false);
+    expect(controller.getSnapshot().lastToast?.message).toBe('Defender is recharging (on cooldown)');
+
+    // Cooldown is per-Defender type, so Iron Golem (100 EN) can still be placed immediately.
+    expect(controller.summonDefender('iron_golem', { row: 2, column: 0 })).toBe(true);
+
+    // Pausing freezes cooldown countdown.
+    const remBeforePause = controller.getSnapshot().baseDefenderCards.find(c => c.id === 'skeleton')!
+      .cooldownRemainingSeconds;
+    controller.setPaused(true);
+    controller.stepMs(3000);
+    const remAfterPause = controller.getSnapshot().baseDefenderCards.find(c => c.id === 'skeleton')!
+      .cooldownRemainingSeconds;
+    expect(remAfterPause).toBe(remBeforePause);
+
+    // Save/Resume preserves cooldown, then advancing >= 4s clears it and allows re-summon.
+    const reloaded = new CampaignController({ storage });
+    expect(reloaded.resumeSavedBattle()).toBe(true);
+    const reloadedCard = reloaded.getSnapshot().baseDefenderCards.find(c => c.id === 'skeleton')!;
+    expect(reloadedCard.onCooldown).toBe(true);
+
+    for (let i = 0; i < 85; i++) {
+      reloaded.stepMs(50);
+    }
+    const readyCard = reloaded.getSnapshot().baseDefenderCards.find(c => c.id === 'skeleton')!;
+    expect(readyCard.onCooldown).toBe(false);
+    expect(readyCard.cooldownRemainingSeconds).toBe(0);
+    expect(reloaded.summonDefender('skeleton', { row: 1, column: 0 })).toBe(true);
+  });
 });

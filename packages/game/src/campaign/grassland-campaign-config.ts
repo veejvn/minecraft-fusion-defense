@@ -27,6 +27,7 @@ export interface CampaignDefenderCatalogItem {
   readonly tier: 1 | 2;
   readonly role: string;
   readonly summonEnergyCost: number;
+  readonly summonCooldownSeconds: number;
   readonly maxHp: number;
   readonly damage: number;
   readonly attackSpeed: number;
@@ -89,6 +90,14 @@ const CAMPAIGN_BASE_COSTS: Readonly<Record<string, number>> = {
   iron_golem: 100,
   wolf: 100,
   blaze: 125,
+};
+
+export const CAMPAIGN_BASE_COOLDOWNS: Readonly<Record<string, number>> = {
+  skeleton: 4,
+  snow_golem: 5,
+  iron_golem: 7,
+  wolf: 6,
+  blaze: 8,
 };
 
 export const GRASSLAND_WAVE_CRYSTALS: readonly number[] = [1, 1, 1, 1, 2];
@@ -254,6 +263,7 @@ export const CAMPAIGN_DEFENDER_CATALOG: readonly CampaignDefenderCatalogItem[] =
       tier: meta.tier,
       role: DEFENDER_ROLES_BY_ID[meta.id] ?? (meta.tier === 1 ? 'Base Defender' : 'Fusion Defender'),
       summonEnergyCost: CAMPAIGN_BASE_COSTS[meta.id] ?? stats?.summonEnergyCost ?? 0,
+      summonCooldownSeconds: meta.tier === 1 ? (CAMPAIGN_BASE_COOLDOWNS[meta.id] ?? 0) : 0,
       maxHp: stats?.maxHp ?? 200,
       damage: stats?.damage ?? 25,
       attackSpeed: stats?.attackSpeed ?? 1,
@@ -329,6 +339,7 @@ export function createGrasslandCampaignInputs(
       id: d.id,
       classification: d.tier === 1 ? 'base' : 'fusion',
       summonEnergyCost: d.summonEnergyCost,
+      summonCooldownSeconds: d.tier === 1 ? (CAMPAIGN_BASE_COOLDOWNS[d.id] ?? 0) : 0,
       unlocked: true,
     })),
     enemies: preset.enemies.map(e => ({

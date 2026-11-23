@@ -5,7 +5,12 @@ import {
   GrasslandBattleScene,
   type CampaignTool,
   type CampaignVisualStyle,
+  type ExternalDragPayload,
 } from './scenes/grassland-battle-scene';
+
+export interface CreateCampaignGameOptions {
+  readonly onToolChange?: (tool: CampaignTool) => void;
+}
 
 export type CampaignGameHandle = {
   game: Phaser.Game;
@@ -14,6 +19,16 @@ export type CampaignGameHandle = {
   setTool(tool: CampaignTool): void;
   setVisualStyle(style: CampaignVisualStyle): void;
   setShowGridCoords(show: boolean): void;
+  setExternalDragAtClientPoint(
+    payload: ExternalDragPayload | null,
+    clientX: number,
+    clientY: number,
+  ): void;
+  dropExternalDragAtClientPoint(
+    payload: ExternalDragPayload,
+    clientX: number,
+    clientY: number,
+  ): boolean;
   destroy(): void;
 };
 
@@ -24,6 +39,7 @@ export type CampaignGameHandle = {
 export function createCampaignGame(
   host: HTMLElement,
   controllerOrOptions?: CampaignController | CampaignControllerOptions,
+  options?: CreateCampaignGameOptions,
 ): CampaignGameHandle {
   const owner = claimHost(host);
   let resolveReady!: () => void;
@@ -47,11 +63,15 @@ export function createCampaignGame(
     controllerOrOptions instanceof CampaignController
       ? controllerOrOptions
       : new CampaignController(controllerOrOptions);
-  const scene = new GrasslandBattleScene(controller, () => {
-    if (readySettled) return;
-    readySettled = true;
-    resolveReady();
-  });
+  const scene = new GrasslandBattleScene(
+    controller,
+    () => {
+      if (readySettled) return;
+      readySettled = true;
+      resolveReady();
+    },
+    options?.onToolChange,
+  );
 
   let game!: Phaser.Game;
   try {
@@ -70,7 +90,7 @@ export function createCampaignGame(
         mode: Phaser.Scale.FIT,
         width: 1280,
         height: 720,
-        autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       scene: [scene],
     });
@@ -100,6 +120,20 @@ export function createCampaignGame(
     },
     setShowGridCoords(show: boolean) {
       scene.setShowGridCoords(show);
+    },
+    setExternalDragAtClientPoint(
+      payload: ExternalDragPayload | null,
+      clientX: number,
+      clientY: number,
+    ) {
+      scene.setExternalDragAtClientPoint(payload, clientX, clientY);
+    },
+    dropExternalDragAtClientPoint(
+      payload: ExternalDragPayload,
+      clientX: number,
+      clientY: number,
+    ) {
+      return scene.dropExternalDragAtClientPoint(payload, clientX, clientY);
     },
     destroy() {
       cancelReady();

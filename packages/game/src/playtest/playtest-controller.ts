@@ -135,10 +135,10 @@ export interface PlaytestRedirectAuraView {
   readonly protectedAllyIds: readonly string[];
 }
 
-/** Ephemeral visual flash emitted when abilities or fusions resolve. */
+/** Ephemeral visual flash emitted when abilities, fusions, or summons resolve. */
 export interface PlaytestFlashEffect {
   readonly id: number;
-  readonly kind: 'ability' | 'fusion';
+  readonly kind: 'ability' | 'fusion' | 'summon';
   readonly abilityId?: string;
   readonly lane?: number;
   readonly cell?: Cell;

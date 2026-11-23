@@ -36,11 +36,35 @@ test('built homepage serves full MVP Menu, Collection (20 Defenders), Achievemen
   await expect(page.getByRole('heading', { name: 'Level Selection' })).toBeVisible();
   await page.getByRole('button', { name: /Play Grassland Campaign|Start New Battle/i }).click();
 
-  // Phaser 1280x720 Canvas + React HUD mount cleanly
+  // Phaser 1280x720 Canvas + React HUD mount cleanly inside a single viewport (zero vertical scroll)
   await expect(page.locator('canvas')).toHaveCount(1);
   await expect(page.getByText('Loading Grassland Battlefield...')).toHaveCount(0);
   await expect(page.getByText('Failed to initialize Phaser battlefield.')).toHaveCount(0);
   await expect(page.getByText('WAVE 1/5')).toBeVisible();
+
+  const layoutMetrics = await page.evaluate(() => {
+    const canvas = document.querySelector('canvas');
+    const rect = canvas.getBoundingClientRect();
+    return {
+      scrollHeight: document.documentElement.scrollHeight,
+      innerHeight: window.innerHeight,
+      canvasBottom: rect.bottom,
+      canvasHeight: rect.height,
+    };
+  });
+  expect(layoutMetrics.scrollHeight).toBeLessThanOrEqual(layoutMetrics.innerHeight);
+  expect(layoutMetrics.canvasBottom).toBeLessThanOrEqual(layoutMetrics.innerHeight);
+  expect(layoutMetrics.canvasHeight).toBeGreaterThan(400);
+
+  // Summoning Skeleton puts Skeleton card into recharge cooldown (CD Xs) and resets active tool
+  const skeletonCard = page.getByRole('button', { name: /Skeleton/i });
+  await skeletonCard.click();
+  const canvasBox = await page.locator('canvas').boundingBox();
+  await page.mouse.click(
+    canvasBox.x + (304 / 1280) * canvasBox.width,
+    canvasBox.y + (220 / 720) * canvasBox.height,
+  );
+  await expect(skeletonCard).toContainText(/CD \d+\.\ds/);
 
   // Pause and Save & Return to Menu -> triggers localStorage active battle checkpoint
   await page.getByRole('button', { name: 'Pause' }).click();

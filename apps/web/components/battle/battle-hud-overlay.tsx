@@ -1,10 +1,33 @@
 'use client';
 
-import type { CampaignDefenderCatalogItem, CampaignSnapshot, CampaignSpeed, CampaignTool } from '@mfd/game';
+import { useEffect, useRef, useState } from 'react';
+import type {
+  CampaignDefenderCatalogItem,
+  CampaignGameHandle,
+  CampaignSnapshot,
+  CampaignSpeed,
+  CampaignTool,
+  ExternalDragPayload,
+} from '@mfd/game';
+
+interface HudDragGesture {
+  readonly payload: ExternalDragPayload;
+  readonly spriteUrl: string;
+  readonly label: string;
+  readonly startX: number;
+  readonly startY: number;
+  readonly currentX: number;
+  readonly currentY: number;
+  readonly active: boolean;
+  readonly pointerId: number;
+}
+
+const DRAG_ACTIVATION_PX = 8;
 
 interface BattleHudOverlayProps {
   readonly snapshot: CampaignSnapshot;
   readonly activeTool: CampaignTool;
+  readonly battleHandle: CampaignGameHandle | null;
   readonly defenderCatalog: readonly CampaignDefenderCatalogItem[];
   readonly onSelectTool: (tool: CampaignTool) => void;
   readonly onClaimPending: () => void;
@@ -19,6 +42,7 @@ interface BattleHudOverlayProps {
 export function BattleHudOverlay({
   snapshot,
   activeTool,
+  battleHandle,
   defenderCatalog,
   onSelectTool,
   onClaimPending,
@@ -30,23 +54,105 @@ export function BattleHudOverlay({
   onReturnToMenuTerminal,
 }: BattleHudOverlayProps) {
   const catalogById = new Map(defenderCatalog.map(d => [d.id, d]));
+  const [dragGesture, setDragGesture] = useState<HudDragGesture | null>(null);
+  const dragRef = useRef<HudDragGesture | null>(null);
+  const suppressNextClickRef = useRef(false);
+
+  useEffect(() => {
+    dragRef.current = dragGesture;
+  }, [dragGesture]);
+
+  useEffect(() => {
+    if (!dragGesture) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const current = dragRef.current;
+      if (!current || e.pointerId !== current.pointerId) return;
+      const dist = Math.hypot(e.clientX - current.startX, e.clientY - current.startY);
+      const nowActive = current.active || dist >= DRAG_ACTIVATION_PX;
+      const updated: HudDragGesture = {
+        ...current,
+        currentX: e.clientX,
+        currentY: e.clientY,
+        active: nowActive,
+      };
+      dragRef.current = updated;
+      setDragGesture(updated);
+      if (nowActive) {
+        battleHandle?.setExternalDragAtClientPoint(current.payload, e.clientX, e.clientY);
+      }
+    };
+
+    const finishDrag = (e: PointerEvent, isDrop: boolean) => {
+      const current = dragRef.current;
+      if (!current || e.pointerId !== current.pointerId) return;
+      dragRef.current = null;
+      setDragGesture(null);
+      if (current.active) {
+        suppressNextClickRef.current = true;
+        window.setTimeout(() => {
+          suppressNextClickRef.current = false;
+        }, 0);
+        if (isDrop) {
+          battleHandle?.dropExternalDragAtClientPoint(current.payload, e.clientX, e.clientY);
+        } else {
+          battleHandle?.setExternalDragAtClientPoint(null, e.clientX, e.clientY);
+        }
+      }
+    };
+
+    const onUp = (e: PointerEvent) => finishDrag(e, true);
+    const onCancel = (e: PointerEvent) => finishDrag(e, false);
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+    };
+  }, [Boolean(dragGesture), battleHandle]);
+
+  const startHudDrag = (
+    e: React.PointerEvent<HTMLButtonElement>,
+    payload: ExternalDragPayload,
+    spriteUrl: string,
+    label: string,
+  ) => {
+    if (e.button !== 0 || snapshot.status !== 'playing') return;
+    suppressNextClickRef.current = false;
+    const initial: HudDragGesture = {
+      payload,
+      spriteUrl,
+      label,
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      active: false,
+      pointerId: e.pointerId,
+    };
+    dragRef.current = initial;
+    setDragGesture(initial);
+  };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
       {/* Top Tactical HUD Bar */}
       <div
         className="mfd-card"
         style={{
-          padding: '10px 14px',
+          padding: '6px 10px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 12,
+          gap: 8,
           flexWrap: 'wrap',
         }}
       >
         {/* Resources: Energy & Power Crystal */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
             style={{
               display: 'flex',
@@ -55,31 +161,40 @@ export function BattleHudOverlay({
               background: '#0f172a',
               border: '2px solid #ca8a04',
               borderRadius: 8,
-              padding: '6px 10px',
+              padding: '4px 8px',
             }}
             title="Energy used to summon Base Defenders"
           >
-            <img src="/assets/sprites/items/energy_orb.png" alt="Energy" width={28} height={28} className="mfd-pixel" />
+            <img src="/assets/sprites/items/energy_orb.png" alt="Energy" width={24} height={24} className="mfd-pixel" />
             <div>
-              <div style={{ fontSize: 10, color: '#FDE047', fontWeight: 700 }}>ENERGY</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#FEF08A' }}>{snapshot.energy}</div>
+              <div style={{ fontSize: 9, color: '#FDE047', fontWeight: 700, lineHeight: 1.1 }}>ENERGY</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#FEF08A', lineHeight: 1.1 }}>{snapshot.energy}</div>
             </div>
           </div>
 
           <button
             type="button"
             className={`mfd-btn ${activeTool.kind === 'crystal' ? 'mfd-btn-crystal' : ''}`}
-            style={{ padding: '6px 10px' }}
+            style={{ padding: '4px 8px', touchAction: 'none', userSelect: 'none' }}
             disabled={snapshot.crystals < 1 || snapshot.status !== 'playing'}
-            onClick={() =>
-              onSelectTool(activeTool.kind === 'crystal' ? { kind: 'select' } : { kind: 'crystal' })
-            }
-            title="Click then select a Defender to cast its Special Ability (1 Crystal, 0s cooldown)"
+            onPointerDown={e => {
+              if (snapshot.crystals >= 1) {
+                startHudDrag(e, { kind: 'crystal' }, '/assets/sprites/items/power_crystal.png', 'Power Crystal');
+              }
+            }}
+            onClick={() => {
+              if (suppressNextClickRef.current) {
+                suppressNextClickRef.current = false;
+                return;
+              }
+              onSelectTool(activeTool.kind === 'crystal' ? { kind: 'select' } : { kind: 'crystal' });
+            }}
+            title="Click or drag onto a Defender to cast its Special Ability (1 Crystal, 0s cooldown)"
           >
-            <img src="/assets/sprites/items/power_crystal.png" alt="Crystal" width={28} height={28} className="mfd-pixel" />
+            <img src="/assets/sprites/items/power_crystal.png" alt="Crystal" width={24} height={24} className="mfd-pixel" />
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 10, color: '#BAE6FD' }}>CRYSTALS</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>
+              <div style={{ fontSize: 9, color: '#BAE6FD', lineHeight: 1.1 }}>CRYSTALS</div>
+              <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.1 }}>
                 {snapshot.crystals} / {snapshot.maxCrystals}
               </div>
             </div>
@@ -89,50 +204,87 @@ export function BattleHudOverlay({
             <button
               type="button"
               className="mfd-btn mfd-btn-gold"
+              style={{ padding: '5px 8px', fontSize: 12 }}
               disabled={snapshot.crystals >= snapshot.maxCrystals || snapshot.status !== 'playing'}
               onClick={onClaimPending}
               title="Claim pending Wave Reward Power Crystals once storage has room"
             >
-              Claim +{snapshot.pendingWaveCrystals} Pending
+              +{snapshot.pendingWaveCrystals} Crystal
             </button>
           )}
         </div>
 
-        {/* Base Defender Selection Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        {/* Base Defender Selection & Drag Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {snapshot.baseDefenderCards.map(card => {
             const selected = activeTool.kind === 'place' && activeTool.definitionId === card.id;
-            const disabled = !card.unlocked || !card.canAfford || snapshot.status !== 'playing';
+            const unavailable = !card.unlocked || !card.canAfford || card.onCooldown || snapshot.status !== 'playing';
             return (
               <button
                 key={card.id}
                 type="button"
-                className="mfd-btn"
-                disabled={!card.unlocked || snapshot.status !== 'playing'}
+                className="mfd-btn mfd-defender-card"
+                disabled={!card.unlocked || card.onCooldown || snapshot.status !== 'playing'}
+                onPointerDown={e => {
+                  if (card.unlocked && card.canAfford && !card.onCooldown) {
+                    startHudDrag(e, { kind: 'place', definitionId: card.id }, card.spriteUrl, card.name);
+                  }
+                }}
                 onClick={() => {
-                  if (!card.unlocked) return;
+                  if (suppressNextClickRef.current) {
+                    suppressNextClickRef.current = false;
+                    return;
+                  }
+                  if (!card.unlocked || card.onCooldown) return;
                   onSelectTool(selected ? { kind: 'select' } : { kind: 'place', definitionId: card.id });
                 }}
                 style={{
-                  padding: '5px 8px',
-                  borderColor: selected ? '#facc15' : card.unlocked && card.canAfford ? '#4ade80' : '#475569',
+                  padding: '4px 8px',
+                  borderColor: selected
+                    ? '#facc15'
+                    : card.unlocked && card.canAfford && !card.onCooldown
+                      ? '#4ade80'
+                      : '#475569',
                   background: selected ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
-                  opacity: card.unlocked ? (disabled && !selected ? 0.68 : 1) : 0.45,
+                  opacity: card.unlocked ? (unavailable && !selected ? 0.78 : 1) : 0.45,
                 }}
-                title={card.unlocked ? `${card.name} (${card.cost} EN) — ${card.abilityName}` : `Locked: ${card.requirement}`}
+                title={
+                  card.unlocked
+                    ? `${card.name} (${card.cost} EN, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto battlefield.`
+                    : `Locked: ${card.requirement}`
+                }
               >
+                {card.onCooldown && (
+                  <>
+                    <div className="mfd-cd-curtain" style={{ height: `${card.cooldownProgressPct}%` }} />
+                    <div className="mfd-cd-badge">{card.cooldownRemainingSeconds.toFixed(1)}s</div>
+                  </>
+                )}
                 <img
                   src={card.spriteUrl}
                   alt={card.name}
-                  width={36}
-                  height={36}
+                  width={30}
+                  height={30}
+                  draggable={false}
                   className="mfd-pixel"
                   style={{ filter: card.unlocked ? 'none' : 'grayscale(100%)' }}
                 />
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC' }}>{card.name}</div>
-                  <div style={{ fontSize: 10, color: card.unlocked ? (card.canAfford ? '#4ADE80' : '#F87171') : '#94A3B8' }}>
-                    {card.unlocked ? `${card.cost} EN` : 'LOCKED'}
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>{card.name}</div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      lineHeight: 1.15,
+                      color: !card.unlocked
+                        ? '#94A3B8'
+                        : card.onCooldown
+                          ? '#FACC15'
+                          : card.canAfford
+                            ? '#4ADE80'
+                            : '#F87171',
+                    }}
+                  >
+                    {!card.unlocked ? 'LOCKED' : card.onCooldown ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s` : `${card.cost} EN`}
                   </div>
                 </div>
               </button>
@@ -141,40 +293,48 @@ export function BattleHudOverlay({
         </div>
 
         {/* Wave Status & Match Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div
             style={{
               background: '#0f172a',
               border: '2px solid #334155',
               borderRadius: 8,
-              padding: '5px 10px',
+              padding: '3px 8px',
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: 11, color: '#38BDF8', fontWeight: 700 }}>
+            <div style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, lineHeight: 1.15 }}>
               WAVE {snapshot.waveNumber}/{snapshot.totalWaves}
             </div>
-            <div style={{ fontSize: 11, color: '#CBD5E1' }}>
-              Enemies: {snapshot.enemiesRemaining} · Kills: {snapshot.enemiesKilled}
+            <div style={{ fontSize: 10, color: '#CBD5E1', lineHeight: 1.15 }}>
+              E: {snapshot.enemiesRemaining} · K: {snapshot.enemiesKilled}
             </div>
           </div>
 
           <button
             type="button"
             className="mfd-btn"
+            style={{ padding: '6px 10px', fontSize: 12 }}
             onClick={() => onSetSpeed(snapshot.speedMultiplier === 1 ? 2 : 1)}
             title="Toggle simulation speed (1x / 2x)"
           >
             {snapshot.speedMultiplier}x
           </button>
 
-          <button type="button" className="mfd-btn" onClick={onOpenHowToPlay} title="How to Play">
+          <button
+            type="button"
+            className="mfd-btn"
+            style={{ padding: '6px 10px', fontSize: 12 }}
+            onClick={onOpenHowToPlay}
+            title="How to Play"
+          >
             ?
           </button>
 
           <button
             type="button"
             className="mfd-btn mfd-btn-gold"
+            style={{ padding: '6px 10px', fontSize: 12 }}
             disabled={snapshot.terminal !== null}
             onClick={onTogglePause}
           >
@@ -183,15 +343,30 @@ export function BattleHudOverlay({
         </div>
       </div>
 
-      {/* Feedback Toast Strip */}
+      {/* Floating Cursor Ghost while dragging card or crystal */}
+      {dragGesture?.active && (
+        <div
+          className="mfd-drag-ghost"
+          style={{ left: dragGesture.currentX, top: dragGesture.currentY }}
+          aria-hidden="true"
+        >
+          <img
+            src={dragGesture.spriteUrl}
+            alt={dragGesture.label}
+            width={64}
+            height={64}
+            className="mfd-pixel"
+            style={{ opacity: 0.9 }}
+          />
+        </div>
+      )}
+
+      {/* Floating Feedback Toast Overlay (0px vertical layout height) */}
       {snapshot.lastToast && (
         <div
           role="status"
+          className="mfd-toast-float"
           style={{
-            padding: '6px 12px',
-            borderRadius: 6,
-            fontSize: 12,
-            fontWeight: 700,
             border: `1px solid ${
               snapshot.lastToast.kind === 'error'
                 ? '#f87171'
@@ -201,10 +376,10 @@ export function BattleHudOverlay({
             }`,
             background:
               snapshot.lastToast.kind === 'error'
-                ? 'rgba(127, 29, 29, 0.55)'
+                ? 'rgba(127, 29, 29, 0.92)'
                 : snapshot.lastToast.kind === 'success'
-                  ? 'rgba(20, 83, 45, 0.55)'
-                  : 'rgba(12, 74, 110, 0.45)',
+                  ? 'rgba(20, 83, 45, 0.92)'
+                  : 'rgba(12, 74, 110, 0.92)',
             color: '#F8FAFC',
           }}
         >

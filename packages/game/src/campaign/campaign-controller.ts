@@ -60,6 +60,10 @@ export interface BaseDefenderCardView {
   readonly cost: number;
   readonly unlocked: boolean;
   readonly canAfford: boolean;
+  readonly cooldownTotalSeconds: number;
+  readonly cooldownRemainingSeconds: number;
+  readonly cooldownProgressPct: number;
+  readonly onCooldown: boolean;
   readonly role: string;
   readonly abilityName: string;
   readonly requirement: string;
@@ -171,6 +175,8 @@ function formatEnglishRejection(category: 'summon' | 'fuse' | 'ability' | 'colle
       return 'Battle has already ended';
     case 'insufficient-energy':
       return 'Insufficient Energy';
+    case 'summon-on-cooldown':
+      return 'Defender is recharging (on cooldown)';
     case 'defender-unavailable':
       return 'Defender is still locked';
     case 'occupied':
@@ -506,9 +512,24 @@ export class CampaignController {
     }
     this.runtime.advance(TICK_DURATION_MS);
     this.processOutcomesAndTerminal();
-    this.refreshAndEmit();
     const outcome = this.runtime.snapshot().resources?.outcome;
-    return outcome && outcome.eventId !== prevEventId ? outcome.status === 'APPLIED' : true;
+    const applied = outcome && outcome.eventId !== prevEventId ? outcome.status === 'APPLIED' : true;
+    if (applied) {
+      const meta = DEFENDER_META_BY_ID.get(definitionId);
+      const tickNow = this.runtime.snapshot().tick;
+      this.flashes.push({
+        id: this.nextFlashId++,
+        kind: 'summon',
+        lane: cell.row,
+        cell,
+        color: meta?.accentColor ?? 0x22c55e,
+        label: meta?.shortLabel ?? definitionId,
+        createdAtTick: tickNow,
+        ttlMs: 450,
+      });
+    }
+    this.refreshAndEmit();
+    return applied;
   }
 
   fuseDefenders(sourceId: string, targetId: string): boolean {
@@ -795,6 +816,10 @@ export class CampaignController {
           cost: d.summonEnergyCost,
           unlocked: this.unlockAllMode || unlockedSet.has(d.id),
           canAfford: false,
+          cooldownTotalSeconds: d.summonCooldownSeconds,
+          cooldownRemainingSeconds: 0,
+          cooldownProgressPct: 0,
+          onCooldown: false,
           role: d.role,
           abilityName: d.abilityName,
           requirement: this.getDefenderCollection().find(c => c.id === d.id)?.requirement ?? 'Unlocked',
@@ -1016,8 +1041,21 @@ export class CampaignController {
     const resourceDefById = new Map(this.runtimeInputs.resourceInput.defenders.map(d => [d.id, d]));
 
     const baseDefenderCards: BaseDefenderCardView[] = BASE_CATALOG.map(d => {
-      const unlocked = resourceDefById.get(d.id)?.unlocked ?? false;
+      const resourceDef = resourceDefById.get(d.id);
+      const unlocked = resourceDef?.unlocked ?? false;
       const cost = this.runtimeInputs!.defenderCosts[d.id] ?? d.summonEnergyCost;
+      const cooldownTotalSeconds = resourceDef?.summonCooldownSeconds ?? d.summonCooldownSeconds;
+      const readyTick = resources?.summonCooldownUntilTick?.get(d.id) ?? 0;
+      const remainingTicks = Math.max(0, readyTick - raw.tick);
+      const onCooldown = remainingTicks > 0;
+      const cooldownRemainingSeconds = onCooldown
+        ? Number((remainingTicks / TICKS_PER_SECOND).toFixed(1))
+        : 0;
+      const totalCooldownTicks = cooldownTotalSeconds * TICKS_PER_SECOND;
+      const cooldownProgressPct =
+        onCooldown && totalCooldownTicks > 0
+          ? Math.min(100, Math.max(0, Math.round((remainingTicks / totalCooldownTicks) * 100)))
+          : 0;
       return {
         id: d.id,
         name: d.name,
@@ -1025,6 +1063,10 @@ export class CampaignController {
         cost,
         unlocked,
         canAfford: unlocked && energy >= cost,
+        cooldownTotalSeconds,
+        cooldownRemainingSeconds,
+        cooldownProgressPct,
+        onCooldown,
         role: d.role,
         abilityName: d.abilityName,
         requirement: collectionById.get(d.id)?.requirement ?? 'Unlocked',

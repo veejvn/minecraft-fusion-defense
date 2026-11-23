@@ -10,6 +10,7 @@ export interface ResourceSessionInput {
     readonly classification: 'base' | 'fusion';
     readonly summonEnergyCost: number;
     readonly unlocked: boolean;
+    readonly summonCooldownSeconds?: number;
   }[];
   readonly enemies: readonly { readonly id: string; readonly energy: number; readonly crystals: number }[];
   readonly waves: readonly { readonly id: string; readonly crystals: number }[];
@@ -63,6 +64,14 @@ export function validateResourceSession(input: ResourceSessionInput, rate: numbe
     if ((defender.classification !== 'base' && defender.classification !== 'fusion') ||
       typeof defender.unlocked !== 'boolean') throw new TypeError('Invalid Defender availability');
     count(defender.summonEnergyCost);
+    if (defender.summonCooldownSeconds !== undefined) {
+      if (typeof defender.summonCooldownSeconds !== 'number' ||
+        !Number.isFinite(defender.summonCooldownSeconds) ||
+        defender.summonCooldownSeconds < 0) {
+        throw new RangeError('Invalid Defender summon cooldown');
+      }
+      if (defender.summonCooldownSeconds > 0) deadline(defender.summonCooldownSeconds, rate);
+    }
   }
   for (const enemy of config.enemies) {
     count(enemy.energy);

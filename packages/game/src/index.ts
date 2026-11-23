@@ -5,10 +5,14 @@ export { createPlaytestGame } from './create-playtest-game';
 export type { PlaytestGameHandle } from './create-playtest-game';
 
 export { createCampaignGame } from './create-campaign-game';
-export type { CampaignGameHandle } from './create-campaign-game';
+export type { CampaignGameHandle, CreateCampaignGameOptions } from './create-campaign-game';
 
 export type { PlaytestTool, PlaytestVisualStyle } from './scenes/playtest-scene';
-export type { CampaignTool, CampaignVisualStyle } from './scenes/grassland-battle-scene';
+export type {
+  CampaignTool,
+  CampaignVisualStyle,
+  ExternalDragPayload,
+} from './scenes/grassland-battle-scene';
 
 export {
   ALL_GAME_ASSETS,

@@ -652,6 +652,16 @@ function validateResourcesState(resources: ResourceState | undefined, ctx?: Chec
   for (const claimId of resources.processedClaims) {
     assertSemantic(isNonEmptyString(claimId), 'processedClaims must contain non-empty strings');
   }
+  if (resources.summonCooldownUntilTick !== undefined) {
+    assertSemantic(
+      resources.summonCooldownUntilTick instanceof Map,
+      'resources.summonCooldownUntilTick must be a Map',
+    );
+    for (const [defenderId, readyTick] of resources.summonCooldownUntilTick.entries()) {
+      assertSemantic(isNonEmptyString(defenderId), 'summonCooldownUntilTick key must be non-empty string');
+      assertSemantic(isPositiveSafeInt(readyTick), 'summonCooldownUntilTick value must be positive safe int');
+    }
+  }
   validateOutcome(resources.outcome, 'resources');
 }
 

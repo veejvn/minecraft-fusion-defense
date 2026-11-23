@@ -33,6 +33,7 @@ export interface ResourceState {
   readonly rewardedWaves: Set<string>;
   readonly processedClaims: Set<string>;
   outcome: { eventId: string; status: 'APPLIED' | 'REJECTED'; reason?: string } | null;
+  summonCooldownUntilTick?: Map<string, number>;
 }
 
 export function createResourceState(): ResourceState {
@@ -167,11 +168,22 @@ function applyResourceCommand(ctx: Context, command: ResourceCommand): string | 
         throw error;
       }
       if (battle.occupancy[index] !== null) return 'occupied-cell';
+      if ((definition.summonCooldownSeconds ?? 0) > 0) {
+        const readyTick = state.summonCooldownUntilTick?.get(definition.id) ?? 0;
+        if (ctx.tick < readyTick) return 'summon-on-cooldown';
+      }
       if (state.energy < definition.summonEnergyCost) return 'insufficient-energy';
       state.energy -= definition.summonEnergyCost;
       applyBattleCommand(battle, { type: 'add', entity: {
         kind: 'defender', definitionId: definition.id, cell: command.cell,
       } });
+      if ((definition.summonCooldownSeconds ?? 0) > 0) {
+        state.summonCooldownUntilTick ??= new Map();
+        state.summonCooldownUntilTick.set(
+          definition.id,
+          ctx.tick + deadline(definition.summonCooldownSeconds!, config.rate),
+        );
+      }
       // Map insertion order is the monotonically allocated Item creation order.
       for (const [id, item] of state.items) {
         if (state.crystals === CRYSTAL_CAP) break;

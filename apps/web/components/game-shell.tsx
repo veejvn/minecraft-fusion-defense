@@ -6,6 +6,7 @@ import type {
   CampaignController,
   CampaignDefenderCatalogItem,
   CampaignEnemyCatalogItem,
+  CampaignGameHandle,
   CampaignRecipeCatalogItem,
   CampaignSnapshot,
   CampaignTool,
@@ -58,6 +59,7 @@ export function GameShell() {
     recordedBattleIds: [],
   });
   const [activeTool, setActiveTool] = useState<CampaignTool>({ kind: 'select' });
+  const [battleHandle, setBattleHandle] = useState<CampaignGameHandle | null>(null);
 
   const syncMetaFromController = useCallback((ctrl: CampaignController) => {
     setProfile(ctrl.getProgressionProfile());
@@ -121,6 +123,8 @@ export function GameShell() {
 
   const handleSaveAndExit = () => {
     if (!controller) return;
+    setActiveTool({ kind: 'select' });
+    setBattleHandle(null);
     controller.abandonBattleToMenu(true);
     syncMetaFromController(controller);
     setScreen('MAIN_MENU');
@@ -128,13 +132,15 @@ export function GameShell() {
 
   const handleReturnFromTerminal = () => {
     if (!controller) return;
+    setActiveTool({ kind: 'select' });
+    setBattleHandle(null);
     controller.abandonBattleToMenu(false);
     syncMetaFromController(controller);
     setScreen('MAIN_MENU');
   };
 
   return (
-    <main className="mfd-shell">
+    <main className={screen === 'BATTLE' ? 'mfd-shell mfd-shell-battle' : 'mfd-shell'}>
       <div className="mfd-container">
         {!controller || !catalog ? (
           <div className="mfd-card" style={{ textAlign: 'center', padding: 40 }}>
@@ -199,10 +205,11 @@ export function GameShell() {
             )}
 
             {screen === 'BATTLE' && snapshot && (
-              <section aria-label="Grassland Campaign Battle">
+              <section aria-label="Grassland Campaign Battle" className="mfd-battle-section">
                 <BattleHudOverlay
                   snapshot={snapshot}
                   activeTool={activeTool}
+                  battleHandle={battleHandle}
                   defenderCatalog={catalog.defenders}
                   onSelectTool={setActiveTool}
                   onClaimPending={() => controller.claimPendingWaveReward()}
@@ -219,6 +226,8 @@ export function GameShell() {
                   visualStyle={settings.visualStyle}
                   showGridCoords={settings.showGridCoords}
                   onSnapshot={handleSnapshot}
+                  onToolChange={setActiveTool}
+                  onHandleReady={setBattleHandle}
                 />
               </section>
             )}

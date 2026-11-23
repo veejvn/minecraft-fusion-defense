@@ -40,9 +40,86 @@ body {
   padding: 18px 20px 28px;
 }
 
+.mfd-shell.mfd-shell-battle {
+  height: 100dvh;
+  min-height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  padding: 8px 12px 10px;
+}
+
 .mfd-container {
   width: 100%;
   max-width: 1280px;
+}
+
+.mfd-shell-battle .mfd-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mfd-battle-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.mfd-defender-card {
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.mfd-cd-curtain {
+  position: absolute;
+  inset: 0 0 auto 0;
+  background: rgba(2, 6, 23, 0.74);
+  pointer-events: none;
+  transition: height 0.08s linear;
+  z-index: 1;
+}
+
+.mfd-cd-badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 6, 23, 0.35);
+  color: #facc15;
+  font-size: 13px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.mfd-toast-float {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  pointer-events: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+}
+
+.mfd-drag-ghost {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.75));
 }
 
 .mfd-card {

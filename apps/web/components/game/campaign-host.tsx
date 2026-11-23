@@ -18,6 +18,8 @@ interface CampaignHostProps {
   readonly visualStyle: CampaignVisualStyle;
   readonly showGridCoords: boolean;
   readonly onSnapshot: (snapshot: CampaignSnapshot) => void;
+  readonly onToolChange?: (tool: CampaignTool) => void;
+  readonly onHandleReady?: (handle: CampaignGameHandle | null) => void;
 }
 
 export function CampaignHost({
@@ -26,10 +28,22 @@ export function CampaignHost({
   visualStyle,
   showGridCoords,
   onSnapshot,
+  onToolChange,
+  onHandleReady,
 }: CampaignHostProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<CampaignGameHandle | null>(null);
+  const onToolChangeRef = useRef(onToolChange);
+  const onHandleReadyRef = useRef(onHandleReady);
   const [status, setStatus] = useState<HostStatus>('loading');
+
+  useEffect(() => {
+    onToolChangeRef.current = onToolChange;
+  }, [onToolChange]);
+
+  useEffect(() => {
+    onHandleReadyRef.current = onHandleReady;
+  }, [onHandleReady]);
 
   useEffect(() => {
     const unsub = controller.subscribe(onSnapshot);
@@ -76,8 +90,11 @@ export function CampaignHost({
       const mountGame = () => {
         if (cancelled) return;
         try {
-          handle = createCampaignGame(host, controller);
+          handle = createCampaignGame(host, controller, {
+            onToolChange: nextTool => onToolChangeRef.current?.(nextTool),
+          });
           handleRef.current = handle;
+          onHandleReadyRef.current?.(handle);
           handle.setTool(activeTool);
           handle.setVisualStyle(visualStyle);
           handle.setShowGridCoords(showGridCoords);
@@ -110,6 +127,7 @@ export function CampaignHost({
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.clearTimeout(retryTimer);
       handleRef.current = null;
+      onHandleReadyRef.current?.(null);
       if (handle) {
         try {
           handle.destroy();
@@ -121,26 +139,63 @@ export function CampaignHost({
   }, [controller]);
 
   return (
-    <div style={{ width: '100%', maxWidth: 1280, marginInline: 'auto', position: 'relative' }}>
+    <div
+      style={{
+        flex: 1,
+        minHeight: 0,
+        width: '100%',
+        maxWidth: 1280,
+        marginInline: 'auto',
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <div
         ref={hostRef}
         aria-label="Grassland 5x9 Battlefield"
         style={{
           width: '100%',
-          aspectRatio: '16 / 9',
+          height: '100%',
+          minHeight: 0,
           borderRadius: 10,
           overflow: 'hidden',
           border: '3px solid #334155',
           background: '#0f172a',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       />
       {status === 'loading' && (
-        <p role="status" style={{ textAlign: 'center', color: '#94A3B8', marginTop: 8 }}>
+        <p
+          role="status"
+          style={{
+            position: 'absolute',
+            bottom: 10,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            margin: 0,
+            color: '#94A3B8',
+            pointerEvents: 'none',
+          }}
+        >
           Loading Grassland Battlefield...
         </p>
       )}
       {status === 'error' && (
-        <p role="alert" style={{ textAlign: 'center', color: '#F87171', marginTop: 8 }}>
+        <p
+          role="alert"
+          style={{
+            position: 'absolute',
+            bottom: 10,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            margin: 0,
+            color: '#F87171',
+          }}
+        >
           Failed to initialize Phaser battlefield.
         </p>
       )}
