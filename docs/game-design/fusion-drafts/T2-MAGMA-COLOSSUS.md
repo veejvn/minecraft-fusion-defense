@@ -1,29 +1,30 @@
-# Magma Colossus — Tier 2 Fusion Defender (Draft)
+# Magma Colossus — Tier 2 Fusion Defender (Confirmed)
 
 **Project:** Minecraft Fusion Defense  
 **Document ID:** T2-MAGMA-COLOSSUS  
-**Entity ID đề xuất:** magma_colossus  
-**Recipe ID đề xuất:** fusion_magma_colossus  
-**Tier:** 2 (đề xuất cho công thức tương lai)  
-**Status:** **DRAFT — CHƯA ĐƯỢC OWNER PHÊ DUYỆT**  
-**Tên Defender:** Giữ nguyên theo quyết định Owner.  
-**Phạm vi:** Hồ sơ ý tưởng thiết kế; không phải nội dung MVP đã duyệt, không phải đặc tả triển khai.
+**Entity ID:** `magma_colossus`  
+**Recipe ID:** `fusion_magma_colossus`  
+**Tier:** 2 (MVP Confirmed)  
+**Status:** **CONFIRMED — ĐÃ ĐƯỢC OWNER PHÊ DUYỆT (2026-11-23)**  
+**Tên Defender:** Magma Colossus  
+**Phạm vi:** Nội dung MVP chính thức (1 trong 15 Tier-2 Fusion Defenders đã xác nhận).
 
-> **Ranh giới phê duyệt:** Owner đã yêu cầu giữ tám công thức mới ở trạng thái Draft và giữ tên Defender. Việc có hồ sơ này trong repository không biến công thức, Entity ID, Recipe ID, vai trò, đòn đánh hay Ability thành nội dung Confirmed. MVP hiện tại vẫn có đúng 7 Fusion Recipes Tier 2 đã được phê duyệt. Không tự thêm hồ sơ này vào roster, recipe catalog, Ability Catalog hoặc Production Game Dataset.
+> **Quyết định Owner (2026-11-23):** Đã nâng cấp lên chính thức theo cơ chế Eruption đã chốt. Tự động unlock khi **Blaze** unlock (`5` Grassland Victories tích lũy).
 
 ## 1. Thông tin định danh
 
 | Trường | Giá trị | Trạng thái |
 |---|---|---|
-| Tên hiển thị | Magma Colossus | Tên được Owner giữ lại cho bản Draft |
-| Entity ID | magma_colossus | Proposed |
-| Recipe ID | fusion_magma_colossus | Proposed |
-| Tier | 2 | Draft concept |
-| Nguyên liệu | Iron Golem (iron_golem) + Blaze (blaze) | Draft recipe |
-| Combat role | Heavy Melee / Fire Area Damage — đấu sĩ hạng nặng gây áp lực cận chiến với chủ đề nhiệt/dung nham. | Proposed |
-| Normal attack | Molten Slam | Proposed |
-| Special Ability | Eruption | Proposed |
-| Ability ID đề xuất | eruption | Proposed |
+| Tên hiển thị | Magma Colossus | **Confirmed** |
+| Entity ID | `magma_colossus` | **Confirmed** |
+| Recipe ID | `fusion_magma_colossus` | **Confirmed** |
+| Tier | 2 | **Confirmed** |
+| Nguyên liệu | Iron Golem (`iron_golem`) + Blaze (`blaze`) | **Confirmed** |
+| Unlock rule | Tự động mở khi Blaze unlock (Iron Golem mở từ đầu) | **Confirmed** |
+| Combat role | Heavy Melee / Fire Area Damage — đấu sĩ hạng nặng gây áp lực cận chiến với chủ đề nhiệt/dung nham. | **Confirmed** |
+| Normal attack | Molten Slam | **Confirmed** |
+| Special Ability | Eruption (`1` Power Crystal, `0s` cooldown, `same-lane-enemies`: gây ngay `3.5×` Attack Damage hệ Fire xuyên giáp + Burn `30%` AD/s trong `5s` dọc cùng Lane, đồng thời tự tạo Shield `30%` Max HP) | **Confirmed** |
+| Ability ID | `eruption` | **Confirmed** |
 
 ## 2. Công thức Fusion
 

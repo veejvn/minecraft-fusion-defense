@@ -19,7 +19,7 @@
 | --- | --- | --- |
 | Platform | Desktop Web PC/laptop, Local only, internal testing | Confirmed |
 | Campaign / difficulty / language | Grassland, 5 Waves, 5 × 9, beginner-friendly, English-only | Confirmed |
-| Content | 5 Base Defenders, 4 Enemy types, 7 approved Fusion Defenders/Recipes, 12 required Special Abilities (11 existing draft IDs; Steel Guardian `iron_bastion`) | Confirmed scope; chưa phê duyệt Ability effects/parameters |
+| Content | 5 Base Defenders, 4 Enemy types, 15 approved Fusion Defenders/Recipes, 20 Confirmed Special Abilities (cập nhật 23/11/2026) | Confirmed scope & ability mechanics |
 | Fusion | Miễn phí, mọi Lane/khoảng cách, Output tại Target; 100% own Max HP, no inherited status effects, attack khi có target | Confirmed |
 | Resources | Energy/Crystal values và delivery theo Gameplay Mechanics / Game Balancing | Confirmed cho các thông số đã liệt kê |
 | Navigation | Main Menu, Level Selection, Settings, Achievements, Defender Collection | Confirmed |
@@ -28,36 +28,52 @@
 | Visual / audio | Basic Minecraft-style Pixel Art, simple animations; không yêu cầu SFX/BGM | Confirmed |
 | Acceptance | Manual campaign playthrough + core automated tests | Confirmed; chi tiết test TBD |
 
-### 2.1. Bảy Fusion Recipes
+### 2.1. Mười lăm Fusion Recipes (Confirmed 2026-11-23)
 
 | Inputs (không phân biệt thứ tự) | Output |
 | --- | --- |
 | Skeleton + Skeleton | Skeleton Sniper |
 | Iron Golem + Iron Golem | Steel Guardian |
+| Iron Golem + Skeleton | Iron Ranger |
 | Snow Golem + Snow Golem | Ice Golem |
 | Iron Golem + Snow Golem | Frost Guardian |
-| Blaze + Wolf | Flame Fang |
-| Blaze + Skeleton | Inferno Archer |
+| Snow Golem + Skeleton | Frostbite Ranger |
 | Wolf + Wolf | Alpha Wolf |
+| Iron Golem + Wolf | Ironfang Guardian |
+| Skeleton + Wolf | Bonefang Hunter |
+| Snow Golem + Wolf | Frostfang |
+| Blaze + Blaze | Infernal Archon |
+| Iron Golem + Blaze | Magma Colossus |
+| Snow Golem + Blaze | Steam Warden |
+| Blaze + Skeleton | Inferno Archer |
+| Blaze + Wolf | Flame Fang |
 
-**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 7 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
+**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP phê duyệt đầy đủ **15 Recipe Tier-1 + Tier-1 → Tier-2** (mở rộng chính thức từ 7 lên 15 công thức ngày `2026-11-23`); Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
 
-### 2.2. Danh mục Special Abilities
+### 2.2. Danh mục 20 Special Abilities (Confirmed 2026-11-23)
 
 | Defender | Ability ID |
 | --- | --- |
 | Snow Golem | `blizzard` |
-| Steel Guardian (`steel_guardian`) | `iron_bastion` |
 | Iron Golem | `earthquake` |
 | Skeleton | `arrow_storm` |
 | Wolf | `pack_frenzy` |
 | Blaze | `inferno` |
 | Skeleton Sniper | `piercing_barrage` |
+| Steel Guardian (`steel_guardian`) | `iron_bastion` |
+| Iron Ranger (`iron_ranger`) | `siege_volley` |
 | Ice Golem | `absolute_zero` |
 | Frost Guardian | `glacial_fortress` |
-| Flame Fang | `wildfire_rush` |
-| Inferno Archer | `meteor_arrow_rain` |
+| Frostbite Ranger (`frostbite_ranger`) | `glacier_barrage` |
 | Alpha Wolf | `alpha_howl` |
+| Ironfang Guardian (`ironfang_guardian`) | `guardian_charge` |
+| Bonefang Hunter (`bonefang_hunter`) | `predator_mark` |
+| Frostfang (`frostfang`) | `winter_pounce` |
+| Infernal Archon (`infernal_archon`) | `solar_cataclysm` |
+| Magma Colossus (`magma_colossus`) | `eruption` |
+| Steam Warden (`steam_warden`) | `thermal_collapse` |
+| Inferno Archer | `meteor_arrow_rain` |
+| Flame Fang | `wildfire_rush` |
 
 Danh mục là phạm vi MVP đã xác nhận; không suy diễn rằng mọi giá trị Damage, Duration, Radius, Cost hoặc Cooldown đã được chốt.
 

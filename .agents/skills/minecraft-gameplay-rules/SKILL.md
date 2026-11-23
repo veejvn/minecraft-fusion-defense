@@ -29,7 +29,7 @@ If two authoritative sources conflict, stop before making a consequential design
 - Enemy spawn on the right and move from right to left. Each Enemy belongs to a Lane.
 - Approved initial five Base Defender identities: Snow Golem, Iron Golem, Skeleton, Wolf, Blaze; initially unlocked: Iron Golem and Skeleton. Other unlocks follow `docs/game-design/ENTITY_CATALOG.md`.
 - Approved MVP Enemy identities: Zombie, Husk, Vindicator, Pillager (Spider moved to future Defender roadmap, outside current MVP). Zombie is not a Fusion input and Creeper is outside the repository-approved MVP roster.
-- Current repository-approved MVP: one Grassland Level, five Waves, five Tier-1 Base Defenders, seven Tier-2 Fusion Defenders and seven approved initial Fusion recipes. The engine has no fixed Fusion tier ceiling; future recipes require Owner approval.
+- Current repository-approved MVP: one Grassland Level, five Waves, five Tier-1 Base Defenders, fifteen Tier-2 Fusion Defenders and fifteen approved Tier-2 Fusion recipes (expanded from 7 to all 15 pairwise combinations on `2026-11-23`), with 20 Confirmed Special Abilities. The engine has no fixed Fusion tier ceiling; future recipes require Owner approval.
 - The game uses two distinct gameplay resources: Energy for summoning Defender and a separate resource for activating Defender Abilities.
 
 ## Confirmed gameplay decisions

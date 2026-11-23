@@ -1,29 +1,30 @@
-# Frostbite Ranger — Tier 2 Fusion Defender (Draft)
+# Frostbite Ranger — Tier 2 Fusion Defender (Confirmed)
 
 **Project:** Minecraft Fusion Defense  
 **Document ID:** T2-FROSTBITE-RANGER  
-**Entity ID đề xuất:** frostbite_ranger  
-**Recipe ID đề xuất:** fusion_frostbite_ranger  
-**Tier:** 2 (đề xuất cho công thức tương lai)  
-**Status:** **DRAFT — CHƯA ĐƯỢC OWNER PHÊ DUYỆT**  
-**Tên Defender:** Giữ nguyên theo quyết định Owner.  
-**Phạm vi:** Hồ sơ ý tưởng thiết kế; không phải nội dung MVP đã duyệt, không phải đặc tả triển khai.
+**Entity ID:** `frostbite_ranger`  
+**Recipe ID:** `fusion_frostbite_ranger`  
+**Tier:** 2 (MVP Confirmed)  
+**Status:** **CONFIRMED — ĐÃ ĐƯỢC OWNER PHÊ DUYỆT (2026-11-23)**  
+**Tên Defender:** Frostbite Ranger  
+**Phạm vi:** Nội dung MVP chính thức (1 trong 15 Tier-2 Fusion Defenders đã xác nhận).
 
-> **Ranh giới phê duyệt:** Owner đã yêu cầu giữ tám công thức mới ở trạng thái Draft và giữ tên Defender. Việc có hồ sơ này trong repository không biến công thức, Entity ID, Recipe ID, vai trò, đòn đánh hay Ability thành nội dung Confirmed. MVP hiện tại vẫn có đúng 7 Fusion Recipes Tier 2 đã được phê duyệt. Không tự thêm hồ sơ này vào roster, recipe catalog, Ability Catalog hoặc Production Game Dataset.
+> **Quyết định Owner (2026-11-23):** Đã nâng cấp lên chính thức: *Frostbite Ranger bắn ra 1 mũi tên băng duy nhất đi hết Lane, xuyên qua tất cả kẻ địch và làm chúng đóng băng (`Freeze`), chịu hiệu ứng băng giá (`Slow`).* Tự động unlock khi **Snow Golem** unlock (First Grassland Victory).
 
 ## 1. Thông tin định danh
 
 | Trường | Giá trị | Trạng thái |
 |---|---|---|
-| Tên hiển thị | Frostbite Ranger | Tên được Owner giữ lại cho bản Draft |
-| Entity ID | frostbite_ranger | Proposed |
-| Recipe ID | fusion_frostbite_ranger | Proposed |
-| Tier | 2 | Draft concept |
-| Nguyên liệu | Snow Golem (snow_golem) + Skeleton (skeleton) | Draft recipe |
-| Combat role | Ranged Damage / Slow Control — xạ thủ gây áp lực tầm xa và có định hướng làm chậm. | Proposed |
-| Normal attack | Frozen Arrow | Proposed |
-| Special Ability | Glacier Barrage | Proposed |
-| Ability ID đề xuất | glacier_barrage | Proposed |
+| Tên hiển thị | Frostbite Ranger | **Confirmed** |
+| Entity ID | `frostbite_ranger` | **Confirmed** |
+| Recipe ID | `fusion_frostbite_ranger` | **Confirmed** |
+| Tier | 2 | **Confirmed** |
+| Nguyên liệu | Snow Golem (`snow_golem`) + Skeleton (`skeleton`) | **Confirmed** |
+| Unlock rule | Tự động mở khi Snow Golem unlock (Skeleton mở từ đầu) | **Confirmed** |
+| Combat role | Ranged Damage / Freeze Control — xạ thủ tầm xa gây sát thương băng và xuyên đóng băng cả tuyến địch. | **Confirmed** |
+| Normal attack | Frozen Arrow | **Confirmed** |
+| Special Ability | Glacier Barrage (`1` Power Crystal, `0s` cooldown, `same-lane` proactive: bắn `1` mũi tên băng duy nhất tốc độ `1.8×`, xuyên không giới hạn hết Lane, gây `300%` Attack Damage hệ Ice, gắn `Freeze 2.5s` và `Slow -50%` trong `5s` cho mọi Enemy bị xuyên qua) | **Confirmed** |
+| Ability ID | `glacier_barrage` | **Confirmed** |
 
 ## 2. Công thức Fusion
 

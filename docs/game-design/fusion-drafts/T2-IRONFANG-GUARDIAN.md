@@ -1,29 +1,30 @@
-# Ironfang Guardian — Tier 2 Fusion Defender (Draft)
+# Ironfang Guardian — Tier 2 Fusion Defender (Confirmed)
 
 **Project:** Minecraft Fusion Defense  
 **Document ID:** T2-IRONFANG-GUARDIAN  
-**Entity ID đề xuất:** ironfang_guardian  
-**Recipe ID đề xuất:** fusion_ironfang_guardian  
-**Tier:** 2 (đề xuất cho công thức tương lai)  
-**Status:** **DRAFT — CHƯA ĐƯỢC OWNER PHÊ DUYỆT**  
-**Tên Defender:** Giữ nguyên theo quyết định Owner.  
-**Phạm vi:** Hồ sơ ý tưởng thiết kế; không phải nội dung MVP đã duyệt, không phải đặc tả triển khai.
+**Entity ID:** `ironfang_guardian`  
+**Recipe ID:** `fusion_ironfang_guardian`  
+**Tier:** 2 (MVP Confirmed)  
+**Status:** **CONFIRMED — ĐÃ ĐƯỢC OWNER PHÊ DUYỆT (2026-11-23)**  
+**Tên Defender:** Ironfang Guardian  
+**Phạm vi:** Nội dung MVP chính thức (1 trong 15 Tier-2 Fusion Defenders đã xác nhận).
 
-> **Ranh giới phê duyệt:** Owner đã yêu cầu giữ tám công thức mới ở trạng thái Draft và giữ tên Defender. Việc có hồ sơ này trong repository không biến công thức, Entity ID, Recipe ID, vai trò, đòn đánh hay Ability thành nội dung Confirmed. MVP hiện tại vẫn có đúng 7 Fusion Recipes Tier 2 đã được phê duyệt. Không tự thêm hồ sơ này vào roster, recipe catalog, Ability Catalog hoặc Production Game Dataset.
+> **Quyết định Owner (2026-11-23):** Đã nâng cấp lên chính thức: *Ironfang Guardian có kỹ năng thả chó sói (`guardian_charge`) lao cắn xuyên suốt hết Lane bắt đầu từ vị trí của nó.* Tự động unlock khi **Wolf** unlock (`50` Enemy kills tích lũy trong các trận Victory).
 
 ## 1. Thông tin định danh
 
 | Trường | Giá trị | Trạng thái |
 |---|---|---|
-| Tên hiển thị | Ironfang Guardian | Tên được Owner giữ lại cho bản Draft |
-| Entity ID | ironfang_guardian | Proposed |
-| Recipe ID | fusion_ironfang_guardian | Proposed |
-| Tier | 2 | Draft concept |
-| Nguyên liệu | Iron Golem (iron_golem) + Wolf (wolf) | Draft recipe |
-| Combat role | Armored Melee / Disruption — đấu sĩ cận chiến có giáp, thiên về áp sát và làm gián đoạn đội hình địch. | Proposed |
-| Normal attack | Ironfang Bite | Proposed |
-| Special Ability | Guardian Charge | Proposed |
-| Ability ID đề xuất | guardian_charge | Proposed |
+| Tên hiển thị | Ironfang Guardian | **Confirmed** |
+| Entity ID | `ironfang_guardian` | **Confirmed** |
+| Recipe ID | `fusion_ironfang_guardian` | **Confirmed** |
+| Tier | 2 | **Confirmed** |
+| Nguyên liệu | Iron Golem (`iron_golem`) + Wolf (`wolf`) | **Confirmed** |
+| Unlock rule | Tự động mở khi Wolf unlock (Iron Golem mở từ đầu) | **Confirmed** |
+| Combat role | Armored Melee / Disruption — đấu sĩ cận chiến có giáp, bền bỉ và có khả năng thả sói càn quét dọc Lane. | **Confirmed** |
+| Normal attack | Ironfang Bite | **Confirmed** |
+| Special Ability | Guardian Charge (`1` Power Crystal, `0s` cooldown, `same-lane` proactive: thả một con sói sắt lao chạy hết Lane bắt đầu từ vị trí của Ironfang Guardian, cắn xuyên mọi Enemy trên đường đi gây `350%` Attack Damage vật lý + `1.5s` Stun) | **Confirmed** |
+| Ability ID | `guardian_charge` | **Confirmed** |
 
 ## 2. Công thức Fusion
 

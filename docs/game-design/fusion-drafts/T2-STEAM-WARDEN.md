@@ -1,29 +1,30 @@
-# Steam Warden — Tier 2 Fusion Defender (Draft)
+# Steam Warden — Tier 2 Fusion Defender (Confirmed)
 
 **Project:** Minecraft Fusion Defense  
 **Document ID:** T2-STEAM-WARDEN  
-**Entity ID đề xuất:** steam_warden  
-**Recipe ID đề xuất:** fusion_steam_warden  
-**Tier:** 2 (đề xuất cho công thức tương lai)  
-**Status:** **DRAFT — CHƯA ĐƯỢC OWNER PHÊ DUYỆT**  
-**Tên Defender:** Giữ nguyên theo quyết định Owner.  
-**Phạm vi:** Hồ sơ ý tưởng thiết kế; không phải nội dung MVP đã duyệt, không phải đặc tả triển khai.
+**Entity ID:** `steam_warden`  
+**Recipe ID:** `fusion_steam_warden`  
+**Tier:** 2 (MVP Confirmed)  
+**Status:** **CONFIRMED — ĐÃ ĐƯỢC OWNER PHÊ DUYỆT (2026-11-23)**  
+**Tên Defender:** Steam Warden  
+**Phạm vi:** Nội dung MVP chính thức (1 trong 15 Tier-2 Fusion Defenders đã xác nhận).
 
-> **Ranh giới phê duyệt:** Owner đã yêu cầu giữ tám công thức mới ở trạng thái Draft và giữ tên Defender. Việc có hồ sơ này trong repository không biến công thức, Entity ID, Recipe ID, vai trò, đòn đánh hay Ability thành nội dung Confirmed. MVP hiện tại vẫn có đúng 7 Fusion Recipes Tier 2 đã được phê duyệt. Không tự thêm hồ sơ này vào roster, recipe catalog, Ability Catalog hoặc Production Game Dataset.
+> **Quyết định Owner (2026-11-23):** Đã nâng cấp lên chính thức: *Steam Warden có tầm kỹ năng vùng `3×3` xung quanh chính nó (`area-3x3-self`), tạo vụ nổ hơi nước áp suất cao.* Tự động unlock khi cả **Snow Golem** và **Blaze** unlock.
 
 ## 1. Thông tin định danh
 
 | Trường | Giá trị | Trạng thái |
 |---|---|---|
-| Tên hiển thị | Steam Warden | Tên được Owner giữ lại cho bản Draft |
-| Entity ID | steam_warden | Proposed |
-| Recipe ID | fusion_steam_warden | Proposed |
-| Tier | 2 | Draft concept |
-| Nguyên liệu | Snow Golem (snow_golem) + Blaze (blaze) | Draft recipe |
-| Combat role | Elemental Control — điều khiển nhịp chiến đấu bằng vùng hơi nóng/lạnh; vai trò sát thương hay hỗ trợ chưa chốt. | Proposed |
-| Normal attack | Thermal Burst | Proposed |
-| Special Ability | Thermal Collapse | Proposed |
-| Ability ID đề xuất | thermal_collapse | Proposed |
+| Tên hiển thị | Steam Warden | **Confirmed** |
+| Entity ID | `steam_warden` | **Confirmed** |
+| Recipe ID | `fusion_steam_warden` | **Confirmed** |
+| Tier | 2 | **Confirmed** |
+| Nguyên liệu | Snow Golem (`snow_golem`) + Blaze (`blaze`) | **Confirmed** |
+| Unlock rule | Tự động mở khi cả Snow Golem và Blaze unlock | **Confirmed** |
+| Combat role | Elemental Control — điều khiển nhịp chiến đấu bằng vùng hơi nước áp suất cao `3×3` xung quanh bản thân. | **Confirmed** |
+| Normal attack | Thermal Burst | **Confirmed** |
+| Special Ability | Thermal Collapse (`1` Power Crystal, `0s` cooldown, `area-3x3-self`: giải phóng vụ nổ hơi nước trong vùng `3×3` xung quanh Steam Warden gây `250%` Attack Damage hệ Fire xuyên giáp + gắn `Slow -50%` trong `5s` cho toàn bộ Enemy trong vùng `3×3`) | **Confirmed** |
+| Ability ID | `thermal_collapse` | **Confirmed** |
 
 ## 2. Công thức Fusion
 

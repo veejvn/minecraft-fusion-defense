@@ -1,29 +1,30 @@
-# Bonefang Hunter — Tier 2 Fusion Defender (Draft)
+# Bonefang Hunter — Tier 2 Fusion Defender (Confirmed)
 
 **Project:** Minecraft Fusion Defense  
 **Document ID:** T2-BONEFANG-HUNTER  
-**Entity ID đề xuất:** bonefang_hunter  
-**Recipe ID đề xuất:** fusion_bonefang_hunter  
-**Tier:** 2 (đề xuất cho công thức tương lai)  
-**Status:** **DRAFT — CHƯA ĐƯỢC OWNER PHÊ DUYỆT**  
-**Tên Defender:** Giữ nguyên theo quyết định Owner.  
-**Phạm vi:** Hồ sơ ý tưởng thiết kế; không phải nội dung MVP đã duyệt, không phải đặc tả triển khai.
+**Entity ID:** `bonefang_hunter`  
+**Recipe ID:** `fusion_bonefang_hunter`  
+**Tier:** 2 (MVP Confirmed)  
+**Status:** **CONFIRMED — ĐÃ ĐƯỢC OWNER PHÊ DUYỆT (2026-11-23)**  
+**Tên Defender:** Bonefang Hunter  
+**Phạm vi:** Nội dung MVP chính thức (1 trong 15 Tier-2 Fusion Defenders đã xác nhận).
 
-> **Ranh giới phê duyệt:** Owner đã yêu cầu giữ tám công thức mới ở trạng thái Draft và giữ tên Defender. Việc có hồ sơ này trong repository không biến công thức, Entity ID, Recipe ID, vai trò, đòn đánh hay Ability thành nội dung Confirmed. MVP hiện tại vẫn có đúng 7 Fusion Recipes Tier 2 đã được phê duyệt. Không tự thêm hồ sơ này vào roster, recipe catalog, Ability Catalog hoặc Production Game Dataset.
+> **Quyết định Owner (2026-11-23):** Đã nâng cấp lên chính thức theo cơ chế Predator Mark đã chốt. Tự động unlock khi **Wolf** unlock (`50` Enemy kills tích lũy trong các trận Victory).
 
 ## 1. Thông tin định danh
 
 | Trường | Giá trị | Trạng thái |
 |---|---|---|
-| Tên hiển thị | Bonefang Hunter | Tên được Owner giữ lại cho bản Draft |
-| Entity ID | bonefang_hunter | Proposed |
-| Recipe ID | fusion_bonefang_hunter | Proposed |
-| Tier | 2 | Draft concept |
-| Nguyên liệu | Skeleton (skeleton) + Wolf (wolf) | Draft recipe |
-| Combat role | Agile Melee / Hunter — cận chiến cơ động, ưu tiên truy đuổi hoặc đánh dấu mục tiêu. | Proposed |
-| Normal attack | Bone Claw | Proposed |
-| Special Ability | Predator Mark | Proposed |
-| Ability ID đề xuất | predator_mark | Proposed |
+| Tên hiển thị | Bonefang Hunter | **Confirmed** |
+| Entity ID | `bonefang_hunter` | **Confirmed** |
+| Recipe ID | `fusion_bonefang_hunter` | **Confirmed** |
+| Tier | 2 | **Confirmed** |
+| Nguyên liệu | Skeleton (`skeleton`) + Wolf (`wolf`) | **Confirmed** |
+| Unlock rule | Tự động mở khi Wolf unlock (Skeleton mở từ đầu) | **Confirmed** |
+| Combat role | Agile Melee / Hunter — cận chiến cơ động tốc độ đánh rất nhanh, xuyên giáp mục tiêu đơn. | **Confirmed** |
+| Normal attack | Bone Claw | **Confirmed** |
+| Special Ability | Predator Mark (`1` Power Crystal, `0s` cooldown, `melee-enemy`: tự buff `+100%` Attack Speed & `+50%` Attack Damage trong `6s` và tung ngay `4` đòn cào xương xuyên giáp cách nhau `0.2s`, mỗi đòn `110%` Attack Damage) | **Confirmed** |
+| Ability ID | `predator_mark` | **Confirmed** |
 
 ## 2. Công thức Fusion
 

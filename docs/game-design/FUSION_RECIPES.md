@@ -3,19 +3,19 @@
 # Minecraft Fusion Defense
 
 **Source file:** `docs/game-design/FUSION_RECIPES.md`  
-**Status:** Draft v1.2 — core Fusion rules confirmed.
+**Status:** Confirmed v2.0 — 15 Tier-2 Fusion Recipes (5 same-type + 10 cross-type) and core Fusion rules confirmed (`2026-11-23`).
 
 **Archival source:** [Fusion Recipes — Notion](https://app.notion.com/p/40c62d2ce36e8192bfd8c49172bbed41)
-**Confirmed decisions:** 02/11/2026  
-**Status key:** Confirmed = approved core mechanics, seven recipes and Fusion output HP/status/readiness; Proposed = draft combat/ability concepts; TBD = pending animation/cooldown/UI and unapproved future recipes. Schema, event names and failure codes describe the draft implementation contract, not additional gameplay approvals.
+**Confirmed decisions:** 02/11/2026, 03/11/2026, 23/11/2026 (Owner expanded MVP from 7 to all 15 pairwise Tier-2 combinations of the 5 Base Defenders).  
+**Status key:** Confirmed = approved core mechanics, fifteen recipes and Fusion output HP/status/readiness; Proposed = draft combat concepts; TBD = pending animation/cooldown/UI and unapproved future recipes. Schema, event names and failure codes describe the implementation contract.
 
 **Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
 ## 1. Purpose and scope
 
-Fusion combines two valid living Defender instances by dragging Source onto Target. Both inputs are consumed; Source cell is emptied and output occupies Target's original cell. Initial content is exactly seven approved recipes (four same-type, three cross-type).
+Fusion combines two valid living Defender instances by dragging Source onto Target. Both inputs are consumed; Source cell is emptied and output occupies Target's original cell. Approved MVP content is all **fifteen Tier-2 recipes** (five same-type, ten cross-type) covering every pairwise combination of the 5 Base Defenders.
 
-**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP ban đầu chỉ phê duyệt 7 Recipe Tier-1 + Tier-1 → Tier-2; Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
+**Confirmed:** engine Fusion data-driven không có Tier ceiling cố định. Nội dung MVP phê duyệt đầy đủ **15 Recipe Tier-1 + Tier-1 → Tier-2** (cập nhật 23/11/2026); Tier-2/cao hơn chỉ được làm input khi có Recipe tương lai được chủ dự án phê duyệt. Hiện không có nội dung Tier cao hơn được duyệt; không tự thêm Recipe hoặc Entity.
 
 ## 2. Confirmed mechanics
 
@@ -26,21 +26,29 @@ Fusion combines two valid living Defender instances by dragging Source onto Targ
 - **Confirmed:** Fusion Output bắt đầu ở 100% Max HP của chính nó, không kế thừa status effects tích cực hoặc tiêu cực từ input, có thể tấn công ngay khi có target hợp lệ. Không cộng chỉ số hai input.
 - Fusion executes atomically; failed attempts do not delete units or change resources or grid occupancy.
 
-## 3. MVP recipe catalog
+## 3. MVP recipe catalog (15 Confirmed Tier-2 Recipes)
 
 | Recipe ID | Input A | Input B | Output ID | Output name | Energy cost |
 | --- | --- | --- | --- | --- | --- |
 | `fusion_skeleton_sniper` | `skeleton` | `skeleton` | `skeleton_sniper` | Skeleton Sniper | 0 |
 | `fusion_steel_guardian` | `iron_golem` | `iron_golem` | `steel_guardian` | Steel Guardian | 0 |
+| `fusion_iron_ranger` | `iron_golem` | `skeleton` | `iron_ranger` | Iron Ranger | 0 |
 | `fusion_ice_golem` | `snow_golem` | `snow_golem` | `ice_golem` | Ice Golem | 0 |
 | `fusion_frost_guardian` | `iron_golem` | `snow_golem` | `frost_guardian` | Frost Guardian | 0 |
-| `fusion_flame_fang` | `blaze` | `wolf` | `flame_fang` | Flame Fang | 0 |
-| `fusion_inferno_archer` | `blaze` | `skeleton` | `inferno_archer` | Inferno Archer | 0 |
+| `fusion_frostbite_ranger` | `snow_golem` | `skeleton` | `frostbite_ranger` | Frostbite Ranger | 0 |
 | `fusion_alpha_wolf` | `wolf` | `wolf` | `alpha_wolf` | Alpha Wolf | 0 |
+| `fusion_ironfang_guardian` | `iron_golem` | `wolf` | `ironfang_guardian` | Ironfang Guardian | 0 |
+| `fusion_bonefang_hunter` | `skeleton` | `wolf` | `bonefang_hunter` | Bonefang Hunter | 0 |
+| `fusion_frostfang` | `snow_golem` | `wolf` | `frostfang` | Frostfang | 0 |
+| `fusion_infernal_archon` | `blaze` | `blaze` | `infernal_archon` | Infernal Archon | 0 |
+| `fusion_magma_colossus` | `iron_golem` | `blaze` | `magma_colossus` | Magma Colossus | 0 |
+| `fusion_steam_warden` | `snow_golem` | `blaze` | `steam_warden` | Steam Warden | 0 |
+| `fusion_inferno_archer` | `blaze` | `skeleton` | `inferno_archer` | Inferno Archer | 0 |
+| `fusion_flame_fang` | `blaze` | `wolf` | `flame_fang` | Flame Fang | 0 |
 
-Zombie Golem and Frost Creeper were replaced by Frost Guardian and Flame Fang because Zombie and Creeper are not among the five MVP Base Defenders.
+Zombie Golem and Frost Creeper were replaced because Zombie and Creeper are not among the five MVP Base Defenders.
 
-### Confirmed unlock mapping — 03/11/2026
+### Confirmed unlock mapping — 03/11/2026 & 23/11/2026
 
 
 | Base Defender | Confirmed unlock rule |
@@ -51,15 +59,23 @@ Zombie Golem and Frost Creeper were replaced by Frost Guardian and Flame Fang be
 | Wolf | Cumulative 50 Enemy kills across battles ending in Victory; defeated battles add zero progress |
 | Blaze | Cumulative 5 Grassland Victories |
 
-### Recipe unlock mapping
+### Recipe unlock mapping (15 Recipes — Unlocked automatically when both inputs are unlocked)
 
 | Recipe | Confirmed unlock rule |
 | --- | --- |
 | Skeleton + Skeleton → Skeleton Sniper | Unlocked at the start |
-| Iron Golem + Iron Golem → Steel Guardian | Unlocked at the start; seventh MVP recipe and Tier-2 Fusion Defender |
+| Iron Golem + Iron Golem → Steel Guardian | Unlocked at the start |
+| Iron Golem + Skeleton → Iron Ranger | Unlocked at the start |
 | Snow Golem + Snow Golem → Ice Golem | Automatically when Snow Golem unlocks |
 | Iron Golem + Snow Golem → Frost Guardian | Automatically when both Iron Golem and Snow Golem unlock |
+| Snow Golem + Skeleton → Frostbite Ranger | Automatically when both Snow Golem and Skeleton unlock |
 | Wolf + Wolf → Alpha Wolf | Automatically when Wolf unlocks |
+| Iron Golem + Wolf → Ironfang Guardian | Automatically when both Iron Golem and Wolf unlock |
+| Skeleton + Wolf → Bonefang Hunter | Automatically when both Skeleton and Wolf unlock |
+| Snow Golem + Wolf → Frostfang | Automatically when both Snow Golem and Wolf unlock |
+| Blaze + Blaze → Infernal Archon | Automatically when Blaze unlocks |
+| Iron Golem + Blaze → Magma Colossus | Automatically when both Iron Golem and Blaze unlock |
+| Snow Golem + Blaze → Steam Warden | Automatically when both Snow Golem and Blaze unlock |
 | Blaze + Skeleton → Inferno Archer | Automatically when both Blaze and Skeleton unlock |
 | Blaze + Wolf → Flame Fang | Automatically when both Blaze and Wolf unlock |
 

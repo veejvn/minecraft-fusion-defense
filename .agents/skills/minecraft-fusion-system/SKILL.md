@@ -43,17 +43,25 @@ Before coding, also apply the `minecraft-gameplay-rules` Project Skill. That ski
 
 ## Current approved MVP recipes
 
-Consult `docs/game-design/FUSION_RECIPES.md` for stable IDs, unlocks and superseding decisions. Seven Tier-1 + Tier-1 -> Tier-2 recipes are currently approved:
+Consult `docs/game-design/FUSION_RECIPES.md` for stable IDs, unlocks and superseding decisions. All **fifteen Tier-1 + Tier-1 -> Tier-2 pairwise recipes** are approved (`2026-11-23`):
 
 | Input A | Input B | Result |
 |---|---|---|
 | Skeleton | Skeleton | Skeleton Sniper |
 | Iron Golem | Iron Golem | Steel Guardian |
+| Iron Golem | Skeleton | Iron Ranger |
 | Snow Golem | Snow Golem | Ice Golem |
 | Iron Golem | Snow Golem | Frost Guardian |
-| Blaze | Wolf | Flame Fang |
-| Blaze | Skeleton | Inferno Archer |
+| Snow Golem | Skeleton | Frostbite Ranger |
 | Wolf | Wolf | Alpha Wolf |
+| Iron Golem | Wolf | Ironfang Guardian |
+| Skeleton | Wolf | Bonefang Hunter |
+| Snow Golem | Wolf | Frostfang |
+| Blaze | Blaze | Infernal Archon |
+| Iron Golem | Blaze | Magma Colossus |
+| Snow Golem | Blaze | Steam Warden |
+| Blaze | Skeleton | Inferno Archer |
+| Blaze | Wolf | Flame Fang |
 
 Historical GDD Zombie Golem and Frost Creeper recipes are **not** approved MVP recipes. Zombie is an Enemy; Creeper is outside the repository-approved MVP roster. Do not promote later experimental Fusion concepts into MVP without explicit scope approval.
 

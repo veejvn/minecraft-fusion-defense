@@ -1,7 +1,7 @@
 **Đường dẫn trong repository:** `docs/game-design/ABILITY_CATALOG.md`  
 **Dự án:** Minecraft Fusion Defense  
-**Trạng thái:** Confirmed v2.0 — Đã được Owner xác nhận chính thức ngày `2026-11-21` (đồng bộ quy tắc G09 từ `PGD-02` và hợp đồng runtime T-10; chỉ giữ lại VFX/Animation/UI Events thuộc phạm vi `T-12` ở trạng thái `TBD`)  
-**Phạm vi:** MVP Desktop Web; chiến trường 5 × 9; 5 Base Defenders; 7 Fusion Defenders; 4 Enemy (`zombie`, `husk`, `vindicator`, `pillager`); 5 Waves tại Grassland.
+**Trạng thái:** Confirmed v2.1 — Đã được Owner xác nhận chính thức ngày `2026-11-21` và mở rộng lên đầy đủ **20 Special Abilities** ngày `2026-11-23` (5 Base Defenders + 15 Tier-2 Fusion Defenders; chỉ giữ lại VFX/Animation/UI Events thuộc phạm vi `T-12` ở trạng thái `TBD`)  
+**Phạm vi:** MVP Desktop Web; chiến trường 5 × 9; 5 Base Defenders; 15 Fusion Defenders; 4 Enemy (`zombie`, `husk`, `vindicator`, `pillager`); 5 Waves tại Grassland.
 
 **Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
@@ -24,7 +24,7 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
 7. **Pause & Terminal:** `PAUSED` đóng băng toàn bộ Game Time (cooldown, status duration, Burn tick, multihit cadence, projectile, redirect aura); mọi yêu cầu kích hoạt khi `PAUSED` hoặc `VICTORY`/`DEFEAT` bị từ chối ngay tại cổng `enqueue`. Defender attack và Enemy movement tính đồng thời theo tick cố định. Terminal Priority theo quyết định Owner [G07-TERMINAL-PRIORITY-OWNER-2026-11-20.md](../decisions/PGD-02/owner-decisions/G07-TERMINAL-PRIORITY-OWNER-2026-11-20.md): *first valid resolved terminal event wins*.
 8. **Tương tác Fusion:** Fusion tốn `0` Energy / `0` Power Crystal, mọi Lane/khoảng cách, Output tại Target Cell ở `100%` own Max HP, **không kế thừa** bất kỳ buff/shield/redirect/cooldown nào của nguyên liệu và không tự kích hoạt Special Ability.
 
-## 3. Danh mục 12 Special Abilities trong MVP (`Confirmed 2026-11-21`)
+## 3. Danh mục 20 Special Abilities trong MVP (`Confirmed 2026-11-21 & 2026-11-23`)
 
 | Ability ID | Tên Ability | Defender sở hữu | Loại | Cần mục tiêu (`requiresTarget`) | Chi phí / Cooldown | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -40,6 +40,14 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
 | `meteor_arrow_rain` | Meteor Arrow Rain | `inferno_archer` | Fusion | Có (`area-3x3-closest-enemy`) | `1` Crystal / `0s` | **Confirmed** |
 | `alpha_howl` | Alpha Howl | `alpha_wolf` | Fusion | Không (`ally-3x3`) | `1` Crystal / `0s` | **Confirmed** |
 | `iron_bastion` | Iron Bastion | `steel_guardian` | Fusion | Không (`self` + `ally-3x3`) | `1` Crystal / `0s` | **Confirmed** |
+| `siege_volley` | Siege Volley | `iron_ranger` | Fusion | Có (`same-lane-enemy-in-range`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `guardian_charge` | Guardian Charge | `ironfang_guardian` | Fusion | Không (`same-lane` proactive) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `eruption` | Eruption | `magma_colossus` | Fusion | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `glacier_barrage` | Glacier Barrage | `frostbite_ranger` | Fusion | Không (`same-lane` proactive) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `winter_pounce` | Winter Pounce | `frostfang` | Fusion | Có (`front-3-cells`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `thermal_collapse` | Thermal Collapse | `steam_warden` | Fusion | Có (`area-3x3-self`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `predator_mark` | Predator Mark | `bonefang_hunter` | Fusion | Có (`melee-enemy`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `solar_cataclysm` | Solar Cataclysm | `infernal_archon` | Fusion | Có (`all-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
 
 ## 4. Special Abilities của 5 Base Defenders (`Confirmed`)
 
@@ -131,6 +139,54 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
   - Sát thương có cờ `shieldPiercing` giữ nguyên tính xuyên Shield trên cả phần chuyển hướng lẫn phần giữ lại.
   - Kích hoạt lại khi hiệu ứng cũ chưa hết sẽ đặt lại Shield (`FR2` giữ nguyên `shieldId`/`creationOrder`) và đặt lại đồng hồ `8` giây mà không cộng dồn.
   - Sát thương chuyển hướng có thể hạ gục Steel Guardian (khi Guardian chết, phần sát thương dư **không tràn ngược lại đồng minh**). Guardian chết hoặc Fusion sẽ chấm dứt ngay vùng bảo vệ `3×3` và Shield của nó.
+
+### 5.8. Siege Volley — Iron Ranger (`siege_volley`, Confirmed `2026-11-23`)
+
+- **Mục tiêu thiết kế:** Xạ thủ sát thương hạng nặng chuyên kết liễu kẻ địch máu nhiều (như Husk) với tốc độ bắn chậm nhưng hỏa lực xuyên giáp rất lớn; điểm yếu là kẻ địch tốc độ cao (như Vindicator).
+- **Hiệu ứng xác nhận:** Bắn loạt **`3` chốt thép hạng nặng xuyên giáp** cách nhau **`0.3` giây** (`multihit-projectile`, `armorPiercing: true`, `pierce: false`), mỗi phát gây **`200% Attack Damage`** vật lý dọc **cùng Lane**.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (`same-lane-enemy-in-range`). Stun/Freeze tạm dừng cadence; chết/Fusion hoặc hết mục tiêu hủy phát chưa bắn.
+
+### 5.9. Guardian Charge — Ironfang Guardian (`guardian_charge`, Confirmed `2026-11-23`)
+
+- **Mục tiêu thiết kế:** Thả chó sói sắt lao cắn xuyên suốt hết Lane bắt đầu từ vị trí của Ironfang Guardian.
+- **Hiệu ứng xác nhận:** Phóng **`1` chó sói sắt xung kích** (`projectile`, `pierce: true`, tốc độ `1.6×`) chạy dọc từ vị trí của Ironfang Guardian cho tới hết biên cột `9` trên **cùng Lane**, cắn xuyên qua toàn bộ Enemy trên đường chạy gây **`350% Attack Damage`** vật lý và **Stun `1.5` giây** cho từng Enemy trúng phải.
+- **Điều kiện & Quy tắc:** `requiresTarget: false` (chủ động thả chạy hết Lane). Mỗi Enemy chỉ trúng tối đa `1` lần (`hitEnemyIds`); chó sói đã thả tiếp tục chạy hết Lane ngay cả khi Ironfang Guardian chết/Fusion.
+
+### 5.10. Eruption — Magma Colossus (`eruption`, Confirmed `2026-11-23`)
+
+- **Mục tiêu thiết kế:** Phun trào dung nham diện rộng dọc cùng Lane kết hợp lá chắn chịu đòn.
+- **Hiệu ứng xác nhận:** Gây ngay **`3.5× Attack Damage` hệ Fire** (`armorPiercing: true`) + gắn **Burn `30% Attack Damage/giây` trong `5` giây** (`1 tick/giây`) lên toàn bộ Enemy trên **cùng Lane**, đồng thời tự tạo **Shield bằng `30% Max HP`**.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (`same-lane-enemies`). Burn giữ nguyên khi Owner chết/Fusion; Shield kết thúc khi bị đánh vỡ hoặc Owner chết/Fusion.
+
+### 5.11. Glacier Barrage — Frostbite Ranger (`glacier_barrage`, Confirmed `2026-11-23`)
+
+- **Mục tiêu thiết kế:** Bắn một mũi tên băng duy nhất xuyên hết cả hàng địch, đóng băng và làm chậm toàn bộ tuyến.
+- **Hiệu ứng xác nhận:** Bắn **`1` mũi tên băng duy nhất** (`projectile`, `pierce: true`, tốc độ `1.8×`, `damageType: 'ice'`) bay suốt dọc **cùng Lane**, xuyên không giới hạn qua mọi Enemy, gây **`300% Attack Damage`** hệ Ice, gắn **Freeze `2.5` giây** (tôn trọng `freezeImmune`/`freezeResistancePct`) và **Slow `-50%` trong `5` giây**.
+- **Điều kiện & Quy tắc:** `requiresTarget: false` (chủ động bắn hết Lane). Mỗi Enemy trúng tối đa `1` lần; mũi tên đã bắn tiếp tục bay nếu Owner chết/Fusion.
+
+### 5.12. Winter Pounce — Frostfang (`winter_pounce`, Confirmed `2026-11-23`)
+
+- **Mục tiêu thiết kế:** Đòn vồ băng tầm `3` ô phía trước, khuếch đại sát thương mạnh lên mục tiêu đang bị đóng băng hoặc làm chậm.
+- **Hiệu ứng xác nhận:** Quét sát thương băng trong phạm vi **`3` ô phía trước** (`col` đến `col + 3` trên **cùng Lane**, `front-3-cells`), gây **`250% Attack Damage`** hệ Ice — và **tăng thêm `+60%` sát thương (tổng `400% Attack Damage`)** lên bất kỳ Enemy nào đang chịu hiệu ứng băng giá (`slow` hoặc `freeze`), đồng thời gắn **Slow `-50%` trong `4` giây**.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (`front-3-cells` — cần ít nhất `1` Enemy trong phạm vi `3` ô phía trước trên cùng Lane).
+
+### 5.13. Thermal Collapse — Steam Warden (`thermal_collapse`, Confirmed `2026-11-23`)
+
+- **Mục tiêu thiết kế:** Vụ nổ áp suất hơi nước bao phủ khu vực `3×3` xung quanh chính Steam Warden.
+- **Hiệu ứng xác nhận:** Kích nổ hơi nước trong vùng **`3×3` lấy tâm là chính Steam Warden** (`area-3x3-self`, `|row - ownerRow| <= 1` và `|col - ownerCol| <= 1`), gây **`250% Attack Damage` hệ Fire** (`armorPiercing: true`) và gắn **Slow `-50%` trong `5` giây** cho toàn bộ Enemy trong vùng `3×3`.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (`area-3x3-self` — cần ít nhất `1` Enemy trong vùng `3×3` quanh Steam Warden).
+
+### 5.14. Predator Mark — Bonefang Hunter (`predator_mark`, Confirmed `2026-11-23`)
+
+- **Mục tiêu thiết kế:** Tự cường hóa bản năng săn mồi và dồn chuỗi đòn cào xương xuyên giáp vào mục tiêu cận chiến.
+- **Hiệu ứng xác nhận:** Tự buff **`+100% Attack Speed` và `+50% Attack Damage` trong `6` giây** (`self` buff) đồng thời thực hiện chuỗi **`4` đòn cận chiến xuyên giáp** cách nhau **`0.2` giây** (`multihit-melee`, `armorPiercing: true`), mỗi đòn gây **`110% Attack Damage`** vật lý.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (`melee-enemy`).
+
+### 5.15. Solar Cataclysm — Infernal Archon (`solar_cataclysm`, Confirmed `2026-11-23`)
+
+- **Mục tiêu thiết kế:** Đòn đại họa lửa bao trùm toàn bộ chiến trường `5` Lane, đối xứng với `Absolute Zero`.
+- **Hiệu ứng xác nhận:** Gây ngay **`2.5× Attack Damage` hệ Fire** (`armorPiercing: true`) và gắn **Burn `30% Attack Damage/giây` trong `5` giây** (`1 tick/giây`) lên toàn bộ Enemy đang có mặt trên **cả `5` Lane (`all-enemies`)**.
+- **Điều kiện & Quy tắc:** `requiresTarget: true` (`all-enemies` — cần ít nhất `1` Enemy sống trên sân).
 
 ## 6. Quy trình kích hoạt Ability (`Confirmed`)
 

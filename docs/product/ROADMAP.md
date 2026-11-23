@@ -12,7 +12,7 @@ Lập các nhóm công việc để đi từ tài liệu thiết kế đến MVP
 
 - 2D Pixel Art, side-view, single-player Desktop Web.
 - Một Grassland Level, Battlefield 5 Rows × 9 Columns, 5 Waves.
-- 5 Base Defenders, 4 Enemies, 7 Fusion Recipes, 7 Fusion Defenders, 12 required Special Abilities (11 existing draft IDs; Steel Guardian `iron_bastion` (effects TBD)).
+- 5 Base Defenders, 4 Enemies, 15 Fusion Recipes, 15 Fusion Defenders, 20 required Special Abilities (mở rộng chính thức từ 7 lên toàn bộ 15 công thức Tier-2 ngày `2026-11-23`).
 - Energy dùng Summon; Power Crystal dùng Special Abilities.
 - Fusion miễn phí, không giới hạn Lane/khoảng cách; Tier-1 + Tier-1 → Tier-2; Output tại Target Cell.
 - Pause, Victory và Defeat theo Gameplay Mechanics.

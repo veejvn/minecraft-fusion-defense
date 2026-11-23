@@ -1,29 +1,30 @@
-# Frostfang — Tier 2 Fusion Defender (Draft)
+# Frostfang — Tier 2 Fusion Defender (Confirmed)
 
 **Project:** Minecraft Fusion Defense  
 **Document ID:** T2-FROSTFANG  
-**Entity ID đề xuất:** frostfang  
-**Recipe ID đề xuất:** fusion_frostfang  
-**Tier:** 2 (đề xuất cho công thức tương lai)  
-**Status:** **DRAFT — CHƯA ĐƯỢC OWNER PHÊ DUYỆT**  
-**Tên Defender:** Giữ nguyên theo quyết định Owner.  
-**Phạm vi:** Hồ sơ ý tưởng thiết kế; không phải nội dung MVP đã duyệt, không phải đặc tả triển khai.
+**Entity ID:** `frostfang`  
+**Recipe ID:** `fusion_frostfang`  
+**Tier:** 2 (MVP Confirmed)  
+**Status:** **CONFIRMED — ĐÃ ĐƯỢC OWNER PHÊ DUYỆT (2026-11-23)**  
+**Tên Defender:** Frostfang  
+**Phạm vi:** Nội dung MVP chính thức (1 trong 15 Tier-2 Fusion Defenders đã xác nhận).
 
-> **Ranh giới phê duyệt:** Owner đã yêu cầu giữ tám công thức mới ở trạng thái Draft và giữ tên Defender. Việc có hồ sơ này trong repository không biến công thức, Entity ID, Recipe ID, vai trò, đòn đánh hay Ability thành nội dung Confirmed. MVP hiện tại vẫn có đúng 7 Fusion Recipes Tier 2 đã được phê duyệt. Không tự thêm hồ sơ này vào roster, recipe catalog, Ability Catalog hoặc Production Game Dataset.
+> **Quyết định Owner (2026-11-23):** Đã nâng cấp lên chính thức: *Frostfang có tầm kỹ năng `3` ô phía trước (`front-3-cells`), gây thêm sát thương mạnh nếu kẻ địch đang chịu hiệu ứng băng giá (`Slow` hoặc `Freeze`).* Tự động unlock khi cả **Snow Golem** và **Wolf** unlock.
 
 ## 1. Thông tin định danh
 
 | Trường | Giá trị | Trạng thái |
 |---|---|---|
-| Tên hiển thị | Frostfang | Tên được Owner giữ lại cho bản Draft |
-| Entity ID | frostfang | Proposed |
-| Recipe ID | fusion_frostfang | Proposed |
-| Tier | 2 | Draft concept |
-| Nguyên liệu | Snow Golem (snow_golem) + Wolf (wolf) | Draft recipe |
-| Combat role | Fast Melee / Freeze Control — cận chiến tốc độ cao thiên về khống chế lạnh. | Proposed |
-| Normal attack | Frost Bite | Proposed |
-| Special Ability | Winter Pounce | Proposed |
-| Ability ID đề xuất | winter_pounce | Proposed |
+| Tên hiển thị | Frostfang | **Confirmed** |
+| Entity ID | `frostfang` | **Confirmed** |
+| Recipe ID | `fusion_frostfang` | **Confirmed** |
+| Tier | 2 | **Confirmed** |
+| Nguyên liệu | Snow Golem (`snow_golem`) + Wolf (`wolf`) | **Confirmed** |
+| Unlock rule | Tự động mở khi cả Snow Golem và Wolf unlock | **Confirmed** |
+| Combat role | Fast Melee / Cryo Executioner — cận chiến tốc độ cao, kết liễu mục tiêu đang chịu hiệu ứng băng giá. | **Confirmed** |
+| Normal attack | Frost Bite | **Confirmed** |
+| Special Ability | Winter Pounce (`1` Power Crystal, `0s` cooldown, `front-3-cells`: đánh bùng nổ băng trong phạm vi `3` ô phía trước trên cùng Lane gây `250%` Attack Damage hệ Ice, tăng lên `400%` Attack Damage (`+60%` bonus) nếu Enemy đang chịu `Slow` hoặc `Freeze`, đồng thời gắn `Slow -50%` trong `4s`) | **Confirmed** |
+| Ability ID | `winter_pounce` | **Confirmed** |
 
 ## 2. Công thức Fusion
 

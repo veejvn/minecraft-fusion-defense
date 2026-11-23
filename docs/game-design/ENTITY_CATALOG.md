@@ -15,7 +15,7 @@
 
 Desktop web, side-view 2D pixel art, 5 lanes × 9 columns. Defenders occupy one grid cell each; enemies spawn from the right and move left. Enemy behavior is configured per enemy; defender target selection is configured per defender. Enemy base breach generates Defeat; simultaneous terminal events follow Event Queue insertion order, with the first resolved terminal event deciding the result.
 
-MVP: **5 Base Defenders, 7 Tier-2 Fusion Defenders, 4 Enemy types**, one Grassland level with five waves. Fusion is free, may cross lanes and any distance, and spawns its output at the target's original cell. Output HP/status/readiness follow the Confirmed 03/11/2026 rules in section 3. Power Crystal activates Special Abilities and is obtained from Wave Rewards and collectible Power Crystal Items.
+MVP: **5 Base Defenders, 15 Tier-2 Fusion Defenders, 4 Enemy types**, one Grassland level with five waves. Fusion is free, may cross lanes and any distance, and spawns its output at the target's original cell. Output HP/status/readiness follow the Confirmed 03/11/2026 rules in section 3. Power Crystal activates Special Abilities and is obtained from Wave Rewards and collectible Power Crystal Items.
 
 ## 2. Base Defender catalog
 
@@ -31,19 +31,27 @@ MVP: **5 Base Defenders, 7 Tier-2 Fusion Defenders, 4 Enemy types**, one Grassla
 
 Each Defender Definition must include: stable ID, display name, tier, role, HP, damage, attack speed, attack range, attack type, targeting strategy, summon Energy cost, specialAbilityId, animation/asset references, and optional status effects. **All numerical stats and precise targeting choices remain TBD until balancing.**
 
-## 3. Fusion Defender catalog
+## 3. Fusion Defender catalog (15 Confirmed Tier-2 Defenders — 2026-11-23)
 
-**Confirmed:** seven output names/input pairs and Tier 2; Steel Guardian ID, Crowd Control Guardian identity, Crushing Strike and Iron Bastion follow [PGD-01](../decisions/PGD-01-STEEL-GUARDIAN.md). Other combat roles, attacks and Special Ability names remain Proposed.
+**Confirmed:** all 15 pairwise output names/input pairs, Tier 2, combat identities, and Special Ability IDs (updated 2026-11-23 per Owner approval of the 8 remaining pairwise recipes). Exact numerical combat balance stats remain TBD until final balancing.
 
 | Entity ID | Name | Inputs | Tier | Combat role | Special Ability |
 | --- | --- | --- | --- | --- | --- |
-| `skeleton_sniper` | Skeleton Sniper | Skeleton + Skeleton | 2 | Long-range burst | Piercing Barrage |
-| `steel_guardian` | Steel Guardian | Iron Golem + Iron Golem | 2 | Crowd Control Guardian | Iron Bastion |
-| `ice_golem` | Ice Golem | Snow Golem + Snow Golem | 2 | Ice Control | Absolute Zero |
-| `frost_guardian` | Frost Guardian | Iron Golem + Snow Golem | 2 | Tank / Control | Glacial Fortress |
-| `flame_fang` | Flame Fang | Blaze + Wolf | 2 | Melee Damage / Burn | Wildfire Rush |
-| `inferno_archer` | Inferno Archer | Blaze + Skeleton | 2 | Ranged Damage / Burn | Meteor Arrow Rain |
-| `alpha_wolf` | Alpha Wolf | Wolf + Wolf | 2 | Melee Damage / Support | Alpha Howl |
+| `skeleton_sniper` | Skeleton Sniper | Skeleton + Skeleton | 2 | Long-range burst | `piercing_barrage` |
+| `steel_guardian` | Steel Guardian | Iron Golem + Iron Golem | 2 | Crowd Control Guardian | `iron_bastion` |
+| `iron_ranger` | Iron Ranger | Iron Golem + Skeleton | 2 | Heavy Ranged Marksman (slow fire rate, high single-target damage vs high-HP enemies, weak vs fast enemies) | `siege_volley` |
+| `ice_golem` | Ice Golem | Snow Golem + Snow Golem | 2 | Ice Control | `absolute_zero` |
+| `frost_guardian` | Frost Guardian | Iron Golem + Snow Golem | 2 | Tank / Control | `glacial_fortress` |
+| `frostbite_ranger` | Frostbite Ranger | Snow Golem + Skeleton | 2 | Ranged Freeze Control | `glacier_barrage` |
+| `alpha_wolf` | Alpha Wolf | Wolf + Wolf | 2 | Melee Damage / Support | `alpha_howl` |
+| `ironfang_guardian` | Ironfang Guardian | Iron Golem + Wolf | 2 | Armored Melee / Disruption | `guardian_charge` |
+| `bonefang_hunter` | Bonefang Hunter | Skeleton + Wolf | 2 | Agile Melee / Hunter | `predator_mark` |
+| `frostfang` | Frostfang | Snow Golem + Wolf | 2 | Fast Melee / Cryo Executioner | `winter_pounce` |
+| `infernal_archon` | Infernal Archon | Blaze + Blaze | 2 | Ranged Fire / Map-Wide Burst | `solar_cataclysm` |
+| `magma_colossus` | Magma Colossus | Iron Golem + Blaze | 2 | Heavy Melee / Fire Bruiser | `eruption` |
+| `steam_warden` | Steam Warden | Snow Golem + Blaze | 2 | Elemental Control (3×3 around self) | `thermal_collapse` |
+| `inferno_archer` | Inferno Archer | Blaze + Skeleton | 2 | Ranged Damage / Burn | `meteor_arrow_rain` |
+| `flame_fang` | Flame Fang | Blaze + Wolf | 2 | Melee Damage / Burn | `wildfire_rush` |
 
 ### Frost Guardian
 
@@ -89,33 +97,39 @@ Crystal Item từ Enemy death xuất hiện kể cả khi storage đầy (cap 5)
 
 **Confirmed — Product Design 03/11/2026:** Iron Golem và Skeleton mở từ đầu; Snow Golem mở sau First Grassland Victory; Wolf sau 50 Enemy kills tích lũy qua các trận Victory; Blaze sau 5 Grassland Victories tích lũy. Replay Victory được cộng tiến độ, Defeat không cộng; unlock vĩnh viễn, không cấp reward trùng. Recipe mở từ đầu: Skeleton Sniper và Steel Guardian. Ice Golem mở khi Snow Golem unlock; Frost Guardian khi Iron Golem và Snow Golem unlock; Alpha Wolf khi Wolf unlock; Inferno Archer khi Blaze và Skeleton unlock; Flame Fang khi Blaze và Wolf unlock. Fusion optional cho Grassland Victory: có thể thắng bằng Base Defenders, không thêm Fusion count vào điều kiện thắng. UI/tracking implementation vẫn TBD.
 
-## 5. Special Ability references
+## 5. Special Ability references (20 Confirmed Special Abilities — 2026-11-23)
 
-**Proposed:** the following ability IDs and names are draft references, not confirmed Ability specifications.
+**Confirmed:** all 20 Defender-to-Ability ID mappings (5 Base Defenders + 15 Tier-2 Fusion Defenders). Full mechanics are defined in [ABILITY_CATALOG.md](ABILITY_CATALOG.md) (`Confirmed v2.1`).
 
 | Defender | Ability ID |
 | --- | --- |
 | Snow Golem | `blizzard` |
-| Steel Guardian | `iron_bastion` |
-
-Steel Guardian's normal attack is **Crushing Strike** (Confirmed name and interrupt-oriented melee identity). Its exact effects, targeting and numerical stats remain TBD.
 | Iron Golem | `earthquake` |
 | Skeleton | `arrow_storm` |
 | Wolf | `pack_frenzy` |
 | Blaze | `inferno` |
 | Skeleton Sniper | `piercing_barrage` |
+| Steel Guardian | `iron_bastion` |
+| Iron Ranger | `siege_volley` |
 | Ice Golem | `absolute_zero` |
 | Frost Guardian | `glacial_fortress` |
-| Flame Fang | `wildfire_rush` |
-| Inferno Archer | `meteor_arrow_rain` |
+| Frostbite Ranger | `glacier_barrage` |
 | Alpha Wolf | `alpha_howl` |
+| Ironfang Guardian | `guardian_charge` |
+| Bonefang Hunter | `predator_mark` |
+| Frostfang | `winter_pounce` |
+| Infernal Archon | `solar_cataclysm` |
+| Magma Colossus | `eruption` |
+| Steam Warden | `thermal_collapse` |
+| Inferno Archer | `meteor_arrow_rain` |
+| Flame Fang | `wildfire_rush` |
 
-Ability names/effects are design drafts. Exact Power Crystal cost, cooldown, duration and target selection belong in `ABILITY_CATALOG.md`.
+Steel Guardian's normal attack is **Crushing Strike** (Confirmed name and interrupt-oriented melee identity). Exact numerical combat stats remain TBD until balancing.
 
 ## 6. Data integrity and acceptance
 
 - All IDs are unique and stable; references resolve to existing entity and ability definitions.
-- Exactly five Tier-1 defenders and seven Tier-2 fusion defenders.
+- Exactly five Tier-1 defenders and fifteen Tier-2 fusion defenders (all 15 pairwise combinations).
 - Exactly four MVP enemy types.
 - Zombie is an enemy, not a Fusion input. Creeper is outside the MVP roster.
 - Every initial approved Recipe uses the five Base Defenders. Engine validation follows approved Recipe definitions across any Tier; no fixed Tier ceiling.

@@ -1,29 +1,30 @@
-# Iron Ranger — Tier 2 Fusion Defender (Draft)
+# Iron Ranger — Tier 2 Fusion Defender (Confirmed)
 
 **Project:** Minecraft Fusion Defense  
 **Document ID:** T2-IRON-RANGER  
-**Entity ID đề xuất:** iron_ranger  
-**Recipe ID đề xuất:** fusion_iron_ranger  
-**Tier:** 2 (đề xuất cho công thức tương lai)  
-**Status:** **DRAFT — CHƯA ĐƯỢC OWNER PHÊ DUYỆT**  
-**Tên Defender:** Giữ nguyên theo quyết định Owner.  
-**Phạm vi:** Hồ sơ ý tưởng thiết kế; không phải nội dung MVP đã duyệt, không phải đặc tả triển khai.
+**Entity ID:** `iron_ranger`  
+**Recipe ID:** `fusion_iron_ranger`  
+**Tier:** 2 (MVP Confirmed)  
+**Status:** **CONFIRMED — ĐÃ ĐƯỢC OWNER PHÊ DUYỆT (2026-11-23)**  
+**Tên Defender:** Iron Ranger  
+**Phạm vi:** Nội dung MVP chính thức (1 trong 15 Tier-2 Fusion Defenders đã xác nhận).
 
-> **Ranh giới phê duyệt:** Owner đã yêu cầu giữ tám công thức mới ở trạng thái Draft và giữ tên Defender. Việc có hồ sơ này trong repository không biến công thức, Entity ID, Recipe ID, vai trò, đòn đánh hay Ability thành nội dung Confirmed. MVP hiện tại vẫn có đúng 7 Fusion Recipes Tier 2 đã được phê duyệt. Không tự thêm hồ sơ này vào roster, recipe catalog, Ability Catalog hoặc Production Game Dataset.
+> **Quyết định Owner (2026-11-23):** Đã nâng cấp lên chính thức: *Iron Ranger là xạ thủ sát thương hạng nặng, bắn chậm nhưng sát thương rất lớn, phù hợp kết liễu nhanh chóng kẻ địch máu nhiều (như Husk), nhưng yếu trước kẻ địch có tốc độ di chuyển cao (như Vindicator).* Unlock ngay từ đầu (`iron_golem + skeleton`).
 
 ## 1. Thông tin định danh
 
 | Trường | Giá trị | Trạng thái |
 |---|---|---|
-| Tên hiển thị | Iron Ranger | Tên được Owner giữ lại cho bản Draft |
-| Entity ID | iron_ranger | Proposed |
-| Recipe ID | fusion_iron_ranger | Proposed |
-| Tier | 2 | Draft concept |
-| Nguyên liệu | Iron Golem (iron_golem) + Skeleton (skeleton) | Draft recipe |
-| Combat role | Armored Ranged Damage — xạ thủ tầm xa có hình ảnh bền bỉ hơn Skeleton, tập trung vào phát bắn chính xác. | Proposed |
-| Normal attack | Steel Bolt | Proposed |
-| Special Ability | Siege Volley | Proposed |
-| Ability ID đề xuất | siege_volley | Proposed |
+| Tên hiển thị | Iron Ranger | **Confirmed** |
+| Entity ID | `iron_ranger` | **Confirmed** |
+| Recipe ID | `fusion_iron_ranger` | **Confirmed** |
+| Tier | 2 | **Confirmed** |
+| Nguyên liệu | Iron Golem (`iron_golem`) + Skeleton (`skeleton`) | **Confirmed** |
+| Unlock rule | Unlocked at the start (cả Iron Golem và Skeleton mở từ đầu) | **Confirmed** |
+| Combat role | Heavy Ranged Marksman — xạ thủ sát thương hạng nặng, bắn chậm nhưng sát thương lớn, chuyên trị kẻ địch máu cao, sợ kẻ địch tốc độ cao. | **Confirmed** |
+| Normal attack | Steel Bolt (bắn chậm, sát thương đơn mục tiêu rất lớn) | **Confirmed** |
+| Special Ability | Siege Volley (`1` Power Crystal, `0s` cooldown, `same-lane-enemy-in-range`: bắn loạt `3` chốt thép xuyên giáp nặng cách nhau `0.3s`, mỗi chốt gây `200%` Attack Damage) | **Confirmed** |
+| Ability ID | `siege_volley` | **Confirmed** |
 
 ## 2. Công thức Fusion
 
