@@ -43,52 +43,52 @@ export const BASIC_ATTACK_VFX_BY_DEFENDER: Readonly<Record<string, BasicAttackVi
     kind: 'projectile',
     textureKey: EFFECT_SPRITE_ASSETS.proj_arrow.key,
     fallbackColor: 0xfef08a,
-    size: 30,
-    durationMs: 190,
+    size: 32,
+    durationMs: 220,
   },
   skeleton_sniper: {
     kind: 'projectile',
     textureKey: EFFECT_SPRITE_ASSETS.proj_arrow.key,
     fallbackColor: 0xfde047,
     tint: 0xfef08a,
-    size: 34,
-    durationMs: 160,
+    size: 36,
+    durationMs: 190,
   },
   iron_ranger: {
     kind: 'projectile',
     textureKey: EFFECT_SPRITE_ASSETS.proj_steel_bolt.key,
     fallbackColor: 0xe2e8f0,
     size: 36,
-    durationMs: 185,
+    durationMs: 210,
   },
   frostbite_ranger: {
     kind: 'projectile',
     textureKey: EFFECT_SPRITE_ASSETS.proj_frost_pierce_arrow.key,
     fallbackColor: 0x38bdf8,
-    size: 34,
-    durationMs: 190,
+    size: 36,
+    durationMs: 220,
   },
   snow_golem: {
     kind: 'projectile',
     textureKey: EFFECT_SPRITE_ASSETS.proj_snowball.key,
     fallbackColor: 0xe0f2fe,
-    size: 28,
-    durationMs: 220,
+    size: 30,
+    durationMs: 240,
   },
   ice_golem: {
     kind: 'projectile',
     textureKey: EFFECT_SPRITE_ASSETS.proj_snowball.key,
     fallbackColor: 0x7dd3fc,
     tint: 0x7dd3fc,
-    size: 34,
-    durationMs: 220,
+    size: 36,
+    durationMs: 240,
   },
   inferno_archer: {
     kind: 'projectile',
     textureKey: EFFECT_SPRITE_ASSETS.proj_meteor_arrow.key,
     fallbackColor: 0xf97316,
-    size: 34,
-    durationMs: 195,
+    size: 36,
+    durationMs: 220,
   },
 
   // Ranged Lobbed / Parabolic Projectiles
@@ -96,19 +96,19 @@ export const BASIC_ATTACK_VFX_BY_DEFENDER: Readonly<Record<string, BasicAttackVi
     kind: 'projectile',
     textureKey: EFFECT_SPRITE_ASSETS.proj_fireball.key,
     fallbackColor: 0xfb923c,
-    size: 30,
-    durationMs: 260,
+    size: 32,
+    durationMs: 280,
     curved: true,
-    arcHeight: 54,
+    arcHeight: 56,
   },
   infernal_archon: {
     kind: 'projectile',
     textureKey: EFFECT_SPRITE_ASSETS.proj_fireball.key,
     fallbackColor: 0xf97316,
-    size: 36,
-    durationMs: 260,
+    size: 38,
+    durationMs: 280,
     curved: true,
-    arcHeight: 62,
+    arcHeight: 64,
   },
 
   // Melee Slams
@@ -116,19 +116,19 @@ export const BASIC_ATTACK_VFX_BY_DEFENDER: Readonly<Record<string, BasicAttackVi
     kind: 'melee',
     style: 'slam',
     color: 0xe2e8f0,
-    durationMs: 190,
+    durationMs: 220,
   },
   steel_guardian: {
     kind: 'melee',
     style: 'slam',
     color: 0xfacc15,
-    durationMs: 210,
+    durationMs: 240,
   },
   magma_colossus: {
     kind: 'melee',
     style: 'slam',
     color: 0xf97316,
-    durationMs: 210,
+    durationMs: 240,
   },
 
   // Melee Elemental Claws & Steam Bursts
@@ -137,21 +137,21 @@ export const BASIC_ATTACK_VFX_BY_DEFENDER: Readonly<Record<string, BasicAttackVi
     style: 'claw',
     textureKey: EFFECT_SPRITE_ASSETS.vfx_frost_claw.key,
     color: 0x38bdf8,
-    durationMs: 200,
+    durationMs: 220,
   },
   frostfang: {
     kind: 'melee',
     style: 'claw',
     textureKey: EFFECT_SPRITE_ASSETS.vfx_frost_claw.key,
     color: 0x7dd3fc,
-    durationMs: 185,
+    durationMs: 210,
   },
   steam_warden: {
     kind: 'melee',
     style: 'burst',
     textureKey: EFFECT_SPRITE_ASSETS.vfx_steam_burst.key,
     color: 0xbae6fd,
-    durationMs: 210,
+    durationMs: 230,
   },
 
   // Melee Fang / Bite Strikes
@@ -159,31 +159,31 @@ export const BASIC_ATTACK_VFX_BY_DEFENDER: Readonly<Record<string, BasicAttackVi
     kind: 'melee',
     style: 'bite',
     color: 0xfef08a,
-    durationMs: 160,
+    durationMs: 190,
   },
   alpha_wolf: {
     kind: 'melee',
     style: 'bite',
     color: 0xfacc15,
-    durationMs: 165,
+    durationMs: 195,
   },
   ironfang_guardian: {
     kind: 'melee',
     style: 'bite',
     color: 0xcbd5e1,
-    durationMs: 175,
+    durationMs: 205,
   },
   bonefang_hunter: {
     kind: 'melee',
     style: 'bite',
     color: 0xf87171,
-    durationMs: 165,
+    durationMs: 195,
   },
   flame_fang: {
     kind: 'melee',
     style: 'bite',
     color: 0xf97316,
-    durationMs: 170,
+    durationMs: 200,
   },
 };
 
@@ -204,8 +204,13 @@ export function getBasicAttackVisualSpec(definitionId: string): BasicAttackVisua
  */
 export class BasicAttackVisualTracker {
   private visualTimeMs = 0;
-  private readonly prevDefenderAttackCounts = new Map<string, number>();
+  private lastTick = -1;
+  private readonly prevDefenderAttackState = new Map<
+    string,
+    { readonly anchor: number | null; readonly count: number }
+  >();
   private readonly prevEnemyHp = new Map<string, number>();
+  private readonly lastEnemyPos = new Map<string, { readonly lane: number; readonly x: number }>();
   private readonly defenderAttackAnims = new Map<
     string,
     { readonly startMs: number; readonly durationMs: number; readonly isMelee: boolean }
@@ -215,8 +220,10 @@ export class BasicAttackVisualTracker {
 
   reset(): void {
     this.visualTimeMs = 0;
-    this.prevDefenderAttackCounts.clear();
+    this.lastTick = -1;
+    this.prevDefenderAttackState.clear();
     this.prevEnemyHp.clear();
+    this.lastEnemyPos.clear();
     this.defenderAttackAnims.clear();
     this.enemyHitFlashUntil.clear();
     this.activeBasicAttacks = [];
@@ -249,36 +256,58 @@ export class BasicAttackVisualTracker {
     defenders: readonly PlaytestDefenderView[],
     enemies: readonly PlaytestEnemyView[],
     geom: BattleGridGeometry,
+    currentTick = -1,
   ): void {
+    if (currentTick >= 0 && this.lastTick >= 0 && currentTick < this.lastTick) {
+      this.reset();
+    }
+    if (currentTick >= 0) {
+      this.lastTick = currentTick;
+    }
+
     const enemyById = new Map(enemies.map(e => [e.id, e]));
     const livingDefIds = new Set<string>();
     const livingEnemyIds = new Set<string>();
 
     for (const def of defenders) {
       livingDefIds.add(def.id);
-      const prev = this.prevDefenderAttackCounts.get(def.id);
-      if (prev === undefined) {
-        this.prevDefenderAttackCounts.set(def.id, def.attackCount);
-        continue;
-      }
-      if (def.attackCount > prev) {
-        this.prevDefenderAttackCounts.set(def.id, def.attackCount);
+      const prev = this.prevDefenderAttackState.get(def.id);
+      const anchor = def.attackAnchorTick;
+      const count = def.attackCount;
+      this.prevDefenderAttackState.set(def.id, { anchor, count });
+
+      const firedOnSpawn =
+        prev === undefined &&
+        count > 0 &&
+        anchor !== null &&
+        currentTick >= 0 &&
+        currentTick - anchor <= 2;
+      const firedAfterPrev =
+        prev !== undefined &&
+        count > 0 &&
+        ((anchor === prev.anchor && count > prev.count) ||
+          (anchor !== prev.anchor && anchor !== null));
+
+      if (firedOnSpawn || firedAfterPrev) {
         const spec = getBasicAttackVisualSpec(def.definitionId);
         const isMelee = spec.kind === 'melee';
         this.defenderAttackAnims.set(def.id, {
           startMs: this.visualTimeMs,
-          durationMs: isMelee ? 170 : 140,
+          durationMs: isMelee ? 185 : 150,
           isMelee,
         });
 
         const startX = geom.originX + (def.column + 0.65) * geom.cellW;
         const startY = geom.originY + (def.row + 0.48) * geom.cellH;
-        const target =
-          (def.targetId ? enemyById.get(def.targetId) : undefined) ??
+        const livingTarget = def.targetId ? enemyById.get(def.targetId) : undefined;
+        const slainTarget = !livingTarget && def.targetId ? this.lastEnemyPos.get(def.targetId) : undefined;
+        const fallbackTarget =
+          livingTarget ??
+          slainTarget ??
           enemies.find(e => e.lane === def.row && e.x >= def.column);
-        const endCol = target ? target.x : def.column + (isMelee ? 1.05 : 3.2);
+        const endCol = fallbackTarget ? fallbackTarget.x : def.column + (isMelee ? 1.05 : 3.2);
         const endX = geom.originX + endCol * geom.cellW;
-        const endY = geom.originY + ((target ? target.lane : def.row) + 0.5) * geom.cellH;
+        const endY = geom.originY + ((fallbackTarget ? fallbackTarget.lane : def.row) + 0.5) * geom.cellH;
 
         this.activeBasicAttacks.push({
           spec,
@@ -292,9 +321,9 @@ export class BasicAttackVisualTracker {
       }
     }
 
-    for (const id of this.prevDefenderAttackCounts.keys()) {
+    for (const id of this.prevDefenderAttackState.keys()) {
       if (!livingDefIds.has(id)) {
-        this.prevDefenderAttackCounts.delete(id);
+        this.prevDefenderAttackState.delete(id);
         this.defenderAttackAnims.delete(id);
       }
     }
@@ -303,14 +332,16 @@ export class BasicAttackVisualTracker {
       livingEnemyIds.add(enemy.id);
       const prevHp = this.prevEnemyHp.get(enemy.id);
       if (prevHp !== undefined && enemy.hp < prevHp) {
-        this.enemyHitFlashUntil.set(enemy.id, this.visualTimeMs + 100);
+        this.enemyHitFlashUntil.set(enemy.id, this.visualTimeMs + 110);
       }
       this.prevEnemyHp.set(enemy.id, enemy.hp);
+      this.lastEnemyPos.set(enemy.id, { lane: enemy.lane, x: enemy.x });
     }
 
     for (const id of this.prevEnemyHp.keys()) {
       if (!livingEnemyIds.has(id)) {
         this.prevEnemyHp.delete(id);
+        this.lastEnemyPos.delete(id);
         this.enemyHitFlashUntil.delete(id);
       }
     }
@@ -369,20 +400,20 @@ export function renderBasicAttackEffects(
       const trailArc = atk.spec.curved ? Math.sin(trailP * Math.PI) * (atk.spec.arcHeight ?? 52) : 0;
       const trailY = atk.startY + (atk.endY - atk.startY) * trailP - trailArc;
 
-      gfx.lineStyle(3, atk.spec.fallbackColor, 0.55);
+      gfx.lineStyle(4, atk.spec.fallbackColor, 0.65);
       gfx.lineBetween(trailX, trailY, curX, curY);
 
       if (useSprites && hasTexture(atk.spec.textureKey)) {
         putSprite(curX, curY, atk.spec.textureKey, atk.spec.size, 1, atk.spec.tint);
       } else {
         gfx.fillStyle(atk.spec.fallbackColor, 1);
-        gfx.fillCircle(curX, curY, Math.max(5, atk.spec.size * 0.22));
+        gfx.fillCircle(curX, curY, Math.max(6, atk.spec.size * 0.24));
       }
 
-      if (p >= 0.82) {
-        const sparkAlpha = Math.max(0.15, (1 - p) / 0.18);
-        gfx.fillStyle(atk.spec.fallbackColor, sparkAlpha * 0.6);
-        gfx.fillCircle(atk.endX, atk.endY, 12);
+      if (p >= 0.78) {
+        const sparkAlpha = Math.max(0.2, (1 - p) / 0.22);
+        gfx.fillStyle(atk.spec.fallbackColor, sparkAlpha * 0.72);
+        gfx.fillCircle(atk.endX, atk.endY, 14);
       }
     } else {
       const alpha = Math.max(0.15, 1 - p);

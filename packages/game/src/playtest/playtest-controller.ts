@@ -1,6 +1,12 @@
 import { BATTLEFIELD_COLUMNS, cellIndex, isLane, type Cell } from '../battlefield/grid';
 import type { AbilityDamageType as DamageType } from '../abilities/ability-session';
 import type { AbilityOutcome } from '../abilities/ability-state';
+import { DEFENDER_SPRITE_ASSETS } from '../assets/asset-manifest';
+import type {
+  BaseDefenderCardView,
+  CampaignToast,
+  GloveCooldownView,
+} from '../campaign/campaign-controller';
 import type { EntityId } from '../entities/runtime-entity';
 import { BattleRuntime } from '../systems/battle-runtime';
 import type { WavePhaseStatus } from '../waves/wave-state';
@@ -22,6 +28,7 @@ const MAX_CATCH_UP_TICKS = 10;
 const TICK_DURATION_MS = 1000 / TICKS_PER_SECOND;
 const MAX_LOG_ENTRIES = 40;
 const MAX_SANDBOX_CRYSTAL_GRANTS = 50;
+const MAX_CRYSTALS = 5;
 const ENERGY_GRANT_SOURCE_BASE = 1_000_000n;
 
 /** Supported simulation playback speed multipliers. */
@@ -60,6 +67,7 @@ export interface PlaytestDefenderView {
   readonly hasRedirectAura: boolean;
   readonly targetId: string | null;
   readonly attackCount: number;
+  readonly attackAnchorTick: number | null;
   readonly badges: readonly PlaytestStatusBadge[];
 }
 
@@ -81,6 +89,7 @@ export interface PlaytestEnemyView {
   readonly burnCount: number;
   readonly targetId: string | null;
   readonly attackCount: number;
+  readonly attackAnchorTick: number | null;
   readonly badges: readonly PlaytestStatusBadge[];
 }
 
@@ -167,9 +176,12 @@ export interface PlaytestHudSnapshot {
   readonly paused: boolean;
   readonly speedMultiplier: PlaytestSpeed;
   readonly showAuxLanes: boolean;
+  readonly allowMultiLaneWaves: boolean;
   readonly energy: number;
   readonly crystals: number;
+  readonly maxCrystals: number;
   readonly pendingCrystals: number;
+  readonly enemiesKilled: number;
   readonly waveStatus: WavePhaseStatus | 'sandbox';
   readonly currentWaveIndex: number | null;
   readonly totalWaves: number;
@@ -182,6 +194,9 @@ export interface PlaytestHudSnapshot {
   readonly slowZones: readonly PlaytestSlowZoneView[];
   readonly redirectAuras: readonly PlaytestRedirectAuraView[];
   readonly flashes: readonly PlaytestFlashEffect[];
+  readonly baseDefenderCards: readonly BaseDefenderCardView[];
+  readonly gloveCooldown: GloveCooldownView;
+  readonly lastToast: CampaignToast | null;
   readonly eventLog: readonly PlaytestLogEntry[];
 }
 
@@ -201,15 +216,63 @@ const ENEMY_META_BY_ID = new Map<string, PlaytestEnemyMeta>(
   PLAYTEST_ENEMY_META.map(meta => [meta.id, meta]),
 );
 
-const FUSION_PAIR_SET = new Set<string>(
+const RECIPE_BY_PAIR = new Map<string, (typeof PLAYTEST_FUSION_RECIPES_META)[number]>(
   PLAYTEST_FUSION_RECIPES_META.map(recipe => {
     const [a, b] = recipe.inputs;
-    return a <= b ? `${a}|${b}` : `${b}|${a}`;
+    return [a <= b ? `${a}|${b}` : `${b}|${a}`, recipe];
   }),
 );
 
+const BASE_DEFENDER_META = PLAYTEST_DEFENDER_META.filter(meta => meta.tier === 1);
+
 function normalizePairKey(a: string, b: string): string {
   return a <= b ? `${a}|${b}` : `${b}|${a}`;
+}
+
+function formatPlaytestRejection(
+  category: 'summon' | 'fuse' | 'move' | 'remove' | 'ability' | 'collect' | 'claim',
+  reason?: string,
+): string {
+  switch (reason) {
+    case 'paused':
+      return 'Game is Paused — unpause first';
+    case 'terminal':
+      return 'Battle has already ended';
+    case 'insufficient-energy':
+      return 'Insufficient Energy';
+    case 'summon-on-cooldown':
+      return 'Defender is recharging (on cooldown)';
+    case 'glove-on-cooldown':
+      return 'Fusion Glove is recharging (on cooldown)';
+    case 'occupied':
+    case 'occupied-cell':
+    case 'grid-conflict':
+      return 'Cell is already occupied';
+    case 'same-cell':
+      return 'Defender is already on that cell';
+    case 'invalid-cell':
+    case 'invalid-target-cell':
+      return 'Invalid battlefield cell';
+    case 'insufficient-crystals':
+      return 'Insufficient Power Crystals';
+    case 'no-target':
+      return 'No valid Enemy target in range';
+    case 'owner-disabled':
+      return 'Defender is Stunned or Frozen';
+    case 'on-cooldown':
+      return 'Ability is on Cooldown';
+    case 'no-recipe':
+    case 'recipe-not-found':
+      return 'No Fusion Recipe for these two Defenders';
+    case 'same-instance':
+      return 'Cannot fuse a Defender with itself';
+    case 'crystal-storage-full':
+      return 'Power Crystal storage is full (5/5)';
+    case 'nothing-to-claim':
+      return 'No pending Power Crystals to claim';
+    default:
+      return `${category.toUpperCase()} rejected${reason ? ` (${reason})` : ''}`;
+  }
 }
 
 function parseEntityId(id: string): EntityId | null {
@@ -245,6 +308,12 @@ export class PlaytestController {
   private claimCounter = 0;
   private nextLogId = 1;
   private nextFlashId = 1;
+  private nextToastId = 1;
+  private lastToast: CampaignToast | null = null;
+  private pendingResourceVisual:
+    | { readonly kind: 'summon'; readonly label: string; readonly cell: Cell; readonly color: number }
+    | { readonly kind: 'move'; readonly label: string; readonly cell: Cell; readonly color: number }
+    | null = null;
   private lastResourceOutcomeEventId: string | null = null;
   private lastCombatOutcomeEventId: string | null = null;
   private lastFusionOutcomeEventId: string | null = null;
@@ -337,11 +406,25 @@ export class PlaytestController {
 
   /** Check whether two currently living Defenders form an enabled MVP Fusion recipe. */
   canFuse(sourceId: string, targetId: string): boolean {
-    if (sourceId === targetId) return false;
+    return this.getFusionOutputId(sourceId, targetId) !== null;
+  }
+
+  /** Return the resulting Fusion Defender definitionId for two placed Defenders, or null if incompatible. */
+  getFusionOutputId(sourceId: string, targetId: string): string | null {
+    if (sourceId === targetId) return null;
     const source = this.snapshotCache.defenders.find(d => d.id === sourceId);
     const target = this.snapshotCache.defenders.find(d => d.id === targetId);
-    if (!source || !target || source.hp <= 0 || target.hp <= 0) return false;
-    return FUSION_PAIR_SET.has(normalizePairKey(source.definitionId, target.definitionId));
+    if (!source || !target || source.hp <= 0 || target.hp <= 0) return null;
+    const recipe = RECIPE_BY_PAIR.get(normalizePairKey(source.definitionId, target.definitionId));
+    return recipe ? recipe.output : null;
+  }
+
+  /** Return the resulting Fusion Defender definitionId when fusing a Base shop card onto a placed Defender, or null. */
+  getCardFusionOutputId(cardDefinitionId: string, targetDefenderId: string): string | null {
+    const target = this.snapshotCache.defenders.find(d => d.id === targetDefenderId);
+    if (!target || target.hp <= 0 || target.tier !== 1) return null;
+    const recipe = RECIPE_BY_PAIR.get(normalizePairKey(cardDefinitionId, target.definitionId));
+    return recipe ? recipe.output : null;
   }
 
   /**
@@ -391,17 +474,20 @@ export class PlaytestController {
   placeDefender(definitionId: string, cell: Cell, freeSandbox: boolean): boolean {
     if (this.snapshotCache.terminal !== null) {
       this.pushLog('summon', 'rejected', 'Cannot place Defender after battle ended');
+      this.pushToast('error', 'Battle has already ended');
       this.refreshAndEmit();
       return false;
     }
     if (!isValidCell(cell)) {
       this.pushLog('summon', 'rejected', 'Invalid battlefield cell');
+      this.pushToast('error', 'Invalid battlefield cell');
       this.refreshAndEmit();
       return false;
     }
     const def = this.preset.defenders.find(d => d.id === definitionId);
     if (!def) {
       this.pushLog('summon', 'rejected', `Unknown Defender: ${definitionId}`);
+      this.pushToast('error', `Unknown Defender: ${definitionId}`);
       this.refreshAndEmit();
       return false;
     }
@@ -415,6 +501,7 @@ export class PlaytestController {
     );
     if (raw.occupancy[cellIndex(cell)] !== null || hasPendingAddAtCell) {
       this.pushLog('summon', 'rejected', `Cell (${cell.row}, ${cell.column}) is already occupied`);
+      this.pushToast('error', 'Cell is already occupied');
       this.refreshAndEmit();
       return false;
     }
@@ -429,10 +516,18 @@ export class PlaytestController {
         targetTick,
       );
       if (res.status === 'REJECTED' || res.status === 'FAILED') {
-        this.pushLog('summon', 'rejected', `Failed to place ${label}`);
+        const msg = formatPlaytestRejection('summon', 'reason' in res ? res.reason : undefined);
+        this.pushLog('summon', 'rejected', msg);
+        this.pushToast('error', msg);
         this.refreshAndEmit();
         return false;
       }
+      this.pendingResourceVisual = {
+        kind: 'summon',
+        label: label.toUpperCase(),
+        cell: { row: cell.row, column: cell.column },
+        color: meta?.accentColor ?? 0x4ade80,
+      };
       this.pushLog('summon', 'info', `Placed ${label} (Sandbox) at (${cell.row}, ${cell.column})`);
       this.refreshAndEmit();
       return true;
@@ -444,16 +539,25 @@ export class PlaytestController {
         'rejected',
         `Standard Summon only supports Tier-1 Base Defenders (${label} is Tier 2)`,
       );
+      this.pushToast('error', `Standard Summon only supports Tier-1 Base Defenders`);
       this.refreshAndEmit();
       return false;
     }
 
     const res = this.runtime.enqueue({ type: 'summon', definitionId, cell }, targetTick);
     if (res.status === 'REJECTED' || res.status === 'FAILED') {
-      this.pushLog('summon', 'rejected', `Summon ${label} rejected`);
+      const msg = formatPlaytestRejection('summon', 'reason' in res ? res.reason : undefined);
+      this.pushLog('summon', 'rejected', msg);
+      this.pushToast('error', msg);
       this.refreshAndEmit();
       return false;
     }
+    this.pendingResourceVisual = {
+      kind: 'summon',
+      label: label.toUpperCase(),
+      cell: { row: cell.row, column: cell.column },
+      color: meta?.accentColor ?? 0x4ade80,
+    };
     this.pushLog(
       'summon',
       'info',
@@ -463,12 +567,13 @@ export class PlaytestController {
     return true;
   }
 
-  /** Enqueue a T-08 Fusion command combining Source onto Target. */
+  /** Enqueue a T-08 Fusion command combining Source onto Target (Fusion Glove). */
   fuseDefenders(sourceId: string, targetId: string): boolean {
     const src = parseEntityId(sourceId);
     const tgt = parseEntityId(targetId);
     if (src === null || tgt === null) {
       this.pushLog('fusion', 'rejected', 'Invalid Fusion entity ID');
+      this.pushToast('error', 'Invalid Fusion target');
       this.refreshAndEmit();
       return false;
     }
@@ -476,19 +581,112 @@ export class PlaytestController {
     const raw = this.runtime.snapshot();
     const res = this.runtime.enqueue({ type: 'fuse', sourceId: src, targetId: tgt }, raw.tick + 1);
     if (res.status === 'REJECTED') {
-      const message =
-        res.reason === 'paused'
-          ? 'Cannot fuse while Paused — unpause first!'
-          : `Cannot fuse: ${res.reason}`;
-      this.pushLog('fusion', 'rejected', message);
+      const msg = formatPlaytestRejection('fuse', res.reason);
+      this.pushLog('fusion', 'rejected', msg);
+      this.pushToast('error', msg);
       this.refreshAndEmit();
       return false;
     }
     if (res.status === 'FAILED') {
       this.pushLog('fusion', 'rejected', 'Fusion enqueue failed');
+      this.pushToast('error', 'Fusion failed');
       this.refreshAndEmit();
       return false;
     }
+    return true;
+  }
+
+  /** Enqueue a Direct Shop-Card Fusion (`summon-fuse`) combining a Base Defender card onto a placed Target. */
+  summonAndFuseDefender(definitionId: string, targetId: string): boolean {
+    if (this.snapshotCache.terminal !== null) {
+      this.pushLog('fusion', 'rejected', 'Battle has already ended');
+      this.pushToast('error', 'Battle has already ended');
+      this.refreshAndEmit();
+      return false;
+    }
+    const tgt = parseEntityId(targetId);
+    if (tgt === null) {
+      this.pushLog('fusion', 'rejected', 'Invalid Fusion target ID');
+      this.pushToast('error', 'Invalid Fusion target');
+      this.refreshAndEmit();
+      return false;
+    }
+
+    const raw = this.runtime.snapshot();
+    const res = this.runtime.enqueue(
+      { type: 'summon-fuse', definitionId, targetId: tgt },
+      raw.tick + 1,
+    );
+    if (res.status === 'REJECTED') {
+      const msg = formatPlaytestRejection('fuse', res.reason);
+      this.pushLog('fusion', 'rejected', msg);
+      this.pushToast('error', msg);
+      this.refreshAndEmit();
+      return false;
+    }
+    if (res.status === 'FAILED') {
+      this.pushLog('fusion', 'rejected', 'Shop-card Fusion enqueue failed');
+      this.pushToast('error', 'Shop-card Fusion failed');
+      this.refreshAndEmit();
+      return false;
+    }
+    return true;
+  }
+
+  /** Enqueue a Fusion Glove `move-defender` command relocating a placed Defender to an empty cell (0 EN, Glove CD). */
+  moveDefender(defenderId: string, targetCell: Cell): boolean {
+    if (this.snapshotCache.terminal !== null) {
+      this.pushLog('summon', 'rejected', 'Battle has already ended');
+      this.pushToast('error', 'Battle has already ended');
+      this.refreshAndEmit();
+      return false;
+    }
+    if (!isValidCell(targetCell)) {
+      this.pushLog('summon', 'rejected', 'Invalid battlefield cell');
+      this.pushToast('error', 'Invalid battlefield cell');
+      this.refreshAndEmit();
+      return false;
+    }
+    const id = parseEntityId(defenderId);
+    if (id === null) {
+      this.pushLog('summon', 'rejected', 'Invalid Defender ID');
+      this.pushToast('error', 'Invalid Defender ID');
+      this.refreshAndEmit();
+      return false;
+    }
+
+    const existing = this.snapshotCache.defenders.find(d => d.id === defenderId);
+    const meta = existing ? DEFENDER_META_BY_ID.get(existing.definitionId) : undefined;
+    const raw = this.runtime.snapshot();
+    const res = this.runtime.enqueue(
+      { type: 'move-defender', defenderId: id, targetCell },
+      raw.tick + 1,
+    );
+    if (res.status === 'REJECTED') {
+      const msg = formatPlaytestRejection('move', res.reason);
+      this.pushLog('summon', 'rejected', msg);
+      this.pushToast('error', msg);
+      this.refreshAndEmit();
+      return false;
+    }
+    if (res.status === 'FAILED') {
+      this.pushLog('summon', 'rejected', 'Move Defender enqueue failed');
+      this.pushToast('error', 'Move Defender failed');
+      this.refreshAndEmit();
+      return false;
+    }
+    this.pendingResourceVisual = {
+      kind: 'move',
+      label: meta?.name ?? 'Defender',
+      cell: { row: targetCell.row, column: targetCell.column },
+      color: meta?.accentColor ?? 0x38bdf8,
+    };
+    this.pushLog(
+      'summon',
+      'info',
+      `Queued Move ${meta?.name ?? 'Defender'} to (${targetCell.row}, ${targetCell.column})`,
+    );
+    this.refreshAndEmit();
     return true;
   }
 
@@ -516,18 +714,20 @@ export class PlaytestController {
           ? 'Cannot cast Ability while Paused — unpause first!'
           : `Cannot cast Ability: ${res.reason}`;
       this.pushLog('ability', 'rejected', message);
+      this.pushToast('error', formatPlaytestRejection('ability', res.reason));
       this.refreshAndEmit();
       return false;
     }
     if (res.status === 'FAILED') {
       this.pushLog('ability', 'rejected', 'Ability enqueue failed');
+      this.pushToast('error', 'Ability failed');
       this.refreshAndEmit();
       return false;
     }
     return true;
   }
 
-  /** Remove a living Defender from the battlefield. */
+  /** Remove a living Defender from the battlefield (Shovel: 0% refund). */
   removeDefender(defenderId: string): boolean {
     const id = parseEntityId(defenderId);
     if (id === null) return false;
@@ -540,13 +740,23 @@ export class PlaytestController {
     if (alreadyQueuedRemove) return false;
 
     const res = this.runtime.enqueue({ type: 'remove', id }, raw.tick + 1);
-    if (res.status === 'REJECTED' || res.status === 'FAILED') return false;
+    if (res.status === 'REJECTED' || res.status === 'FAILED') {
+      if (res.status === 'REJECTED') {
+        const msg = formatPlaytestRejection('remove', res.reason);
+        this.pushLog('summon', 'rejected', msg);
+        this.pushToast('error', msg);
+        this.refreshAndEmit();
+      }
+      return false;
+    }
 
     if (this.selectedDefenderId === defenderId) {
       this.selectedDefenderId = null;
     }
     const meta = DEFENDER_META_BY_ID.get(entity.definitionId);
-    this.pushLog('summon', 'info', `Removed ${meta?.name ?? entity.definitionId}`);
+    const label = meta?.name ?? entity.definitionId;
+    this.pushLog('summon', 'info', `Removed ${label} with Shovel`);
+    this.pushToast('info', `Removed ${label} with Shovel`);
     this.refreshAndEmit();
     return true;
   }
@@ -619,6 +829,7 @@ export class PlaytestController {
           ? 'Cannot collect items while Paused — unpause first!'
           : `Cannot collect item: ${res.reason}`;
       this.pushLog('resource', 'rejected', msg);
+      this.pushToast('error', formatPlaytestRejection('collect', res.reason));
       this.refreshAndEmit();
       return false;
     }
@@ -638,6 +849,7 @@ export class PlaytestController {
           ? 'Cannot claim crystals while Paused — unpause first!'
           : `Cannot claim crystals: ${res.reason}`;
       this.pushLog('resource', 'rejected', msg);
+      this.pushToast('error', formatPlaytestRejection('claim', res.reason));
       this.refreshAndEmit();
       return false;
     }
@@ -706,6 +918,8 @@ export class PlaytestController {
     this.energyGrantCounter = 0;
     this.crystalGrantCounter = 0;
     this.claimCounter = 0;
+    this.pendingResourceVisual = null;
+    this.lastToast = null;
     this.lastResourceOutcomeEventId = null;
     this.lastCombatOutcomeEventId = null;
     this.lastFusionOutcomeEventId = null;
@@ -743,12 +957,56 @@ export class PlaytestController {
     if (raw.resources?.outcome && raw.resources.outcome.eventId !== this.lastResourceOutcomeEventId) {
       this.lastResourceOutcomeEventId = raw.resources.outcome.eventId;
       if (raw.resources.outcome.status === 'REJECTED') {
+        const msg = formatPlaytestRejection('summon', raw.resources.outcome.reason);
         this.pushLog(
           'resource',
           'rejected',
           `Resource action rejected: ${raw.resources.outcome.reason ?? 'unknown'}`,
         );
+        this.pushToast('error', msg);
+        this.pendingResourceVisual = null;
+      } else if (this.pendingResourceVisual) {
+        const vis = this.pendingResourceVisual;
+        this.pendingResourceVisual = null;
+        if (vis.kind === 'move') {
+          this.pushToast('info', `Moved ${vis.label}!`);
+          this.flashes.push({
+            id: this.nextFlashId++,
+            kind: 'summon',
+            lane: vis.cell.row,
+            cell: vis.cell,
+            color: vis.color,
+            label: 'MOVED',
+            createdAtTick: raw.tick,
+            ttlMs: 420,
+          });
+        } else {
+          this.flashes.push({
+            id: this.nextFlashId++,
+            kind: 'summon',
+            lane: vis.cell.row,
+            cell: vis.cell,
+            color: vis.color,
+            label: vis.label,
+            createdAtTick: raw.tick,
+            ttlMs: 450,
+          });
+        }
       }
+    } else if (this.pendingResourceVisual && this.pendingResourceVisual.kind === 'summon') {
+      // Free sandbox placement uses internal `add` without updating resources.outcome.
+      const vis = this.pendingResourceVisual;
+      this.pendingResourceVisual = null;
+      this.flashes.push({
+        id: this.nextFlashId++,
+        kind: 'summon',
+        lane: vis.cell.row,
+        cell: vis.cell,
+        color: vis.color,
+        label: vis.label,
+        createdAtTick: raw.tick,
+        ttlMs: 450,
+      });
     }
 
     if (raw.combat?.outcome && raw.combat.outcome.eventId !== this.lastCombatOutcomeEventId) {
@@ -767,22 +1025,26 @@ export class PlaytestController {
       const outcome = raw.fusion.outcome;
       if (outcome.status === 'APPLIED') {
         fusionOutputId = String(outcome.outputEntityId);
+        const outEntity = raw.entities.get(outcome.outputEntityId);
+        const outMeta = outEntity ? DEFENDER_META_BY_ID.get(outEntity.definitionId) : undefined;
         this.pushLog(
           'fusion',
           'applied',
           `Fusion completed: ${outcome.recipeId} at (${outcome.targetCell.row}, ${outcome.targetCell.column})`,
         );
+        this.pushToast('success', `Fused into ${outMeta?.name ?? outEntity?.definitionId ?? 'Defender'}!`);
         this.flashes.push({
           id: this.nextFlashId++,
           kind: 'fusion',
           cell: outcome.targetCell,
-          color: 0xfbbf24,
-          label: 'FUSION!',
+          color: outMeta?.accentColor ?? 0xfbbf24,
+          label: outMeta?.name ?? 'FUSION!',
           createdAtTick: raw.tick,
           ttlMs: 800,
         });
       } else {
         this.pushLog('fusion', 'rejected', `Fusion rejected: ${outcome.reason}`);
+        this.pushToast('error', formatPlaytestRejection('fuse', outcome.reason));
       }
     }
 
@@ -797,6 +1059,7 @@ export class PlaytestController {
           'rejected',
           `Ability rejected (${outcome.abilityId ?? 'unknown'}): ${outcome.reason ?? 'unknown'}`,
         );
+        this.pushToast('error', formatPlaytestRejection('ability', outcome.reason));
       }
     }
 
@@ -848,6 +1111,7 @@ export class PlaytestController {
     const abilityName = casterMeta?.abilityName ?? abilityId;
 
     this.pushLog('ability', 'applied', `Ability applied: ${abilityName} (${abilityId})`);
+    this.pushToast('info', `${casterMeta?.name ?? 'Defender'} activated ${abilityName}!`);
     this.flashes.push({
       id: this.nextFlashId++,
       kind: 'ability',
@@ -860,6 +1124,14 @@ export class PlaytestController {
       createdAtTick: raw.tick,
       ttlMs: 650,
     });
+  }
+
+  private pushToast(kind: CampaignToast['kind'], message: string): void {
+    this.lastToast = {
+      id: this.nextToastId++,
+      kind,
+      message,
+    };
   }
 
   private pushLog(
@@ -968,6 +1240,7 @@ export class PlaytestController {
             ? String(entityCombat.targetId)
             : null,
           attackCount: entityCombat?.attackCount ?? 0,
+          attackAnchorTick: entityCombat?.attackAnchorTick ?? null,
           badges,
         });
       } else {
@@ -1023,6 +1296,7 @@ export class PlaytestController {
             ? String(entityCombat.targetId)
             : null,
           attackCount: entityCombat?.attackCount ?? 0,
+          attackAnchorTick: entityCombat?.attackAnchorTick ?? null,
           badges,
         });
       }
@@ -1107,6 +1381,54 @@ export class PlaytestController {
       }
     }
 
+    const energy = resources?.energy ?? 0;
+    const presetDefById = new Map(this.preset.defenders.map(d => [d.id, d]));
+
+    const baseDefenderCards: BaseDefenderCardView[] = BASE_DEFENDER_META.map(meta => {
+      const cfg = presetDefById.get(meta.id);
+      const cost = cfg?.summonEnergyCost ?? 0;
+      const cooldownTotalSeconds = cfg?.summonCooldownSeconds ?? 0;
+      const readyTick = resources?.summonCooldownUntilTick?.get(meta.id) ?? 0;
+      const remainingTicks = Math.max(0, readyTick - raw.tick);
+      const onCooldown = remainingTicks > 0;
+      const cooldownRemainingSeconds = onCooldown
+        ? Number((remainingTicks / TICKS_PER_SECOND).toFixed(1))
+        : 0;
+      const totalCooldownTicks = cooldownTotalSeconds * TICKS_PER_SECOND;
+      const cooldownProgressPct =
+        onCooldown && totalCooldownTicks > 0
+          ? Math.min(100, Math.max(0, Math.round((remainingTicks / totalCooldownTicks) * 100)))
+          : 0;
+      return {
+        id: meta.id,
+        name: meta.name,
+        spriteUrl: DEFENDER_SPRITE_ASSETS[meta.id]?.url ?? `/assets/sprites/defenders/${meta.id}.png`,
+        cost,
+        unlocked: true,
+        canAfford: energy >= cost,
+        cooldownTotalSeconds,
+        cooldownRemainingSeconds,
+        cooldownProgressPct,
+        onCooldown,
+        role: meta.abilityName,
+        abilityName: meta.abilityName,
+        requirement: 'Unlocked',
+      };
+    });
+
+    const gloveTotalSeconds = this.preset.fusionGloveCooldownSeconds ?? 0;
+    const gloveReadyTick = resources?.gloveCooldownUntilTick ?? 0;
+    const gloveRemainingTicks = Math.max(0, gloveReadyTick - raw.tick);
+    const gloveOnCooldown = gloveRemainingTicks > 0;
+    const gloveRemainingSeconds = gloveOnCooldown
+      ? Number((gloveRemainingTicks / TICKS_PER_SECOND).toFixed(1))
+      : 0;
+    const gloveTotalTicks = gloveTotalSeconds * TICKS_PER_SECOND;
+    const gloveProgressPct =
+      gloveOnCooldown && gloveTotalTicks > 0
+        ? Math.min(100, Math.max(0, Math.round((gloveRemainingTicks / gloveTotalTicks) * 100)))
+        : 0;
+
     return {
       tick: raw.tick,
       elapsedSeconds: raw.tick / TICKS_PER_SECOND,
@@ -1114,9 +1436,12 @@ export class PlaytestController {
       paused: this.paused,
       speedMultiplier: this.speedMultiplier,
       showAuxLanes: this.showAuxLanes,
-      energy: resources?.energy ?? 0,
+      allowMultiLaneWaves: this.allowMultiLaneWaves,
+      energy,
       crystals: resources?.crystals ?? 0,
+      maxCrystals: MAX_CRYSTALS,
       pendingCrystals: resources?.pending ?? 0,
+      enemiesKilled: this.runtime.getPersistenceMeta().matchKills,
       waveStatus: raw.waves ? raw.waves.status : 'sandbox',
       currentWaveIndex: raw.waves ? raw.waves.currentWaveIndex : null,
       totalWaves: this.preset.waves.length,
@@ -1129,6 +1454,14 @@ export class PlaytestController {
       slowZones,
       redirectAuras,
       flashes: [...this.flashes],
+      baseDefenderCards,
+      gloveCooldown: {
+        totalSeconds: gloveTotalSeconds,
+        remainingSeconds: gloveRemainingSeconds,
+        progressPct: gloveProgressPct,
+        onCooldown: gloveOnCooldown,
+      },
+      lastToast: this.lastToast,
       eventLog: [...this.eventLog],
     };
   }

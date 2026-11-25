@@ -17,6 +17,7 @@ import {
   PLAYTEST_FUSION_RECIPES_META,
   createDefaultPlaytestPreset,
   type PlaytestDefenderConfig,
+  type PlaytestPresetConfig,
 } from '../playtest/playtest-presets';
 import type { WaveConfigDefinition, WaveSessionInput } from '../waves/wave-session';
 
@@ -84,7 +85,7 @@ const DEFENDER_ROLES_BY_ID: Readonly<Record<string, string>> = {
   flame_fang: '5-Lane Fire Wolf Summoner',
 };
 
-const CAMPAIGN_BASE_COSTS: Readonly<Record<string, number>> = {
+export const CAMPAIGN_BASE_COSTS: Readonly<Record<string, number>> = {
   skeleton: 50,
   snow_golem: 75,
   iron_golem: 100,
@@ -438,5 +439,25 @@ export function createGrasslandCampaignInputs(
     abilityInput,
     defenderCosts,
     abilities: preset.abilities,
+  };
+}
+
+/**
+ * Create a mutable PlaytestPresetConfig matching exact main Grassland Campaign values
+ * so Owner tuning in /playtest has 1-to-1 parity with /.
+ */
+export function createCampaignPlaytestPreset(): PlaytestPresetConfig {
+  const base = createDefaultPlaytestPreset();
+  return {
+    ...base,
+    seed: 20261123,
+    fusionGloveCooldownSeconds: CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
+    defenders: base.defenders.map(d => ({
+      ...d,
+      summonEnergyCost: d.tier === 1 ? (CAMPAIGN_BASE_COSTS[d.id] ?? d.summonEnergyCost) : 0,
+      summonCooldownSeconds: d.tier === 1 ? (CAMPAIGN_BASE_COOLDOWNS[d.id] ?? 0) : 0,
+    })),
+    waves: structuredClone([...GRASSLAND_CAMPAIGN_WAVES]),
+    waveCrystals: [...GRASSLAND_WAVE_CRYSTALS],
   };
 }

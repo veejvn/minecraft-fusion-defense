@@ -256,7 +256,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
       originY: GRID_ORIGIN_Y,
       cellW: CELL_W,
       cellH: CELL_H,
-    });
+    }, this.snapshot.tick);
     this.unsubscribe = this.controller.subscribe(next => {
       this.snapshot = next;
       this.attackTracker.syncFromSnapshot(next.defenders, next.enemies, {
@@ -264,7 +264,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
         originY: GRID_ORIGIN_Y,
         cellW: CELL_W,
         cellH: CELL_H,
-      });
+      }, next.tick);
       this.needsRender = true;
     });
 

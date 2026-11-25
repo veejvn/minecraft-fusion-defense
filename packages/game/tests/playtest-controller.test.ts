@@ -1,4 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import {
+  CAMPAIGN_BASE_COSTS,
+  CAMPAIGN_BASE_COOLDOWNS,
+  CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
+  createCampaignPlaytestPreset,
+} from '../src/campaign/grassland-campaign-config';
 import { PlaytestController } from '../src/playtest/playtest-controller';
 import {
   PLAYTEST_DEFENDER_META,
@@ -243,5 +249,58 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
     const countBefore = snapshots.length;
     controller.stepMs(50);
     expect(snapshots.length).toBe(countBefore);
+  });
+
+  it('supports Campaign parity preset: summon cooldowns, Direct Shop-Card Fusion, Fusion Glove move/cooldown, and multi-lane waves', () => {
+    const campaignPreset = createCampaignPlaytestPreset();
+    expect(campaignPreset.fusionGloveCooldownSeconds).toBe(CAMPAIGN_GLOVE_COOLDOWN_SECONDS);
+    for (const [id, cost] of Object.entries(CAMPAIGN_BASE_COSTS)) {
+      expect(campaignPreset.defenders.find(d => d.id === id)?.summonEnergyCost).toBe(cost);
+    }
+    for (const [id, cd] of Object.entries(CAMPAIGN_BASE_COOLDOWNS)) {
+      expect(campaignPreset.defenders.find(d => d.id === id)?.summonCooldownSeconds).toBe(cd);
+    }
+
+    const controller = new PlaytestController({
+      preset: campaignPreset,
+      mode: 'five-waves',
+      showAuxLanes: true,
+      allowMultiLaneWaves: true,
+    });
+    expect(controller.grantEnergy()).toBe(true);
+    controller.stepMs(50);
+
+    // Summon Skeleton (50 EN, 4s CD)
+    expect(controller.placeDefender('skeleton', { row: 2, column: 1 }, false)).toBe(true);
+    controller.stepMs(50);
+    const afterSummon = controller.getSnapshot();
+    const skeletonCard = afterSummon.baseDefenderCards.find(c => c.id === 'skeleton')!;
+    expect(skeletonCard.cost).toBe(50);
+    expect(skeletonCard.cooldownTotalSeconds).toBe(4);
+    expect(skeletonCard.onCooldown).toBe(true);
+    expect(afterSummon.defenders).toHaveLength(1);
+
+    // Advance 4s (80 ticks) so Skeleton summon cooldown expires, then Direct Shop-Card Fusion
+    for (let i = 0; i < 80; i++) {
+      controller.stepMs(50);
+    }
+    const targetId = controller.getSnapshot().defenders[0].id;
+    expect(controller.getCardFusionOutputId('iron_golem', targetId)).toBe('iron_ranger');
+    expect(controller.summonAndFuseDefender('iron_golem', targetId)).toBe(true);
+    controller.stepMs(50);
+
+    const afterShopFuse = controller.getSnapshot();
+    const ironRanger = afterShopFuse.defenders.find(d => d.column === 1 && d.row === 2);
+    expect(ironRanger?.definitionId).toBe('iron_ranger');
+    expect(afterShopFuse.lastToast?.message).toContain('Iron Ranger');
+
+    // Move Iron Ranger with Fusion Glove -> moves to (1, 3) and triggers 15s Glove cooldown
+    expect(controller.moveDefender(ironRanger!.id, { row: 1, column: 3 })).toBe(true);
+    controller.stepMs(50);
+    const afterMove = controller.getSnapshot();
+    expect(afterMove.defenders[0].row).toBe(1);
+    expect(afterMove.defenders[0].column).toBe(3);
+    expect(afterMove.gloveCooldown.totalSeconds).toBe(15);
+    expect(afterMove.gloveCooldown.onCooldown).toBe(true);
   });
 });

@@ -12,7 +12,11 @@ import {
   getEffectAsset,
   getEnemyAsset,
 } from '../src/assets/asset-manifest';
-import { BASIC_ATTACK_VFX_BY_DEFENDER } from '../src/assets/basic-attack-vfx';
+import {
+  BASIC_ATTACK_VFX_BY_DEFENDER,
+  BasicAttackVisualTracker,
+} from '../src/assets/basic-attack-vfx';
+import type { PlaytestDefenderView, PlaytestEnemyView } from '../src/playtest/playtest-controller';
 
 const REPO_PUBLIC_DIR = resolve(__dirname, '../../../apps/web/public');
 
@@ -49,5 +53,86 @@ describe('T-12.1 Asset Manifest Coverage (49 Pixel-Art PNGs)', () => {
     for (const id of defenderIds) {
       expect(BASIC_ATTACK_VFX_BY_DEFENDER[id], `Missing basic attack VFX spec for ${id}`).toBeDefined();
     }
+  });
+
+  it('tracks multi-target attackCount resets, spawn-tick shots, killing blows, and match resets in BasicAttackVisualTracker', () => {
+    const tracker = new BasicAttackVisualTracker();
+    const geom = { originX: 136, originY: 22, cellW: 112, cellH: 132 };
+
+    const makeDef = (
+      attackCount: number,
+      attackAnchorTick: number | null,
+      targetId: string | null,
+    ): PlaytestDefenderView => ({
+      id: '1',
+      definitionId: 'skeleton',
+      name: 'Skeleton',
+      shortLabel: 'SK',
+      tier: 1,
+      color: 0xe2e8f0,
+      accentColor: 0x64748b,
+      row: 2,
+      column: 1,
+      hp: 150,
+      maxHp: 150,
+      shieldAmount: 0,
+      shieldMaxAmount: 0,
+      abilityId: 'arrow_storm',
+      abilityName: 'Arrow Storm',
+      abilitySummary: '',
+      requiresTarget: true,
+      cooldownTicks: 0,
+      isStunned: false,
+      isFrozen: false,
+      buffDamagePct: 0,
+      buffAttackSpeedPct: 0,
+      hasRedirectAura: false,
+      targetId,
+      attackCount,
+      attackAnchorTick,
+      badges: [],
+    });
+
+    const makeEnemy = (id: string, x: number): PlaytestEnemyView => ({
+      id,
+      definitionId: 'zombie',
+      name: 'Zombie',
+      shortLabel: 'ZB',
+      color: 0x65a30d,
+      lane: 2,
+      x,
+      hp: 100,
+      maxHp: 100,
+      slowPct: 0,
+      isStunned: false,
+      isFrozen: false,
+      isVulnerable: false,
+      burnCount: 0,
+      targetId: null,
+      attackCount: 0,
+      attackAnchorTick: null,
+      badges: [],
+    });
+
+    // 1. Spawn-tick immediate attack (`attackAnchorTick === currentTick`, `attackCount === 1`)
+    tracker.syncFromSnapshot([makeDef(1, 10, '100')], [makeEnemy('100', 5.5)], geom, 10);
+    expect(tracker.getActiveAttacks()).toHaveLength(1);
+    expect(tracker.getActiveAttacks()[0].endX).toBeCloseTo(136 + 5.5 * 112);
+
+    // 2. Killing blow on same anchor where enemy '100' disappears from living enemies list
+    for (let i = 0; i < 6; i++) tracker.advance(50, false); // > 220ms skeleton duration
+    tracker.syncFromSnapshot([makeDef(2, 10, '100')], [], geom, 27);
+    expect(tracker.getActiveAttacks()).toHaveLength(1);
+    expect(tracker.getActiveAttacks()[0].endX).toBeCloseTo(136 + 5.5 * 112);
+
+    // 3. New enemy arrives later -> engine resets attackCount = 1 with a new attackAnchorTick = 90
+    for (let i = 0; i < 6; i++) tracker.advance(50, false);
+    tracker.syncFromSnapshot([makeDef(1, 90, '101')], [makeEnemy('101', 6.2)], geom, 90);
+    expect(tracker.getActiveAttacks()).toHaveLength(1);
+    expect(tracker.getActiveAttacks()[0].endX).toBeCloseTo(136 + 6.2 * 112);
+
+    // 4. Match reset (tick drops back to 0) resets tracker cleanly without ghost shots from old anchor
+    tracker.syncFromSnapshot([makeDef(0, null, null)], [], geom, 0);
+    expect(tracker.getActiveAttacks()).toHaveLength(0);
   });
 });

@@ -1,7 +1,16 @@
 import * as Phaser from 'phaser';
 import { attachCleanupAdapter, claimHost, failOwner, requestDestroy } from './core/lifecycle-adapter';
 import { PlaytestController, type PlaytestControllerOptions } from './playtest/playtest-controller';
-import { PlaytestScene, type PlaytestTool, type PlaytestVisualStyle } from './scenes/playtest-scene';
+import {
+  PlaytestScene,
+  type PlaytestExternalDragPayload,
+  type PlaytestTool,
+  type PlaytestVisualStyle,
+} from './scenes/playtest-scene';
+
+export interface PlaytestGameOptions extends PlaytestControllerOptions {
+  readonly onToolChange?: (tool: PlaytestTool) => void;
+}
 
 export type PlaytestGameHandle = {
   game: Phaser.Game;
@@ -9,16 +18,27 @@ export type PlaytestGameHandle = {
   controller: PlaytestController;
   setTool(tool: PlaytestTool): void;
   setVisualStyle(style: PlaytestVisualStyle): void;
+  setShowGridCoords(show: boolean): void;
+  setExternalDragAtClientPoint(
+    payload: PlaytestExternalDragPayload | null,
+    clientX: number,
+    clientY: number,
+  ): void;
+  dropExternalDragAtClientPoint(
+    payload: PlaytestExternalDragPayload,
+    clientX: number,
+    clientY: number,
+  ): boolean;
   destroy(): void;
 };
 
 /**
  * Mount the interactive Phaser PlaytestScene into a DOM host using the verified
- * lifecycle cleanup adapter so repeated mounts/unmounts never leak WebGL or RAF loops.
+ * lifecycle cleanup adapter with pixelArt: true nearest-neighbor rendering.
  */
 export function createPlaytestGame(
   host: HTMLElement,
-  options?: PlaytestControllerOptions,
+  options?: PlaytestGameOptions,
 ): PlaytestGameHandle {
   const owner = claimHost(host);
   let resolveReady!: () => void;
@@ -39,11 +59,15 @@ export function createPlaytestGame(
   }
 
   const controller = new PlaytestController(options);
-  const scene = new PlaytestScene(controller, () => {
-    if (readySettled) return;
-    readySettled = true;
-    resolveReady();
-  });
+  const scene = new PlaytestScene(
+    controller,
+    () => {
+      if (readySettled) return;
+      readySettled = true;
+      resolveReady();
+    },
+    options?.onToolChange,
+  );
 
   let game!: Phaser.Game;
   try {
@@ -53,11 +77,16 @@ export function createPlaytestGame(
       width: 1280,
       height: 720,
       backgroundColor: '#0F172A',
+      render: {
+        pixelArt: true,
+        antialias: false,
+        roundPixels: true,
+      },
       scale: {
         mode: Phaser.Scale.FIT,
         width: 1280,
         height: 720,
-        autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       scene: [scene],
     });
@@ -84,6 +113,23 @@ export function createPlaytestGame(
     },
     setVisualStyle(style: PlaytestVisualStyle) {
       scene.setVisualStyle(style);
+    },
+    setShowGridCoords(show: boolean) {
+      scene.setShowGridCoords(show);
+    },
+    setExternalDragAtClientPoint(
+      payload: PlaytestExternalDragPayload | null,
+      clientX: number,
+      clientY: number,
+    ) {
+      scene.setExternalDragAtClientPoint(payload, clientX, clientY);
+    },
+    dropExternalDragAtClientPoint(
+      payload: PlaytestExternalDragPayload,
+      clientX: number,
+      clientY: number,
+    ) {
+      return scene.dropExternalDragAtClientPoint(payload, clientX, clientY);
     },
     destroy() {
       cancelReady();

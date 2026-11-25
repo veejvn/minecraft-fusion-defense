@@ -167,12 +167,76 @@ test('1366x768 laptop viewport fits with 0 scroll, verifies all Collection PNG s
   await page.mouse.click(targetX, targetY);
   await expect(page.getByText('Removed Skeleton with Shovel')).toBeVisible();
 
-  // 5. /playtest sandbox sanity check
+  // 5. /playtest Campaign-parity sandbox check (1366x768 zero scroll + HUD controls + Balance Editor)
   await page.goto('/playtest');
   await expect(page.locator('canvas')).toHaveCount(1);
+  await expect(page.getByText(/Loading Playtest Battlefield/i)).toHaveCount(0);
   await expect(page.getByText(/Failed to initialize/i)).toHaveCount(0);
 
+  const playtestMetrics = await page.evaluate(() => {
+    const canvas = document.querySelector('canvas');
+    const rect = canvas.getBoundingClientRect();
+    return {
+      scrollHeight: document.documentElement.scrollHeight,
+      innerHeight: window.innerHeight,
+      canvasBottom: rect.bottom,
+      canvasHeight: rect.height,
+    };
+  });
+  expect(playtestMetrics.scrollHeight).toBeLessThanOrEqual(playtestMetrics.innerHeight);
+  expect(playtestMetrics.canvasBottom).toBeLessThanOrEqual(playtestMetrics.innerHeight);
+  expect(playtestMetrics.canvasHeight).toBeGreaterThan(400);
+
+  await expect(page.getByRole('button', { name: /Skeleton/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Glove/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Shovel/i })).toBeVisible();
+  const balanceBtn = page.getByRole('button', { name: /Balance/i });
+  await expect(balanceBtn).toBeVisible();
+  await balanceBtn.click();
+  await expect(page.getByRole('heading', { name: /Live Game Balance Editor/i })).toBeVisible();
+  await page.getByRole('button', { name: /Close \[Esc\]/i }).click();
+
   expect(failedAssets).toEqual([]);
+  expect(browserErrors).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
+test('/playtest persists tuned balance preset in localStorage across reload and warns before Reset Campaign Defaults', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+
+  const browserErrors = [];
+  const consoleErrors = [];
+  page.on('pageerror', error => browserErrors.push(error.message));
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+
+  await page.goto('/playtest');
+  await expect(page.locator('canvas')).toHaveCount(1);
+  await expect(page.getByText(/Loading Playtest Battlefield/i)).toHaveCount(0);
+
+  await page.getByRole('button', { name: /Balance/i }).click();
+  await expect(page.getByRole('heading', { name: /Live Game Balance Editor/i })).toBeVisible();
+
+  await page.getByLabel('Max HP').fill('777');
+  await page.getByRole('button', { name: /Apply & Restart Playtest/i }).click();
+
+  await page.reload();
+  await expect(page.locator('canvas')).toHaveCount(1);
+  await expect(page.getByText(/Loading Playtest Battlefield/i)).toHaveCount(0);
+
+  await page.getByRole('button', { name: /Balance/i }).click();
+  await expect(page.getByText('Saved locally')).toBeVisible();
+  await expect(page.getByLabel('Max HP')).toHaveValue('777');
+
+  await page.getByRole('button', { name: /Reset Campaign Defaults/i }).click();
+  await expect(page.getByRole('alertdialog', { name: /Confirm Reset Campaign Defaults/i })).toBeVisible();
+  await page.getByRole('button', { name: /Delete Saved & Reset/i }).click();
+  await expect(page.getByText('Saved locally')).toHaveCount(0);
+  await expect(page.getByLabel('Max HP')).toHaveValue('450');
+
+  await page.getByRole('button', { name: /Close \[Esc\]/i }).click();
+
   expect(browserErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });

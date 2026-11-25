@@ -2,12 +2,16 @@ export { createGame } from './create-game';
 export type { GameHandle } from './create-game';
 
 export { createPlaytestGame } from './create-playtest-game';
-export type { PlaytestGameHandle } from './create-playtest-game';
+export type { PlaytestGameHandle, PlaytestGameOptions } from './create-playtest-game';
 
 export { createCampaignGame } from './create-campaign-game';
 export type { CampaignGameHandle, CreateCampaignGameOptions } from './create-campaign-game';
 
-export type { PlaytestTool, PlaytestVisualStyle } from './scenes/playtest-scene';
+export type {
+  PlaytestExternalDragPayload,
+  PlaytestTool,
+  PlaytestVisualStyle,
+} from './scenes/playtest-scene';
 export type {
   CampaignTool,
   CampaignVisualStyle,
@@ -41,6 +45,8 @@ export type {
 } from './campaign/campaign-controller';
 
 export {
+  CAMPAIGN_BASE_COSTS,
+  CAMPAIGN_BASE_COOLDOWNS,
   CAMPAIGN_DEFENDER_CATALOG,
   CAMPAIGN_ENEMY_CATALOG,
   CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
@@ -48,6 +54,7 @@ export {
   CAMPAIGN_RECIPE_CATALOG,
   GRASSLAND_CAMPAIGN_WAVES,
   GRASSLAND_WAVE_CRYSTALS,
+  createCampaignPlaytestPreset,
   createGrasslandCampaignInputs,
   type CampaignDefenderCatalogItem,
   type CampaignEnemyCatalogItem,

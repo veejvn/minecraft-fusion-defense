@@ -1,7 +1,7 @@
 # MEMORY_BANK — Minecraft Fusion Defense
 
-**Cập nhật lần cuối:** 2026-11-23T21:44:00+07:00  
-**Nhánh Git hiện tại:** `main` (đã hoàn tất 49/49 PNG pixel-art assets gồm `fusion_glove.png` & `shovel.png`, bật `USE_GENERATED_TOOL_PNGS = true` trên HUD; xanh 100% `189/189` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck`, `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production`; sẵn sàng sang **Cân bằng game**; chưa commit/push)
+**Cập nhật lần cuối:** 2026-11-23T22:17:00+07:00  
+**Nhánh Git hiện tại:** `main` (đã thiết kế lại `/playtest` đồng bộ 1-1 với bản chính `/` kèm Balance Editor đầy đủ cho Defenders/Enemies/Waves/Cooldowns/JSON; xanh 100% `190/190` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck`, `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production`; sẵn sàng để Owner chơi thử & **Cân bằng game**; chưa commit/push)
 
 ---
 
@@ -111,6 +111,11 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
     - Kiểm chứng PASS sau cập nhật: `189/189` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck` (`3/3`), `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production`.
   - **Tích hợp 2 PNG công cụ `fusion_glove.png` & `shovel.png` (`2026-11-23`):**
     - Xác nhận `fusion_glove.png` và `shovel.png` trong `apps/web/public/assets/sprites/items/`, đưa vào `ITEM_SPRITE_ASSETS` / `ALL_GAME_ASSETS` (**49 PNGs**), cập nhật `asset-manifest.test.ts`, và bật `USE_GENERATED_TOOL_PNGS = true` trong `battle-hud-overlay.tsx`.
+  - **Thiết kế lại `/playtest` đồng bộ 1-1 với bản chính `/` phục vụ Cân bằng Game (`2026-11-23`):**
+    1. **Preset & Runtime Parity:** Bổ sung `summonCooldownSeconds` & `fusionGloveCooldownSeconds` vào `PlaytestPresetConfig` (`playtest-presets.ts`) và thêm `createCampaignPlaytestPreset()` trong `grassland-campaign-config.ts` với thông số Campaign y hệt `/` (giá 5 Base `50/75/100/100/125`, hồi chiêu `4s/5s/7s/6s/8s`, Glove `15s`, `GRASSLAND_CAMPAIGN_WAVES` 5 lane).
+    2. **`PlaytestController` & `PlaytestScene` Parity:** Thêm `summonAndFuseDefender`, `moveDefender`, `getCardFusionOutputId`, `baseDefenderCards`, `gloveCooldown`, `lastToast` vào `PlaytestController`; viết lại `PlaytestScene` dùng `preloadGameAssets` (49 PNGs), lưới `5×9` chuẩn `GrasslandBattleScene` (hỗ trợ bật/tắt `5 Lanes` ↔ `1 Lane`), `BasicAttackVisualTracker`, đủ 20 VFX kỹ năng, kéo-thả HUD → Canvas kèm ghost `64×64` và preview hợp thể vàng.
+    3. **UI `100dvh` & Live Balance Editor (`playtest-host.tsx`):** Giao diện 1 màn hình không cuộn giống `/`, HUD trên cùng giống hệt Campaign + thanh Playtest Lab gọn (`Mode: 5-Wave/Sandbox`, `5/1 Lanes`, `Rules: Campaign/Free T1-T2`, `+500 EN`, `+5 CR`, `+1 Tick`, `Reset`, `Coords`, `Spawn / T2`, `Balance`, `Log`), kèm Balance Editor cho 20 Defenders (kèm `Summon Cooldown`), 4 Enemies, Waves 1–5 + Glove CD + Crystal reward, và JSON Import/Export.
+    - Kiểm chứng PASS sau chỉnh sửa: `190/190` `@mfd/game` (15 files), `25/25` `@mfd/game-data`, `pnpm typecheck` (`3/3`), `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production` (gồm check `1366×768` zero-scroll & mở Balance Editor trên `/playtest`).
 
 ---
 

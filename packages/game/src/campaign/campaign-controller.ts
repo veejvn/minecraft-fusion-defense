@@ -1055,6 +1055,7 @@ export class CampaignController {
             ? String(entityCombat.targetId)
             : null,
           attackCount: entityCombat?.attackCount ?? 0,
+          attackAnchorTick: entityCombat?.attackAnchorTick ?? null,
           badges,
         });
       } else {
@@ -1100,6 +1101,7 @@ export class CampaignController {
             ? String(entityCombat.targetId)
             : null,
           attackCount: entityCombat?.attackCount ?? 0,
+          attackAnchorTick: entityCombat?.attackAnchorTick ?? null,
           badges,
         });
       }

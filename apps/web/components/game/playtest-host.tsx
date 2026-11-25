@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -8,6 +8,7 @@ import type {
   PlaytestDefenderMeta,
   PlaytestEnemyConfig,
   PlaytestEnemyMeta,
+  PlaytestExternalDragPayload,
   PlaytestFusionRecipeMeta,
   PlaytestGameHandle,
   PlaytestHudSnapshot,
@@ -19,29 +20,141 @@ import type {
 } from '@mfd/game';
 
 type Status = 'loading' | 'ready' | 'error';
-type InspectorTab = 'play' | 'tune' | 'log';
-type PlacementMode = 'free' | 'summon';
-type TuneTargetKind = 'defender' | 'enemy';
+type ModalKind = 'balance' | 'spawn' | 'log' | null;
+type BalanceTab = 'defenders' | 'enemies' | 'waves' | 'json';
+type PlacementMode = 'summon' | 'free';
 
 interface LoadedPlaytestModule {
   defenderMeta: readonly PlaytestDefenderMeta[];
   enemyMeta: readonly PlaytestEnemyMeta[];
   fusionMeta: readonly PlaytestFusionRecipeMeta[];
   clonePreset: (preset: PlaytestPresetConfig) => PlaytestPresetConfig;
-  createDefaultPreset: () => PlaytestPresetConfig;
+  createCampaignPreset: () => PlaytestPresetConfig;
+}
+
+interface HudDragGesture {
+  readonly payload: PlaytestExternalDragPayload;
+  readonly spriteUrl: string;
+  readonly label: string;
+  readonly startX: number;
+  readonly startY: number;
+  readonly currentX: number;
+  readonly currentY: number;
+  readonly active: boolean;
+  readonly pointerId: number;
 }
 
 const MAX_OWNED_WAIT_MS = 6_000;
-const SPEED_OPTIONS: readonly PlaytestSpeed[] = [0.5, 1, 2, 4];
+const DRAG_ACTIVATION_PX = 8;
+const SPEED_OPTIONS: readonly PlaytestSpeed[] = [1, 2, 4, 0.5];
+const ALL_ENEMY_IDS = ['zombie', 'husk', 'vindicator', 'pillager'] as const;
+const PLAYTEST_BALANCE_STORAGE_KEY = 'mfd_playtest_balance_preset_v1';
 
-function hexColor(color: number): string {
-  return `#${color.toString(16).padStart(6, '0')}`;
+function isValidPlaytestPresetShape(value: unknown): value is PlaytestPresetConfig {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<PlaytestPresetConfig>;
+  return (
+    typeof candidate.seed === 'number' &&
+    Array.isArray(candidate.defenders) &&
+    candidate.defenders.length > 0 &&
+    Array.isArray(candidate.enemies) &&
+    candidate.enemies.length > 0 &&
+    Array.isArray(candidate.waves) &&
+    candidate.waves.length > 0 &&
+    Array.isArray(candidate.abilities) &&
+    candidate.abilities.length > 0 &&
+    Array.isArray(candidate.waveCrystals)
+  );
+}
+
+function loadSavedPlaytestPreset(fallback: PlaytestPresetConfig): {
+  readonly preset: PlaytestPresetConfig;
+  readonly hasSaved: boolean;
+} {
+  if (typeof window === 'undefined') {
+    return { preset: fallback, hasSaved: false };
+  }
+  try {
+    const raw = window.localStorage.getItem(PLAYTEST_BALANCE_STORAGE_KEY);
+    if (!raw) return { preset: fallback, hasSaved: false };
+    const parsed: unknown = JSON.parse(raw);
+    if (!isValidPlaytestPresetShape(parsed)) {
+      return { preset: fallback, hasSaved: false };
+    }
+    const savedDefMap = new Map(parsed.defenders.map(d => [d.id, d]));
+    const savedEnemyMap = new Map(parsed.enemies.map(e => [e.id, e]));
+    const merged: PlaytestPresetConfig = {
+      seed: parsed.seed,
+      fusionGloveCooldownSeconds:
+        typeof parsed.fusionGloveCooldownSeconds === 'number'
+          ? parsed.fusionGloveCooldownSeconds
+          : fallback.fusionGloveCooldownSeconds,
+      defenders: fallback.defenders.map(def => {
+        const saved = savedDefMap.get(def.id);
+        return saved ? { ...def, ...saved } : { ...def };
+      }),
+      enemies: fallback.enemies.map(enemy => {
+        const saved = savedEnemyMap.get(enemy.id);
+        return saved ? { ...enemy, ...saved } : { ...enemy };
+      }),
+      abilities: parsed.abilities.length >= fallback.abilities.length ? parsed.abilities : fallback.abilities,
+      waves: parsed.waves.length > 0 ? parsed.waves : fallback.waves,
+      waveCrystals: parsed.waveCrystals.length > 0 ? parsed.waveCrystals : fallback.waveCrystals,
+    };
+    return { preset: merged, hasSaved: true };
+  } catch {
+    return { preset: fallback, hasSaved: false };
+  }
+}
+
+function savePlaytestPreset(preset: PlaytestPresetConfig): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    window.localStorage.setItem(PLAYTEST_BALANCE_STORAGE_KEY, JSON.stringify(preset));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearSavedPlaytestPreset(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(PLAYTEST_BALANCE_STORAGE_KEY);
+  } catch {
+    // Ignore storage errors cleanly.
+  }
+}
+
+function hasSavedPlaytestPresetInStorage(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(PLAYTEST_BALANCE_STORAGE_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+function defenderSpriteUrl(id: string): string {
+  return `/assets/sprites/defenders/${id}.png`;
+}
+
+function enemySpriteUrl(id: string): string {
+  return `/assets/sprites/enemies/${id}.png`;
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
   return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || target.isContentEditable;
+}
+
+function cloneNumberInput(rawValue: string, minVal = 0, maxVal?: number): number | null {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed)) return null;
+  let next = Math.max(minVal, parsed);
+  if (maxVal !== undefined) next = Math.min(maxVal, next);
+  return next;
 }
 
 export function PlaytestHost() {
@@ -53,35 +166,45 @@ export function PlaytestHost() {
   const [modMeta, setModMeta] = useState<LoadedPlaytestModule | null>(null);
   const [snapshot, setSnapshot] = useState<PlaytestHudSnapshot | null>(null);
   const [draftPreset, setDraftPreset] = useState<PlaytestPresetConfig | null>(null);
+  const [appliedPresetJson, setAppliedPresetJson] = useState<string>('');
+  const [hasSavedPreset, setHasSavedPreset] = useState<boolean>(false);
+  const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
 
-  const [placementMode, setPlacementMode] = useState<PlacementMode>('free');
+  const [placementMode, setPlacementMode] = useState<PlacementMode>('summon');
   const [tool, setTool] = useState<PlaytestTool>({ kind: 'select' });
   const toolRef = useRef<PlaytestTool>(tool);
   toolRef.current = tool;
 
-  const [visualStyle, setVisualStyle] = useState<PlaytestVisualStyle>('ai-64');
+  const [visualStyle, setVisualStyle] = useState<PlaytestVisualStyle>('pixel-art');
   const visualStyleRef = useRef<PlaytestVisualStyle>(visualStyle);
   visualStyleRef.current = visualStyle;
 
-  const [activeTab, setActiveTab] = useState<InspectorTab>('play');
-  const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
+  const [showGridCoords, setShowGridCoords] = useState<boolean>(false);
+  const showGridCoordsRef = useRef<boolean>(showGridCoords);
+  showGridCoordsRef.current = showGridCoords;
 
-  const openPanelTab = (tab: InspectorTab) => {
-    setActiveTab(tab);
-    setIsPanelOpen(true);
-  };
+  const [activeModal, setActiveModal] = useState<ModalKind>(null);
+  const [balanceTab, setBalanceTab] = useState<BalanceTab>('defenders');
 
-  // Wave Burst controls
+  // Drag-and-drop state from HUD -> Canvas
+  const [dragGesture, setDragGesture] = useState<HudDragGesture | null>(null);
+  const dragRef = useRef<HudDragGesture | null>(null);
+  const suppressNextClickRef = useRef(false);
+  dragRef.current = dragGesture;
+
+  // Balance editor selection states
+  const [tuneDefenderId, setTuneDefenderId] = useState<string>('iron_golem');
+  const [tuneEnemyId, setTuneEnemyId] = useState<string>('zombie');
+  const [tuneWaveIdx, setTuneWaveIdx] = useState<number>(0);
+  const [jsonInputText, setJsonInputText] = useState<string>('');
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [copiedJson, setCopiedJson] = useState<boolean>(false);
+
+  // Wave Burst spawner states
   const [burstEnemyId, setBurstEnemyId] = useState<string>('zombie');
   const [burstCount, setBurstCount] = useState<number>(5);
   const [burstInterval, setBurstInterval] = useState<number>(1.5);
   const [spawnLane, setSpawnLane] = useState<number>(0);
-
-  // Tune Balance controls
-  const [tuneKind, setTuneKind] = useState<TuneTargetKind>('defender');
-  const [tuneDefenderId, setTuneDefenderId] = useState<string>('iron_golem');
-  const [tuneEnemyId, setTuneEnemyId] = useState<string>('zombie');
-  const [copiedJson, setCopiedJson] = useState<boolean>(false);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -103,25 +226,42 @@ export function PlaytestHost() {
     void import('@mfd/game').then(mod => {
       if (cancelled) return;
 
+      const campaignPreset = mod.createCampaignPlaytestPreset();
+      const loaded = loadSavedPlaytestPreset(campaignPreset);
       setModMeta({
         defenderMeta: mod.PLAYTEST_DEFENDER_META,
         enemyMeta: mod.PLAYTEST_ENEMY_META,
         fusionMeta: mod.PLAYTEST_FUSION_RECIPES_META,
         clonePreset: mod.clonePlaytestPreset,
-        createDefaultPreset: mod.createDefaultPlaytestPreset,
+        createCampaignPreset: mod.createCampaignPlaytestPreset,
       });
 
       const create = () => {
         if (cancelled) return;
         try {
-          handle = mod.createPlaytestGame(host, { mode: 'sandbox', showAuxLanes: false });
+          handle = mod.createPlaytestGame(host, {
+            preset: loaded.preset,
+            mode: 'five-waves',
+            showAuxLanes: true,
+            allowMultiLaneWaves: true,
+            onToolChange: nextTool => {
+              if (!cancelled) setTool(nextTool);
+            },
+          });
           handleRef.current = handle;
           controllerRef.current = handle.controller;
           handle.setTool(toolRef.current);
           handle.setVisualStyle(visualStyleRef.current);
+          handle.setShowGridCoords(showGridCoordsRef.current);
 
+          const initialPreset = handle.controller.getPreset();
           setSnapshot(handle.controller.getSnapshot());
-          setDraftPreset(handle.controller.getPreset());
+          setDraftPreset(initialPreset);
+          setHasSavedPreset(loaded.hasSaved);
+          const initialJson = JSON.stringify(initialPreset, null, 2);
+          setAppliedPresetJson(initialJson);
+          setJsonInputText(initialJson);
+
           unsubscribe = handle.controller.subscribe(next => {
             if (!cancelled) setSnapshot(next);
           });
@@ -175,10 +315,68 @@ export function PlaytestHost() {
   }, [visualStyle]);
 
   useEffect(() => {
+    handleRef.current?.setShowGridCoords(showGridCoords);
+  }, [showGridCoords]);
+
+  useEffect(() => {
+    if (!dragGesture) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const current = dragRef.current;
+      if (!current || e.pointerId !== current.pointerId) return;
+      const dist = Math.hypot(e.clientX - current.startX, e.clientY - current.startY);
+      const nowActive = current.active || dist >= DRAG_ACTIVATION_PX;
+      const updated: HudDragGesture = {
+        ...current,
+        currentX: e.clientX,
+        currentY: e.clientY,
+        active: nowActive,
+      };
+      dragRef.current = updated;
+      setDragGesture(updated);
+      if (nowActive) {
+        handleRef.current?.setExternalDragAtClientPoint(current.payload, e.clientX, e.clientY);
+      }
+    };
+
+    const finishDrag = (e: PointerEvent, isDrop: boolean) => {
+      const current = dragRef.current;
+      if (!current || e.pointerId !== current.pointerId) return;
+      dragRef.current = null;
+      setDragGesture(null);
+      if (current.active) {
+        suppressNextClickRef.current = true;
+        window.setTimeout(() => {
+          suppressNextClickRef.current = false;
+        }, 0);
+        if (isDrop) {
+          handleRef.current?.dropExternalDragAtClientPoint(current.payload, e.clientX, e.clientY);
+        } else {
+          handleRef.current?.setExternalDragAtClientPoint(null, e.clientX, e.clientY);
+        }
+      }
+    };
+
+    const onUp = (e: PointerEvent) => finishDrag(e, true);
+    const onCancel = (e: PointerEvent) => finishDrag(e, false);
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+    };
+  }, [Boolean(dragGesture)]);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       if (event.key === 'Escape') {
-        setIsPanelOpen(false);
+        setShowResetConfirm(false);
+        setActiveModal(null);
+        setTool({ kind: 'select' });
         return;
       }
       if (isEditableTarget(event.target)) return;
@@ -202,12 +400,34 @@ export function PlaytestHost() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
-  // Keep spawnLane clamped to 0 when auxiliary lanes are hidden
   useEffect(() => {
     if (snapshot && !snapshot.showAuxLanes && spawnLane !== 0) {
       setSpawnLane(0);
     }
   }, [snapshot, spawnLane]);
+
+  const startHudDrag = (
+    e: React.PointerEvent<HTMLButtonElement>,
+    payload: PlaytestExternalDragPayload,
+    spriteUrl: string,
+    label: string,
+  ) => {
+    if (e.button !== 0 || snapshot?.terminal !== null) return;
+    suppressNextClickRef.current = false;
+    const initial: HudDragGesture = {
+      payload,
+      spriteUrl,
+      label,
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      active: false,
+      pointerId: e.pointerId,
+    };
+    dragRef.current = initial;
+    setDragGesture(initial);
+  };
 
   const baseDefenders = useMemo(
     () => (modMeta ? modMeta.defenderMeta.filter(d => d.tier === 1) : []),
@@ -223,23 +443,37 @@ export function PlaytestHost() {
     return snapshot.defenders.find(d => d.id === snapshot.selectedDefenderId) ?? null;
   }, [snapshot]);
 
-  const defenderConfigMap = useMemo(() => {
-    const map = new Map<string, PlaytestDefenderConfig>();
-    if (draftPreset) {
-      for (const d of draftPreset.defenders) map.set(d.id, d);
-    }
-    return map;
-  }, [draftPreset]);
+  const isPresetDirty = useMemo(() => {
+    if (!draftPreset || !appliedPresetJson) return false;
+    return JSON.stringify(draftPreset, null, 2) !== appliedPresetJson;
+  }, [draftPreset, appliedPresetJson]);
 
   const editedDefender = useMemo(() => {
     if (!draftPreset) return null;
     return draftPreset.defenders.find(d => d.id === tuneDefenderId) ?? null;
   }, [draftPreset, tuneDefenderId]);
 
+  const editedDefenderMeta = useMemo(() => {
+    if (!modMeta) return null;
+    return modMeta.defenderMeta.find(d => d.id === tuneDefenderId) ?? null;
+  }, [modMeta, tuneDefenderId]);
+
   const editedEnemy = useMemo(() => {
     if (!draftPreset) return null;
     return draftPreset.enemies.find(e => e.id === tuneEnemyId) ?? null;
   }, [draftPreset, tuneEnemyId]);
+
+  const editedEnemyMeta = useMemo(() => {
+    if (!modMeta) return null;
+    return modMeta.enemyMeta.find(e => e.id === tuneEnemyId) ?? null;
+  }, [modMeta, tuneEnemyId]);
+
+  const editedWave = useMemo(() => {
+    if (!draftPreset) return null;
+    return draftPreset.waves[tuneWaveIdx] ?? draftPreset.waves[0] ?? null;
+  }, [draftPreset, tuneWaveIdx]);
+
+  const controller = controllerRef.current;
 
   const switchPlacementMode = (nextMode: PlacementMode) => {
     setPlacementMode(nextMode);
@@ -258,34 +492,61 @@ export function PlaytestHost() {
   };
 
   const switchGameMode = (mode: PlaytestMode) => {
-    const controller = controllerRef.current;
     if (!controller) return;
-    controller.reset(draftPreset ?? undefined, mode, snapshot?.showAuxLanes ?? false);
+    const multiLane = snapshot?.showAuxLanes ?? true;
+    controller.reset(draftPreset ?? undefined, mode, multiLane);
+    controller.setShowAuxLanes(multiLane);
+    setTool({ kind: 'select' });
+  };
+
+  const toggleLanes = () => {
+    if (!controller || !snapshot) return;
+    const nextAux = !snapshot.showAuxLanes;
+    if (snapshot.mode === 'five-waves') {
+      controller.reset(draftPreset ?? undefined, 'five-waves', nextAux);
+    }
+    controller.setShowAuxLanes(nextAux);
   };
 
   const handleReset = () => {
-    const controller = controllerRef.current;
     if (!controller) return;
-    controller.reset(draftPreset ?? undefined, snapshot?.mode ?? 'sandbox', snapshot?.showAuxLanes ?? false);
+    const multiLane = snapshot?.showAuxLanes ?? true;
+    controller.reset(draftPreset ?? undefined, snapshot?.mode ?? 'five-waves', multiLane);
+    controller.setShowAuxLanes(multiLane);
+    setTool({ kind: 'select' });
+  };
+
+  const cycleSpeed = () => {
+    if (!controller || !snapshot) return;
+    const idx = SPEED_OPTIONS.indexOf(snapshot.speedMultiplier);
+    const next = SPEED_OPTIONS[(idx + 1) % SPEED_OPTIONS.length] ?? 1;
+    controller.setSpeed(next);
+  };
+
+  const commitDraftPreset = (nextPreset: PlaytestPresetConfig) => {
+    setDraftPreset(nextPreset);
+    setJsonInputText(JSON.stringify(nextPreset, null, 2));
+    setJsonError(null);
+    if (savePlaytestPreset(nextPreset)) {
+      setHasSavedPreset(true);
+    }
   };
 
   const updateDefenderField = (
     field: keyof Pick<
       PlaytestDefenderConfig,
-      'maxHp' | 'damage' | 'attackSpeed' | 'attackRange' | 'armor' | 'summonEnergyCost'
+      'maxHp' | 'damage' | 'attackSpeed' | 'attackRange' | 'armor' | 'summonEnergyCost' | 'summonCooldownSeconds'
     >,
     rawValue: string,
   ) => {
     if (!draftPreset || !modMeta) return;
-    const parsed = Number(rawValue);
-    if (!Number.isFinite(parsed)) return;
-    const minVal = field === 'maxHp' ? 1 : 0;
-    const value = Math.max(minVal, parsed);
+    const value = cloneNumberInput(rawValue, field === 'maxHp' ? 1 : 0);
+    if (value === null) return;
     const cloned = modMeta.clonePreset(draftPreset);
     const target = cloned.defenders.find(d => d.id === tuneDefenderId);
     if (!target) return;
     target[field] = value;
-    setDraftPreset(cloned);
+    commitDraftPreset(cloned);
   };
 
   const updateEnemyField = (
@@ -305,18 +566,14 @@ export function PlaytestHost() {
     rawValue: string,
   ) => {
     if (!draftPreset || !modMeta) return;
-    const parsed = Number(rawValue);
-    if (!Number.isFinite(parsed)) return;
-    const minVal = field === 'maxHp' ? 1 : 0;
-    const value =
-      field === 'fireResistancePct' || field === 'freezeResistancePct'
-        ? Math.min(100, Math.max(0, parsed))
-        : Math.max(minVal, parsed);
+    const isPct = field === 'fireResistancePct' || field === 'freezeResistancePct';
+    const value = cloneNumberInput(rawValue, field === 'maxHp' ? 1 : 0, isPct ? 100 : undefined);
+    if (value === null) return;
     const cloned = modMeta.clonePreset(draftPreset);
     const target = cloned.enemies.find(e => e.id === tuneEnemyId);
     if (!target) return;
     target[field] = value;
-    setDraftPreset(cloned);
+    commitDraftPreset(cloned);
   };
 
   const updateEnemyFreezeImmune = (checked: boolean) => {
@@ -325,21 +582,153 @@ export function PlaytestHost() {
     const target = cloned.enemies.find(e => e.id === tuneEnemyId);
     if (!target) return;
     target.freezeImmune = checked;
-    setDraftPreset(cloned);
+    commitDraftPreset(cloned);
+  };
+
+  const updateGloveCooldown = (rawValue: string) => {
+    if (!draftPreset || !modMeta) return;
+    const value = cloneNumberInput(rawValue, 0);
+    if (value === null) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    cloned.fusionGloveCooldownSeconds = value;
+    commitDraftPreset(cloned);
+  };
+
+  const updateWaveCrystal = (waveIndex: number, rawValue: string) => {
+    if (!draftPreset || !modMeta) return;
+    const value = cloneNumberInput(rawValue, 0, 5);
+    if (value === null) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    cloned.waveCrystals[waveIndex] = Math.round(value);
+    commitDraftPreset(cloned);
+  };
+
+  const updateWaveTiming = (
+    waveIndex: number,
+    field: 'initialDelaySeconds' | 'delayBeforeNextWaveSeconds',
+    rawValue: string,
+  ) => {
+    if (!draftPreset || !modMeta) return;
+    const value = cloneNumberInput(rawValue, 0);
+    if (value === null) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    const wave = cloned.waves[waveIndex];
+    if (!wave) return;
+    cloned.waves[waveIndex] = { ...wave, [field]: value };
+    commitDraftPreset(cloned);
+  };
+
+  type MutableSpawnGroup = {
+    -readonly [K in keyof PlaytestPresetConfig['waves'][number]['spawnGroups'][number]]:
+      PlaytestPresetConfig['waves'][number]['spawnGroups'][number][K];
+  };
+
+  const updateSpawnGroupField = (
+    waveIndex: number,
+    groupIndex: number,
+    updater: (group: MutableSpawnGroup) => MutableSpawnGroup | void,
+  ) => {
+    if (!draftPreset || !modMeta) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    const wave = cloned.waves[waveIndex];
+    const group = wave?.spawnGroups[groupIndex];
+    if (!wave || !group) return;
+    const editable: MutableSpawnGroup = { ...group, allowedLanes: [...group.allowedLanes] };
+    const next = updater(editable) ?? editable;
+    const nextGroups = wave.spawnGroups.map((g, idx) => (idx === groupIndex ? next : g));
+    cloned.waves[waveIndex] = { ...wave, spawnGroups: nextGroups };
+    commitDraftPreset(cloned);
+  };
+
+  const addSpawnGroup = (waveIndex: number) => {
+    if (!draftPreset || !modMeta) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    const wave = cloned.waves[waveIndex];
+    if (!wave) return;
+    cloned.waves[waveIndex] = {
+      ...wave,
+      spawnGroups: [
+        ...wave.spawnGroups,
+        {
+          enemyId: 'zombie',
+          count: 2,
+          allowedLanes: [0, 1, 2, 3, 4],
+          laneMode: 'sequential',
+          startOffsetSeconds: 0,
+          intervalSeconds: 2.5,
+        },
+      ],
+    };
+    commitDraftPreset(cloned);
+  };
+
+  const removeSpawnGroup = (waveIndex: number, groupIndex: number) => {
+    if (!draftPreset || !modMeta) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    const wave = cloned.waves[waveIndex];
+    if (!wave || wave.spawnGroups.length <= 1) return;
+    cloned.waves[waveIndex] = {
+      ...wave,
+      spawnGroups: wave.spawnGroups.filter((_, idx) => idx !== groupIndex),
+    };
+    commitDraftPreset(cloned);
   };
 
   const handleApplyAndRestart = () => {
-    const controller = controllerRef.current;
     if (!controller || !draftPreset) return;
-    controller.reset(draftPreset, snapshot?.mode ?? 'sandbox', snapshot?.showAuxLanes ?? false);
+    if (savePlaytestPreset(draftPreset)) {
+      setHasSavedPreset(true);
+    }
+    const multiLane = snapshot?.showAuxLanes ?? true;
+    controller.reset(draftPreset, snapshot?.mode ?? 'five-waves', multiLane);
+    controller.setShowAuxLanes(multiLane);
+    const appliedJson = JSON.stringify(draftPreset, null, 2);
+    setAppliedPresetJson(appliedJson);
+    setJsonInputText(appliedJson);
+    setActiveModal(null);
   };
 
-  const handleResetDefaultPreset = () => {
-    const controller = controllerRef.current;
+  const executeResetCampaignPreset = () => {
     if (!controller || !modMeta) return;
-    const fresh = modMeta.createDefaultPreset();
+    clearSavedPlaytestPreset();
+    setHasSavedPreset(false);
+    setShowResetConfirm(false);
+    const fresh = modMeta.createCampaignPreset();
     setDraftPreset(fresh);
-    controller.reset(fresh, snapshot?.mode ?? 'sandbox', snapshot?.showAuxLanes ?? false);
+    const json = JSON.stringify(fresh, null, 2);
+    setAppliedPresetJson(json);
+    setJsonInputText(json);
+    setJsonError(null);
+    const multiLane = snapshot?.showAuxLanes ?? true;
+    controller.reset(fresh, snapshot?.mode ?? 'five-waves', multiLane);
+    controller.setShowAuxLanes(multiLane);
+  };
+
+  const handleResetCampaignPresetClick = () => {
+    if (hasSavedPreset || hasSavedPlaytestPresetInStorage()) {
+      setShowResetConfirm(true);
+      return;
+    }
+    executeResetCampaignPreset();
+  };
+
+  const handleImportJson = () => {
+    try {
+      const parsed = JSON.parse(jsonInputText) as PlaytestPresetConfig;
+      if (!isValidPlaytestPresetShape(parsed)) {
+        setJsonError('JSON missing required fields: seed, defenders, enemies, waves, abilities, waveCrystals.');
+        return;
+      }
+      commitDraftPreset(parsed);
+      if (controller) {
+        const multiLane = snapshot?.showAuxLanes ?? true;
+        controller.reset(parsed, snapshot?.mode ?? 'five-waves', multiLane);
+        controller.setShowAuxLanes(multiLane);
+        setAppliedPresetJson(JSON.stringify(parsed, null, 2));
+      }
+    } catch (err) {
+      setJsonError(err instanceof Error ? err.message : 'Invalid JSON syntax');
+    }
   };
 
   const handleCopyTunedJson = async () => {
@@ -366,976 +755,863 @@ export function PlaytestHost() {
   };
 
   const handleSendWaveBurst = () => {
-    const controller = controllerRef.current;
     if (!controller) return;
     const clampedCount = Math.max(1, Math.min(15, Math.round(burstCount)));
     const clampedInterval = Math.max(0.2, Math.min(3.0, Number(burstInterval.toFixed(2))));
     controller.spawnWaveBurst(burstEnemyId, clampedCount, clampedInterval, spawnLane);
   };
 
-  const btnStyle = (active = false, accent = '#10B981'): React.CSSProperties => ({
-    padding: '6px 10px',
-    borderRadius: 6,
-    border: `1px solid ${active ? accent : '#334155'}`,
-    backgroundColor: active ? accent : '#1E293B',
-    color: active ? '#0F172A' : '#F1F5F9',
-    fontWeight: 700,
-    fontSize: 12,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-  });
-
-  const panelStyle: React.CSSProperties = {
-    backgroundColor: '#1E293B',
-    border: '1px solid #334155',
-    borderRadius: 10,
-    padding: 12,
-  };
-
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '6px 8px',
+    padding: '5px 8px',
     borderRadius: 6,
     border: '1px solid #475569',
-    backgroundColor: '#0F172A',
+    backgroundColor: '#020617',
     color: '#F8FAFC',
     fontSize: 12,
-    boxSizing: 'border-box',
+    fontFamily: 'inherit',
   };
 
-  const controller = controllerRef.current;
+  const smallBtnStyle = (active = false, activeColor = '#4ade80'): React.CSSProperties => ({
+    padding: '3px 8px',
+    fontSize: 11,
+    borderRadius: 5,
+    border: `1px solid ${active ? activeColor : '#475569'}`,
+    background: active ? 'rgba(30, 41, 59, 0.95)' : '#0f172a',
+    color: active ? activeColor : '#CBD5E1',
+    fontWeight: 700,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    fontFamily: 'inherit',
+  });
+
+  const baseCards = snapshot?.baseDefenderCards ?? [];
+  const gloveCooldown = snapshot?.gloveCooldown ?? {
+    totalSeconds: 15,
+    remainingSeconds: 0,
+    progressPct: 0,
+    onCooldown: false,
+  };
+  const waveNumber =
+    snapshot?.currentWaveIndex !== null && snapshot?.currentWaveIndex !== undefined
+      ? Math.min(snapshot.totalWaves, snapshot.currentWaveIndex + 1)
+      : 1;
+  const activeTier2Place =
+    tool.kind === 'place' ? fusionDefenders.find(f => f.id === tool.definitionId) ?? null : null;
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#0F172A',
-        color: '#F8FAFC',
-        fontFamily: 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-        padding: '10px 14px 20px',
-        boxSizing: 'border-box',
-      }}
-    >
-      {/* Top Control & Telemetry Bar */}
-      <header
-        style={{
-          ...panelStyle,
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
-          marginBottom: 14,
-        }}
-      >
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-          <Link
-            href="/"
-            style={{
-              color: '#94A3B8',
-              textDecoration: 'none',
-              fontSize: 12,
-              fontWeight: 700,
-              padding: '5px 8px',
-              borderRadius: 6,
-              border: '1px solid #334155',
-              backgroundColor: '#0F172A',
-            }}
-          >
-            ← Home
-          </Link>
-          <span style={{ fontWeight: 800, fontSize: 15, color: '#4ADE80', letterSpacing: 0.4 }}>
-            MFD 1-Lane Playtest Sandbox
-          </span>
-
-          <div style={{ display: 'flex', gap: 4, marginLeft: 4 }}>
-            <button
-              type="button"
-              onClick={() => switchGameMode('sandbox')}
-              style={btnStyle(snapshot?.mode === 'sandbox', '#4ADE80')}
-            >
-              Sandbox 1-Lane
-            </button>
-            <button
-              type="button"
-              onClick={() => switchGameMode('five-waves')}
-              style={btnStyle(snapshot?.mode === 'five-waves', '#4ADE80')}
-            >
-              5-Wave Sequence
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => controller?.setShowAuxLanes(!(snapshot?.showAuxLanes ?? false))}
-            style={btnStyle(Boolean(snapshot?.showAuxLanes), '#38BDF8')}
-          >
-            {snapshot?.showAuxLanes ? '5 Lanes: ON' : 'Show 5 Lanes'}
-          </button>
-
+    <main className="mfd-shell mfd-shell-battle" style={{ position: 'relative' }}>
+      <div className="mfd-container">
+        <section className="mfd-battle-section">
+          {/* Row 1: Main Campaign-Identical Tactical HUD Bar */}
           <div
-            style={{ display: 'flex', gap: 3 }}
-            title="So sánh 3 kiểu hiển thị thử nghiệm cho 5 Base Defenders, 4 Base Enemies và nền Grassland"
-          >
-            <button
-              type="button"
-              onClick={() => setVisualStyle('ai-64')}
-              style={btnStyle(visualStyle === 'ai-64', '#A855F7')}
-            >
-              AI 64×64
-            </button>
-            <button
-              type="button"
-              onClick={() => setVisualStyle('pixel-code')}
-              style={btnStyle(visualStyle === 'pixel-code', '#A855F7')}
-            >
-              Pixel Code
-            </button>
-            <button
-              type="button"
-              onClick={() => setVisualStyle('blocks')}
-              style={btnStyle(visualStyle === 'blocks', '#A855F7')}
-            >
-              Blocks
-            </button>
-          </div>
-        </div>
-
-        {/* Playback + Resource Grants */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
-          <button
-            type="button"
-            onClick={() => controller?.setPaused(!(snapshot?.paused ?? false))}
-            style={btnStyle(Boolean(snapshot?.paused), '#FBBF24')}
-          >
-            {snapshot?.paused ? 'Resume [P]' : 'Pause [P]'}
-          </button>
-
-          <div style={{ display: 'flex', gap: 3 }}>
-            {SPEED_OPTIONS.map(spd => (
-              <button
-                key={spd}
-                type="button"
-                onClick={() => controller?.setSpeed(spd)}
-                style={btnStyle(snapshot?.speedMultiplier === spd, '#38BDF8')}
-              >
-                {spd}×
-              </button>
-            ))}
-          </div>
-
-          <button type="button" onClick={() => controller?.stepOneTick()} style={btnStyle(false)}>
-            +1 Tick
-          </button>
-          <button type="button" onClick={handleReset} style={btnStyle(false, '#F87171')}>
-            Reset
-          </button>
-
-          <span style={{ width: 1, height: 22, backgroundColor: '#334155', marginInline: 2 }} />
-
-          <button
-            type="button"
-            onClick={() => controller?.grantEnergy()}
-            style={{ ...btnStyle(false), borderColor: '#CA8A04', color: '#FDE047' }}
-          >
-            +500 Energy
-          </button>
-          <button
-            type="button"
-            onClick={() => controller?.grantCrystals()}
-            style={{ ...btnStyle(false), borderColor: '#0284C7', color: '#7DD3FC' }}
-          >
-            +5 Crystals
-          </button>
-          <button
-            type="button"
-            disabled={!snapshot || snapshot.pendingCrystals === 0}
-            onClick={() => controller?.claimPendingCrystals()}
+            className="mfd-card"
             style={{
-              ...btnStyle(false),
-              opacity: snapshot && snapshot.pendingCrystals > 0 ? 1 : 0.45,
-              cursor: snapshot && snapshot.pendingCrystals > 0 ? 'pointer' : 'not-allowed',
-              borderColor: '#38BDF8',
+              padding: '5px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 6,
+              flexWrap: 'wrap',
+              flexShrink: 0,
             }}
           >
-            Claim Pending ({snapshot?.pendingCrystals ?? 0})
-          </button>
-        </div>
+            {/* Resources: Energy & Power Crystal */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: '#0f172a',
+                  border: '2px solid #ca8a04',
+                  borderRadius: 8,
+                  padding: '3px 8px',
+                }}
+                title="Energy used to summon Base Defenders"
+              >
+                <img src="/assets/sprites/items/energy_orb.png" alt="Energy" width={22} height={22} className="mfd-pixel" />
+                <div>
+                  <div style={{ fontSize: 9, color: '#FDE047', fontWeight: 700, lineHeight: 1.1 }}>ENERGY</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#FEF08A', lineHeight: 1.1 }}>
+                    {snapshot?.energy ?? 50}
+                  </div>
+                </div>
+              </div>
 
-        {/* Live Telemetry */}
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: 12,
-            fontSize: 13,
-            fontWeight: 700,
-            fontFamily: 'monospace',
-          }}
-        >
-          <span style={{ color: '#FDE047' }}>⚡ Energy: {snapshot?.energy ?? 0}</span>
-          <span style={{ color: '#38BDF8' }}>
-            💎 Crystals: {snapshot?.crystals ?? 0}/5
-            {snapshot && snapshot.pendingCrystals > 0 ? ` (+${snapshot.pendingCrystals})` : ''}
-          </span>
-          <span style={{ color: '#A7F3D0' }}>
-            🌊{' '}
-            {snapshot?.mode === 'five-waves'
-              ? `Wave ${(snapshot.currentWaveIndex ?? 0) + 1}/${snapshot.totalWaves} (${snapshot.waveStatus})`
-              : 'Sandbox'}
-          </span>
-          <span style={{ color: '#CBD5E1' }}>
-            ⏱ T{snapshot?.tick ?? 0} · {(snapshot?.elapsedSeconds ?? 0).toFixed(1)}s
-          </span>
+              <button
+                type="button"
+                className={`mfd-btn ${tool.kind === 'crystal' ? 'mfd-btn-crystal' : ''}`}
+                style={{ padding: '3px 8px', touchAction: 'none', userSelect: 'none' }}
+                disabled={!snapshot || snapshot.crystals < 1 || snapshot.terminal !== null}
+                onPointerDown={e => {
+                  if (snapshot && snapshot.crystals >= 1) {
+                    startHudDrag(e, { kind: 'crystal' }, '/assets/sprites/items/power_crystal.png', 'Power Crystal');
+                  }
+                }}
+                onClick={() => {
+                  if (suppressNextClickRef.current) {
+                    suppressNextClickRef.current = false;
+                    return;
+                  }
+                  setTool(tool.kind === 'crystal' ? { kind: 'select' } : { kind: 'crystal' });
+                }}
+                title="Click or drag onto a Defender to cast its Special Ability (1 Crystal, 0s cooldown)"
+              >
+                <img src="/assets/sprites/items/power_crystal.png" alt="Crystal" width={22} height={22} className="mfd-pixel" />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: 9, color: '#BAE6FD', lineHeight: 1.1 }}>CRYSTALS</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.1 }}>
+                    {snapshot?.crystals ?? 0} / {snapshot?.maxCrystals ?? 5}
+                  </div>
+                </div>
+              </button>
 
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button
-              type="button"
-              onClick={() => setIsPanelOpen(prev => !prev)}
-              style={btnStyle(isPanelOpen, '#38BDF8')}
-            >
-              ⚙ {isPanelOpen ? 'Đóng Thiết lập' : 'Thiết lập / Waves / Balance'}
-            </button>
-            <button
-              type="button"
-              onClick={() => openPanelTab('log')}
-              style={btnStyle(isPanelOpen && activeTab === 'log', '#FBBF24')}
-            >
-              Log ({snapshot?.eventLog.length ?? 0})
-            </button>
+              {snapshot && snapshot.pendingCrystals > 0 && (
+                <button
+                  type="button"
+                  className="mfd-btn mfd-btn-gold"
+                  style={{ padding: '4px 8px', fontSize: 11 }}
+                  disabled={snapshot.crystals >= snapshot.maxCrystals || snapshot.terminal !== null}
+                  onClick={() => controller?.claimPendingCrystals()}
+                  title="Claim pending Power Crystals once storage has room"
+                >
+                  +{snapshot.pendingCrystals} Crystal
+                </button>
+              )}
+            </div>
+
+            {/* 5 Base Defender Cards + Fusion Glove + Shovel */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+              {baseCards.map(card => {
+                const selected = tool.kind === 'place' && tool.definitionId === card.id;
+                const isFree = placementMode === 'free';
+                const blockedByRules = !isFree && (!card.canAfford || card.onCooldown);
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    className="mfd-btn mfd-defender-card"
+                    disabled={(!isFree && card.onCooldown) || snapshot?.terminal !== null}
+                    onPointerDown={e => {
+                      if (isFree || (card.canAfford && !card.onCooldown)) {
+                        startHudDrag(
+                          e,
+                          { kind: 'place', definitionId: card.id, freeSandbox: isFree },
+                          card.spriteUrl,
+                          card.name,
+                        );
+                      }
+                    }}
+                    onClick={() => {
+                      if (suppressNextClickRef.current) {
+                        suppressNextClickRef.current = false;
+                        return;
+                      }
+                      if (!isFree && card.onCooldown) return;
+                      setTool(
+                        selected
+                          ? { kind: 'select' }
+                          : { kind: 'place', definitionId: card.id, freeSandbox: isFree },
+                      );
+                    }}
+                    style={{
+                      padding: '4px 7px',
+                      borderColor: selected
+                        ? '#facc15'
+                        : isFree || (card.canAfford && !card.onCooldown)
+                          ? '#4ade80'
+                          : '#475569',
+                      background: selected ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
+                      opacity: blockedByRules && !selected ? 0.78 : 1,
+                    }}
+                    title={
+                      isFree
+                        ? `${card.name} (FREE Sandbox) — ${card.abilityName}`
+                        : `${card.name} (${card.cost} EN, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto empty cell or compatible Defender to Fuse.`
+                    }
+                  >
+                    {!isFree && card.onCooldown && (
+                      <>
+                        <div className="mfd-cd-curtain" style={{ height: `${card.cooldownProgressPct}%` }} />
+                        <div className="mfd-cd-badge">{card.cooldownRemainingSeconds.toFixed(1)}s</div>
+                      </>
+                    )}
+                    <img
+                      src={card.spriteUrl}
+                      alt={card.name}
+                      width={26}
+                      height={26}
+                      draggable={false}
+                      className="mfd-pixel"
+                    />
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
+                        {card.name}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 10,
+                          lineHeight: 1.15,
+                          color: isFree
+                            ? '#38BDF8'
+                            : card.onCooldown
+                              ? '#FACC15'
+                              : card.canAfford
+                                ? '#4ADE80'
+                                : '#F87171',
+                        }}
+                      >
+                        {isFree
+                          ? 'FREE'
+                          : card.onCooldown
+                            ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s`
+                            : `${card.cost} EN`}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+
+              {/* Fusion Glove */}
+              <button
+                type="button"
+                className="mfd-btn mfd-defender-card"
+                disabled={gloveCooldown.onCooldown || snapshot?.terminal !== null}
+                onPointerDown={e => {
+                  if (!gloveCooldown.onCooldown) {
+                    startHudDrag(e, { kind: 'glove' }, '/assets/sprites/items/fusion_glove.png', 'Fusion Glove');
+                  }
+                }}
+                onClick={() => {
+                  if (suppressNextClickRef.current) {
+                    suppressNextClickRef.current = false;
+                    return;
+                  }
+                  if (gloveCooldown.onCooldown) return;
+                  setTool(tool.kind === 'glove' ? { kind: 'select' } : { kind: 'glove' });
+                }}
+                style={{
+                  padding: '4px 7px',
+                  borderColor: tool.kind === 'glove' ? '#facc15' : gloveCooldown.onCooldown ? '#475569' : '#38bdf8',
+                  background: tool.kind === 'glove' ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
+                  opacity: gloveCooldown.onCooldown && tool.kind !== 'glove' ? 0.78 : 1,
+                }}
+                title={`Fusion Glove (0 EN, ${gloveCooldown.totalSeconds}s CD): Move a Defender or Fuse two Tier-1 Defenders`}
+              >
+                {gloveCooldown.onCooldown && (
+                  <>
+                    <div className="mfd-cd-curtain" style={{ height: `${gloveCooldown.progressPct}%` }} />
+                    <div className="mfd-cd-badge">{gloveCooldown.remainingSeconds.toFixed(1)}s</div>
+                  </>
+                )}
+                <img
+                  src="/assets/sprites/items/fusion_glove.png"
+                  alt="Fusion Glove"
+                  width={26}
+                  height={26}
+                  draggable={false}
+                  className="mfd-pixel"
+                />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Glove</div>
+                  <div style={{ fontSize: 10, lineHeight: 1.15, color: gloveCooldown.onCooldown ? '#FACC15' : '#38BDF8' }}>
+                    {gloveCooldown.onCooldown ? `CD ${gloveCooldown.remainingSeconds.toFixed(1)}s` : 'MOVE/FUSE'}
+                  </div>
+                </div>
+              </button>
+
+              {/* Shovel */}
+              <button
+                type="button"
+                className="mfd-btn mfd-defender-card"
+                disabled={snapshot?.terminal !== null}
+                onPointerDown={e =>
+                  startHudDrag(e, { kind: 'shovel' }, '/assets/sprites/items/shovel.png', 'Shovel')
+                }
+                onClick={() => {
+                  if (suppressNextClickRef.current) {
+                    suppressNextClickRef.current = false;
+                    return;
+                  }
+                  setTool(tool.kind === 'shovel' ? { kind: 'select' } : { kind: 'shovel' });
+                }}
+                style={{
+                  padding: '4px 7px',
+                  borderColor: tool.kind === 'shovel' ? '#f87171' : '#64748b',
+                  background: tool.kind === 'shovel' ? 'rgba(185, 28, 28, 0.35)' : '#0f172a',
+                }}
+                title="Shovel: Click or drag onto any Defender to remove it (0% refund)"
+              >
+                <img
+                  src="/assets/sprites/items/shovel.png"
+                  alt="Shovel"
+                  width={26}
+                  height={26}
+                  draggable={false}
+                  className="mfd-pixel"
+                />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Shovel</div>
+                  <div style={{ fontSize: 10, lineHeight: 1.15, color: '#FCA5A5' }}>REMOVE</div>
+                </div>
+              </button>
+            </div>
+
+            {/* Wave Status & Playback Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div
+                style={{
+                  background: '#0f172a',
+                  border: '2px solid #334155',
+                  borderRadius: 8,
+                  padding: '3px 8px',
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, lineHeight: 1.15 }}>
+                  {snapshot?.mode === 'sandbox'
+                    ? `SANDBOX · ${(snapshot?.elapsedSeconds ?? 0).toFixed(0)}s`
+                    : `WAVE ${waveNumber}/${snapshot?.totalWaves ?? 5}`}
+                </div>
+                <div style={{ fontSize: 10, color: '#CBD5E1', lineHeight: 1.15 }}>
+                  E: {snapshot?.enemies.length ?? 0} · K: {snapshot?.enemiesKilled ?? 0}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="mfd-btn"
+                style={{ padding: '6px 9px', fontSize: 12 }}
+                onClick={cycleSpeed}
+                title="Cycle simulation speed (1x -> 2x -> 4x -> 0.5x)"
+              >
+                {snapshot?.speedMultiplier ?? 1}x
+              </button>
+
+              <button
+                type="button"
+                className="mfd-btn mfd-btn-gold"
+                style={{ padding: '6px 9px', fontSize: 12 }}
+                disabled={snapshot?.terminal !== null}
+                onClick={() => controller?.setPaused(!(snapshot?.paused ?? false))}
+                title="Pause / Resume [P]"
+              >
+                {snapshot?.paused ? 'Resume' : 'Pause'}
+              </button>
+            </div>
           </div>
-        </div>
-      </header>
 
-      {/* Terminal Callout */}
-      {snapshot?.terminal && (
-        <div
-          role="status"
-          style={{
-            marginBottom: 14,
-            padding: '10px 14px',
-            borderRadius: 10,
-            border: `2px solid ${snapshot.terminal === 'victory' ? '#4ADE80' : '#F87171'}`,
-            backgroundColor: snapshot.terminal === 'victory' ? '#064E3B' : '#7F1D1D',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-          }}
-        >
-          <div>
-            <strong style={{ fontSize: 16 }}>
-              {snapshot.terminal === 'victory' ? 'VICTORY — Waves Cleared!' : 'DEFEAT — Base Breached!'}
-            </strong>
-            <span style={{ marginLeft: 10, fontSize: 13, color: '#E2E8F0' }}>
-              Click Reset to run another playtest iteration.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={handleReset}
-            style={btnStyle(true, snapshot.terminal === 'victory' ? '#4ADE80' : '#FCA5A5')}
+          {/* Row 2: Compact Playtest Lab Strip (keeps canvas >= 600px at 1366x768) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 6,
+              flexWrap: 'wrap',
+              padding: '4px 8px',
+              background: 'rgba(15, 23, 42, 0.9)',
+              border: '1px solid #334155',
+              borderRadius: 8,
+              flexShrink: 0,
+            }}
           >
-            Reset Playtest
-          </button>
-        </div>
-      )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+              <Link
+                href="/"
+                style={{
+                  ...smallBtnStyle(false),
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                }}
+              >
+                ← Menu
+              </Link>
 
-      {/* Main Full-Width Layout: Top Defender Palette + Full-Screen Battlefield */}
-      <main style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {/* Placement Mode, Canvas Tools & Inline Selected Cast */}
-        <div
-          style={{
-            ...panelStyle,
-            padding: '8px 12px',
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-          }}
-        >
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
-              Placement:
-            </span>
-            <button
-              type="button"
-              onClick={() => switchPlacementMode('free')}
-              style={btnStyle(placementMode === 'free', '#4ADE80')}
-            >
-              Free Place T1/T2
-            </button>
-            <button
-              type="button"
-              onClick={() => switchPlacementMode('summon')}
-              style={btnStyle(placementMode === 'summon', '#FBBF24')}
-            >
-              Summon T1 (Energy) + Drag Fuse
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => switchGameMode(snapshot?.mode === 'five-waves' ? 'sandbox' : 'five-waves')}
+                style={smallBtnStyle(snapshot?.mode === 'five-waves', '#4ade80')}
+                title="Switch between 5-Wave Campaign sequence and open Sandbox"
+              >
+                Mode: {snapshot?.mode === 'five-waves' ? '5-Wave' : 'Sandbox'}
+              </button>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
-              Tool:
-            </span>
-            <button
-              type="button"
-              onClick={() => setTool({ kind: 'select' })}
-              style={btnStyle(tool.kind === 'select', '#38BDF8')}
-            >
-              Select / Drag-Fuse
-            </button>
-            <button
-              type="button"
-              onClick={() => setTool({ kind: 'crystal' })}
-              style={btnStyle(tool.kind === 'crystal', '#0EA5E9')}
-            >
-              Cast Ability
-            </button>
-            <button
-              type="button"
-              onClick={() => setTool({ kind: 'remove' })}
-              style={btnStyle(tool.kind === 'remove', '#F87171')}
-            >
-              Remove
-            </button>
+              <button
+                type="button"
+                onClick={toggleLanes}
+                style={smallBtnStyle(Boolean(snapshot?.showAuxLanes ?? true), '#38bdf8')}
+                title="Toggle full 5x9 battlefield vs 1-Lane test mode"
+              >
+                {(snapshot?.showAuxLanes ?? true) ? '5 Lanes' : '1 Lane'}
+              </button>
 
-            {selectedDefender && (
-              <>
-                <span style={{ width: 1, height: 20, backgroundColor: '#334155', marginInline: 2 }} />
-                <span style={{ fontSize: 12, color: '#CBD5E1', fontWeight: 700 }}>
-                  {selectedDefender.name} (R{selectedDefender.row}·C{selectedDefender.column})
-                </span>
+              <button
+                type="button"
+                onClick={() => switchPlacementMode(placementMode === 'summon' ? 'free' : 'summon')}
+                style={smallBtnStyle(placementMode === 'free', '#facc15')}
+                title="Campaign Rules (Energy + Cooldowns) vs Free T1/T2 Sandbox Placement"
+              >
+                Rules: {placementMode === 'summon' ? 'Campaign' : 'Free T1/T2'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setVisualStyle(prev => (prev === 'pixel-art' ? 'procedural' : 'pixel-art'))}
+                style={smallBtnStyle(visualStyle === 'pixel-art', '#a78bfa')}
+                title="Toggle Pixel-Art PNG sprites vs Procedural fallback"
+              >
+                Art: {visualStyle === 'pixel-art' ? 'PNG' : 'Fallback'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowGridCoords(prev => !prev)}
+                style={smallBtnStyle(showGridCoords, '#34d399')}
+                title="Toggle cell (row, col) coordinates"
+              >
+                Coords
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+              {selectedDefender && (
                 <button
                   type="button"
                   onClick={() => controller?.activateAbility(selectedDefender.id)}
-                  style={btnStyle(true, '#38BDF8')}
+                  style={{ ...smallBtnStyle(true, '#38bdf8'), borderColor: '#38bdf8' }}
+                  title={`Cast ${selectedDefender.abilityName} (1 Crystal)`}
                 >
-                  Cast {selectedDefender.abilityName} [Space]
+                  ⚡ {selectedDefender.name}: {selectedDefender.abilityName} [Space]
                 </button>
+              )}
+
+              {activeTier2Place && (
                 <button
                   type="button"
-                  onClick={() => controller?.removeDefender(selectedDefender.id)}
-                  style={{ ...btnStyle(false), borderColor: '#EF4444', color: '#FCA5A5' }}
+                  onClick={() => setTool({ kind: 'select' })}
+                  style={{ ...smallBtnStyle(true, '#facc15'), borderColor: '#facc15' }}
+                  title="Click to cancel Tier-2 placement tool"
                 >
-                  ✕
+                  Placing T2: {activeTier2Place.name} ✕
                 </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Top 12-Defender Palette */}
-        <section style={{ ...panelStyle, padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 5, textTransform: 'uppercase' }}>
-              5 Base Defenders (Tier-1)
-            </div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(152px, 1fr))',
-                gap: 6,
-              }}
-            >
-              {baseDefenders.map(def => {
-                const cfg = defenderConfigMap.get(def.id);
-                const active = tool.kind === 'place' && tool.definitionId === def.id;
-                return (
-                  <button
-                    key={def.id}
-                    type="button"
-                    title={def.abilitySummary}
-                    onClick={() =>
-                      setTool({
-                        kind: 'place',
-                        definitionId: def.id,
-                        freeSandbox: placementMode === 'free',
-                      })
-                    }
-                    style={{
-                      textAlign: 'left',
-                      padding: '6px 8px',
-                      borderRadius: 7,
-                      border: `2px solid ${active ? '#4ADE80' : '#334155'}`,
-                      backgroundColor: active ? '#064E3B' : '#0F172A',
-                      color: '#F8FAFC',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 12 }}>
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            width: 10,
-                            height: 10,
-                            borderRadius: 3,
-                            backgroundColor: hexColor(def.color),
-                            border: `1px solid ${hexColor(def.accentColor)}`,
-                          }}
-                        />
-                        {def.name}
-                      </span>
-                      <span style={{ fontSize: 10, color: '#FDE047', fontWeight: 700 }}>
-                        {placementMode === 'free' ? 'FREE' : `${cfg?.summonEnergyCost ?? 0}⚡`}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>
-                      [{def.shortLabel}] {def.abilityName}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 5, textTransform: 'uppercase' }}>
-              7 Fusion Defenders (Tier-2){' '}
-              {placementMode === 'summon' && (
-                <span style={{ fontWeight: 500, color: '#FBBF24', textTransform: 'none' }}>
-                  — Drag-Fuse two Base Defenders on the lane
-                </span>
               )}
-            </div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(152px, 1fr))',
-                gap: 6,
-              }}
-            >
-              {fusionDefenders.map(def => {
-                const disabled = placementMode === 'summon';
-                const active = !disabled && tool.kind === 'place' && tool.definitionId === def.id;
-                return (
-                  <button
-                    key={def.id}
-                    type="button"
-                    disabled={disabled}
-                    title={disabled ? 'Drag-Fuse two Base Defenders on the lane' : def.abilitySummary}
-                    onClick={() =>
-                      setTool({
-                        kind: 'place',
-                        definitionId: def.id,
-                        freeSandbox: true,
-                      })
-                    }
-                    style={{
-                      textAlign: 'left',
-                      padding: '6px 8px',
-                      borderRadius: 7,
-                      border: `2px solid ${active ? '#38BDF8' : '#334155'}`,
-                      backgroundColor: active ? '#0C4A6E' : '#0F172A',
-                      color: '#F8FAFC',
-                      opacity: disabled ? 0.45 : 1,
-                      cursor: disabled ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 12 }}>
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            width: 10,
-                            height: 10,
-                            borderRadius: 3,
-                            backgroundColor: hexColor(def.color),
-                            border: `1px solid ${hexColor(def.accentColor)}`,
-                          }}
-                        />
-                        {def.name}
-                      </span>
-                      <span style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700 }}>
-                        {disabled ? 'FUSE' : 'FREE'}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>
-                      [{def.shortLabel}] {def.abilityName}
-                    </div>
-                  </button>
-                );
-              })}
+
+              <button
+                type="button"
+                onClick={() => controller?.grantEnergy()}
+                style={{ ...smallBtnStyle(false), color: '#FDE047', borderColor: '#ca8a04' }}
+              >
+                +500 EN
+              </button>
+              <button
+                type="button"
+                onClick={() => controller?.grantCrystals()}
+                style={{ ...smallBtnStyle(false), color: '#7DD3FC', borderColor: '#0284c7' }}
+              >
+                +5 CR
+              </button>
+              <button
+                type="button"
+                onClick={() => controller?.stepOneTick()}
+                style={smallBtnStyle(false)}
+                title="Step exactly 1 simulation tick (50ms)"
+              >
+                +1 Tick
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                style={{ ...smallBtnStyle(false), color: '#FCA5A5', borderColor: '#dc2626' }}
+              >
+                Reset
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveModal(prev => (prev === 'spawn' ? null : 'spawn'))}
+                style={smallBtnStyle(activeModal === 'spawn', '#38bdf8')}
+              >
+                👾 Spawn / T2
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveModal(prev => (prev === 'balance' ? null : 'balance'))}
+                style={smallBtnStyle(activeModal === 'balance', '#4ade80')}
+              >
+                ⚖ Balance{isPresetDirty ? ' ●' : ''}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveModal(prev => (prev === 'log' ? null : 'log'))}
+                style={smallBtnStyle(activeModal === 'log', '#facc15')}
+              >
+                Log ({snapshot?.eventLog.length ?? 0})
+              </button>
             </div>
           </div>
-        </section>
 
-        {/* Full-Width Battlefield Stage */}
-        <section style={{ ...panelStyle, padding: 8, width: '100%', boxSizing: 'border-box' }}>
+          {/* Row 3: Flex-1 5x9 Grassland Phaser Canvas Stage (matches CampaignHost) */}
           <div
-            ref={hostRef}
-            aria-label="Phaser playtest battlefield"
             style={{
+              flex: 1,
+              minHeight: 0,
               width: '100%',
-              aspectRatio: '16 / 9',
-              backgroundColor: '#0F172A',
-              borderRadius: 8,
-              overflow: 'hidden',
-            }}
-          />
-          {status === 'loading' && (
-            <p role="status" style={{ margin: '8px 0 0', fontSize: 12, color: '#94A3B8' }}>
-              Loading Phaser PlaytestScene...
-            </p>
-          )}
-          {status === 'error' && (
-            <p role="alert" style={{ margin: '8px 0 0', fontSize: 12, color: '#FCA5A5' }}>
-              Failed to initialize Playtest Phaser canvas.
-            </p>
-          )}
-        </section>
-      </main>
-
-      {/* Toggleable Modal: Waves, Selected Unit, Balance Tuning & Event Log */}
-      {isPanelOpen && (
-        <div
-          onClick={() => setIsPanelOpen(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 50,
-            backgroundColor: 'rgba(2, 6, 23, 0.74)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Thiết lập Playtest — Waves, Balance & Log"
-            onClick={e => e.stopPropagation()}
-            style={{
-              ...panelStyle,
-              width: 'min(94vw, 620px)',
-              maxHeight: '88vh',
-              overflowY: 'auto',
+              maxWidth: 1280,
+              marginInline: 'auto',
+              position: 'relative',
               display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-              boxShadow: '0 24px 48px rgba(0, 0, 0, 0.6)',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             <div
+              ref={hostRef}
+              aria-label="Phaser playtest battlefield"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 8,
-                paddingBottom: 8,
-                borderBottom: '1px solid #334155',
+                width: '100%',
+                height: '100%',
+                minHeight: 0,
+                borderRadius: 10,
+                overflow: 'hidden',
+                border: '2px solid #334155',
+                background: '#090f1d',
+              }}
+            />
+
+            {status === 'loading' && (
+              <div
+                role="status"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(9, 15, 29, 0.85)',
+                  color: '#CBD5E1',
+                  fontSize: 15,
+                  borderRadius: 10,
+                }}
+              >
+                Loading Playtest Battlefield...
+              </div>
+            )}
+
+            {status === 'error' && (
+              <div
+                role="alert"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(127, 29, 29, 0.88)',
+                  color: '#FECACA',
+                  fontSize: 15,
+                  borderRadius: 10,
+                }}
+              >
+                Failed to initialize Playtest Phaser canvas.
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* Floating Cursor Ghost while dragging */}
+      {dragGesture?.active && (
+        <div
+          className="mfd-drag-ghost"
+          style={{ left: dragGesture.currentX, top: dragGesture.currentY }}
+          aria-hidden="true"
+        >
+          <img
+            src={dragGesture.spriteUrl}
+            alt={dragGesture.label}
+            width={64}
+            height={64}
+            className="mfd-pixel"
+            style={{ opacity: 0.92 }}
+          />
+        </div>
+      )}
+
+      {/* Floating Feedback Toast */}
+      {snapshot?.lastToast && (
+        <div
+          role="status"
+          className="mfd-toast-float"
+          style={{
+            top: 96,
+            border: `1px solid ${
+              snapshot.lastToast.kind === 'error'
+                ? '#f87171'
+                : snapshot.lastToast.kind === 'success'
+                  ? '#4ade80'
+                  : '#38bdf8'
+            }`,
+            background:
+              snapshot.lastToast.kind === 'error'
+                ? 'rgba(127, 29, 29, 0.92)'
+                : snapshot.lastToast.kind === 'success'
+                  ? 'rgba(20, 83, 45, 0.92)'
+                  : 'rgba(12, 74, 110, 0.92)',
+            color: '#F8FAFC',
+          }}
+        >
+          {snapshot.lastToast.message}
+        </div>
+      )}
+
+      {/* Terminal Victory / Defeat Overlay */}
+      {snapshot?.terminal && activeModal === null && (
+        <div className="mfd-modal-backdrop" role="dialog" aria-modal="true" aria-label="Playtest Result">
+          <div
+            className="mfd-modal"
+            style={{
+              maxWidth: 480,
+              textAlign: 'center',
+              borderColor: snapshot.terminal === 'victory' ? '#4ade80' : '#f87171',
+            }}
+          >
+            <h2
+              style={{
+                margin: '0 0 8px',
+                fontSize: 28,
+                color: snapshot.terminal === 'victory' ? '#4ADE80' : '#F87171',
               }}
             >
-              <strong style={{ fontSize: 15, color: '#F8FAFC' }}>
-                Thiết lập Playtest — Waves, Balance &amp; Log
-              </strong>
-              <button
-                type="button"
-                onClick={() => setIsPanelOpen(false)}
-                style={btnStyle(false, '#F87171')}
-              >
-                ✕ Đóng [Esc]
+              {snapshot.terminal === 'victory' ? 'VICTORY — Waves Cleared!' : 'DEFEAT — Base Breached!'}
+            </h2>
+            <p style={{ margin: '0 0 18px', fontSize: 13, color: '#E2E8F0' }}>
+              Elapsed: {snapshot.elapsedSeconds.toFixed(1)}s · Wave {waveNumber}/{snapshot.totalWaves} · Kills:{' '}
+              {snapshot.enemiesKilled}
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button type="button" className="mfd-btn mfd-btn-primary" onClick={handleReset}>
+                Restart Playtest
               </button>
+              <button type="button" className="mfd-btn mfd-btn-gold" onClick={() => setActiveModal('balance')}>
+                Open Balance Editor
+              </button>
+              <Link href="/" className="mfd-btn">
+                Main Menu
+              </Link>
             </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-              <button
-                type="button"
-                onClick={() => setActiveTab('play')}
-                style={btnStyle(activeTab === 'play', '#4ADE80')}
-              >
-                Play &amp; Cast
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('tune')}
-                style={btnStyle(activeTab === 'tune', '#38BDF8')}
-              >
-                Tune Balance
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('log')}
-                style={btnStyle(activeTab === 'log', '#FBBF24')}
-            >
-              Event Log ({snapshot?.eventLog.length ?? 0})
-            </button>
           </div>
+        </div>
+      )}
 
-          {activeTab === 'play' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {/* Selected Defender Card */}
-              <div
-                style={{
-                  padding: 10,
-                  borderRadius: 8,
-                  backgroundColor: '#0F172A',
-                  border: '1px solid #334155',
-                }}
-              >
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#94A3B8', marginBottom: 6 }}>
-                  SELECTED DEFENDER
+      {/* Modal 1: Live Balance Editor (Defenders, Enemies, Waves & Glove, JSON) */}
+      {activeModal === 'balance' && (
+        <div
+          className="mfd-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Playtest Balance Editor"
+          onClick={() => setActiveModal(null)}
+        >
+          <div
+            className="mfd-modal"
+            style={{ maxWidth: 820, display: 'flex', flexDirection: 'column', gap: 14 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <h2 style={{ margin: 0, fontSize: 20, color: '#4ADE80' }}>⚖ Live Game Balance Editor</h2>
+                  {hasSavedPreset && (
+                    <span className="mfd-badge mfd-badge-unlocked">Saved locally</span>
+                  )}
                 </div>
-                {selectedDefender ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong style={{ fontSize: 15 }}>
-                        {selectedDefender.name}{' '}
-                        <span style={{ fontSize: 12, color: '#38BDF8' }}>T{selectedDefender.tier}</span>
-                      </strong>
-                      <span style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'monospace' }}>
-                        R{selectedDefender.row} · C{selectedDefender.column}
-                      </span>
-                    </div>
-
-                    <div style={{ fontSize: 12 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <span>HP</span>
-                        <span style={{ fontFamily: 'monospace' }}>
-                          {Math.ceil(selectedDefender.hp)} / {selectedDefender.maxHp}
-                        </span>
-                      </div>
-                      <div style={{ height: 7, backgroundColor: '#1E293B', borderRadius: 4, overflow: 'hidden' }}>
-                        <div
-                          style={{
-                            width: `${
-                              selectedDefender.maxHp > 0
-                                ? Math.max(0, Math.min(100, (selectedDefender.hp / selectedDefender.maxHp) * 100))
-                                : 0
-                            }%`,
-                            height: '100%',
-                            backgroundColor: '#22C55E',
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {selectedDefender.shieldAmount > 0 && (
-                      <div style={{ fontSize: 12 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                          <span style={{ color: '#67E8F9' }}>Shield</span>
-                          <span style={{ fontFamily: 'monospace', color: '#67E8F9' }}>
-                            {Math.ceil(selectedDefender.shieldAmount)} / {selectedDefender.shieldMaxAmount}
-                          </span>
-                        </div>
-                        <div style={{ height: 6, backgroundColor: '#1E293B', borderRadius: 4, overflow: 'hidden' }}>
-                          <div
-                            style={{
-                              width: `${
-                                selectedDefender.shieldMaxAmount > 0
-                                  ? Math.max(
-                                      0,
-                                      Math.min(
-                                        100,
-                                        (selectedDefender.shieldAmount / selectedDefender.shieldMaxAmount) * 100,
-                                      ),
-                                    )
-                                  : 0
-                              }%`,
-                              height: '100%',
-                              backgroundColor:
-                                selectedDefender.definitionId === 'frost_guardian' ? '#22D3EE' : '#FBBF24',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedDefender.badges.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {selectedDefender.badges.map(b => (
-                          <span
-                            key={b.label}
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              padding: '2px 6px',
-                              borderRadius: 4,
-                              backgroundColor: '#1E293B',
-                              color: '#FDE047',
-                              border: '1px solid #475569',
-                            }}
-                          >
-                            {b.label}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div
-                      style={{
-                        padding: 8,
-                        borderRadius: 6,
-                        backgroundColor: '#1E293B',
-                        fontSize: 12,
-                      }}
-                    >
-                      <div style={{ fontWeight: 700, color: '#38BDF8' }}>{selectedDefender.abilityName}</div>
-                      <div style={{ color: '#CBD5E1', marginTop: 2 }}>{selectedDefender.abilitySummary}</div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button
-                        type="button"
-                        onClick={() => controller?.activateAbility(selectedDefender.id)}
-                        style={{ ...btnStyle(true, '#38BDF8'), flex: 1 }}
-                      >
-                        Cast Ability (1 Crystal) [Space]
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => controller?.removeDefender(selectedDefender.id)}
-                        style={{ ...btnStyle(false), borderColor: '#EF4444', color: '#FCA5A5' }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <p style={{ margin: 0, fontSize: 12, color: '#94A3B8', lineHeight: 1.5 }}>
-                    Click a Defender on the grid to inspect stats and cast its Special Ability. Drag one Defender onto
-                    another to Fuse, drag the top-bar Crystal Orb onto a Defender to cast, or right-click to remove.
-                  </p>
-                )}
-              </div>
-
-              {/* Enemy Wave Spawner */}
-              <div
-                style={{
-                  padding: 10,
-                  borderRadius: 8,
-                  backgroundColor: '#0F172A',
-                  border: '1px solid #334155',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                }}
-              >
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#94A3B8' }}>ENEMY WAVE SPAWNER</div>
-
-                {snapshot?.showAuxLanes && (
-                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span>Target Lane</span>
-                    <select
-                      value={spawnLane}
-                      onChange={e => setSpawnLane(Number(e.target.value))}
-                      style={{ ...inputStyle, width: 120 }}
-                    >
-                      {[0, 1, 2, 3, 4].map(lane => (
-                        <option key={lane} value={lane}>
-                          Lane {lane + 1} (R{lane})
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-
-                <div>
-                  <div style={{ fontSize: 11, color: '#94A3B8', marginBottom: 5 }}>Quick Single Spawn</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
-                    {(modMeta?.enemyMeta ?? []).map(enemy => (
-                      <button
-                        key={enemy.id}
-                        type="button"
-                        onClick={() => controller?.spawnEnemy(enemy.id, spawnLane)}
-                        style={{
-                          ...btnStyle(false),
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          textAlign: 'left',
-                        }}
-                      >
-                        <span>+ {enemy.name}</span>
-                        <span
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: 2,
-                            backgroundColor: hexColor(enemy.color),
-                          }}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    borderTop: '1px solid #1E293B',
-                    paddingTop: 8,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 700 }}>Wave Burst Sender</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 80px', gap: 6 }}>
-                    <label style={{ fontSize: 11, color: '#CBD5E1' }}>
-                      Enemy
-                      <select
-                        value={burstEnemyId}
-                        onChange={e => setBurstEnemyId(e.target.value)}
-                        style={{ ...inputStyle, marginTop: 2 }}
-                      >
-                        {(modMeta?.enemyMeta ?? []).map(e => (
-                          <option key={e.id} value={e.id}>
-                            {e.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label style={{ fontSize: 11, color: '#CBD5E1' }}>
-                      Count
-                      <input
-                        type="number"
-                        min={1}
-                        max={15}
-                        step={1}
-                        value={burstCount}
-                        onChange={e => setBurstCount(Number(e.target.value))}
-                        style={{ ...inputStyle, marginTop: 2 }}
-                      />
-                    </label>
-                    <label style={{ fontSize: 11, color: '#CBD5E1' }}>
-                      Interval (s)
-                      <input
-                        type="number"
-                        min={0.2}
-                        max={3.0}
-                        step={0.1}
-                        value={burstInterval}
-                        onChange={e => setBurstInterval(Number(e.target.value))}
-                        style={{ ...inputStyle, marginTop: 2 }}
-                      />
-                    </label>
-                  </div>
-                  <button type="button" onClick={handleSendWaveBurst} style={btnStyle(true, '#F87171')}>
-                    Send Wave ({Math.max(1, Math.min(15, Math.round(burstCount)))}× on Lane {spawnLane + 1})
-                  </button>
+                <div style={{ fontSize: 11, color: '#94A3B8' }}>
+                  Auto-saved in browser localStorage across reloads. Edit stats, Waves, Cooldowns &amp; Apply &amp; Restart.
                 </div>
               </div>
+              <button type="button" className="mfd-btn" style={{ padding: '6px 12px' }} onClick={() => setActiveModal(null)}>
+                Close [Esc]
+              </button>
             </div>
-          )}
 
-          {activeTab === 'tune' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                <button
-                  type="button"
-                  onClick={() => setTuneKind('defender')}
-                  style={btnStyle(tuneKind === 'defender', '#4ADE80')}
-                >
-                  Defenders (12)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTuneKind('enemy')}
-                  style={btnStyle(tuneKind === 'enemy', '#F87171')}
-                >
-                  Enemies (4)
-                </button>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+              <button
+                type="button"
+                className={`mfd-btn ${balanceTab === 'defenders' ? 'mfd-btn-primary' : ''}`}
+                style={{ padding: '7px 10px', fontSize: 12 }}
+                onClick={() => setBalanceTab('defenders')}
+              >
+                Defenders (20)
+              </button>
+              <button
+                type="button"
+                className={`mfd-btn ${balanceTab === 'enemies' ? 'mfd-btn-danger' : ''}`}
+                style={{ padding: '7px 10px', fontSize: 12 }}
+                onClick={() => setBalanceTab('enemies')}
+              >
+                Enemies (4)
+              </button>
+              <button
+                type="button"
+                className={`mfd-btn ${balanceTab === 'waves' ? 'mfd-btn-crystal' : ''}`}
+                style={{ padding: '7px 10px', fontSize: 12 }}
+                onClick={() => setBalanceTab('waves')}
+              >
+                Waves &amp; Glove
+              </button>
+              <button
+                type="button"
+                className={`mfd-btn ${balanceTab === 'json' ? 'mfd-btn-gold' : ''}`}
+                style={{ padding: '7px 10px', fontSize: 12 }}
+                onClick={() => setBalanceTab('json')}
+              >
+                JSON Import/Export
+              </button>
+            </div>
 
-              {tuneKind === 'defender' ? (
-                <>
-                  <label style={{ fontSize: 12, color: '#CBD5E1' }}>
-                    Defender Unit
+            {balanceTab === 'defenders' && editedDefender && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#1e293b', padding: 10, borderRadius: 8 }}>
+                  <img
+                    src={defenderSpriteUrl(editedDefender.id)}
+                    alt={editedDefenderMeta?.name ?? editedDefender.id}
+                    width={48}
+                    height={48}
+                    className="mfd-pixel"
+                  />
+                  <div style={{ flex: 1 }}>
                     <select
                       value={tuneDefenderId}
                       onChange={e => setTuneDefenderId(e.target.value)}
-                      style={{ ...inputStyle, marginTop: 4 }}
+                      style={{ ...inputStyle, fontWeight: 700, fontSize: 13 }}
                     >
-                      {(modMeta?.defenderMeta ?? []).map(d => (
-                        <option key={d.id} value={d.id}>
-                          {d.name} (T{d.tier})
-                        </option>
-                      ))}
+                      <optgroup label="Base Defenders (Tier-1)">
+                        {baseDefenders.map(d => (
+                          <option key={d.id} value={d.id}>
+                            {d.name} (T1)
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Fusion Defenders (Tier-2)">
+                        {fusionDefenders.map(d => (
+                          <option key={d.id} value={d.id}>
+                            {d.name} (T2)
+                          </option>
+                        ))}
+                      </optgroup>
                     </select>
-                  </label>
-                  {editedDefender && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Max HP
-                        <input
-                          type="number"
-                          min={1}
-                          step={10}
-                          value={editedDefender.maxHp}
-                          onChange={e => updateDefenderField('maxHp', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Damage
-                        <input
-                          type="number"
-                          min={0}
-                          step={5}
-                          value={editedDefender.damage}
-                          onChange={e => updateDefenderField('damage', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Attack Speed
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.1}
-                          value={editedDefender.attackSpeed}
-                          onChange={e => updateDefenderField('attackSpeed', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Attack Range
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.5}
-                          value={editedDefender.attackRange}
-                          onChange={e => updateDefenderField('attackRange', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Armor
-                        <input
-                          type="number"
-                          min={0}
-                          step={1}
-                          value={editedDefender.armor}
-                          onChange={e => updateDefenderField('armor', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Summon Energy Cost
-                        <input
-                          type="number"
-                          min={0}
-                          step={25}
-                          value={editedDefender.summonEnergyCost}
-                          onChange={e => updateDefenderField('summonEnergyCost', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
+                    <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 4 }}>
+                      <strong style={{ color: '#38BDF8' }}>{editedDefenderMeta?.abilityName}:</strong>{' '}
+                      {editedDefenderMeta?.abilitySummary} ·{' '}
+                      <strong style={{ color: '#FACC15' }}>
+                        DPS: {(editedDefender.damage * editedDefender.attackSpeed).toFixed(1)}
+                      </strong>
                     </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <label style={{ fontSize: 12, color: '#CBD5E1' }}>
-                    Enemy Unit
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Max HP
+                    <input
+                      type="number"
+                      min={1}
+                      step={10}
+                      value={editedDefender.maxHp}
+                      onChange={e => updateDefenderField('maxHp', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Damage
+                    <input
+                      type="number"
+                      min={0}
+                      step={5}
+                      value={editedDefender.damage}
+                      onChange={e => updateDefenderField('damage', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Attack Speed (/s)
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.1}
+                      value={editedDefender.attackSpeed}
+                      onChange={e => updateDefenderField('attackSpeed', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Attack Range (cells)
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      value={editedDefender.attackRange}
+                      onChange={e => updateDefenderField('attackRange', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Armor
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={editedDefender.armor}
+                      onChange={e => updateDefenderField('armor', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#FDE047' }}>
+                    Summon Cost (EN)
+                    <input
+                      type="number"
+                      min={0}
+                      step={25}
+                      value={editedDefender.summonEnergyCost}
+                      onChange={e => updateDefenderField('summonEnergyCost', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#38BDF8' }}>
+                    Summon Cooldown (s)
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      value={editedDefender.summonCooldownSeconds ?? 0}
+                      onChange={e => updateDefenderField('summonCooldownSeconds', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {balanceTab === 'enemies' && editedEnemy && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#1e293b', padding: 10, borderRadius: 8 }}>
+                  <img
+                    src={enemySpriteUrl(editedEnemy.id)}
+                    alt={editedEnemyMeta?.name ?? editedEnemy.id}
+                    width={48}
+                    height={48}
+                    className="mfd-pixel"
+                  />
+                  <div style={{ flex: 1 }}>
                     <select
                       value={tuneEnemyId}
                       onChange={e => setTuneEnemyId(e.target.value)}
-                      style={{ ...inputStyle, marginTop: 4 }}
+                      style={{ ...inputStyle, fontWeight: 700, fontSize: 13 }}
                     >
                       {(modMeta?.enemyMeta ?? []).map(e => (
                         <option key={e.id} value={e.id}>
@@ -1343,198 +1619,665 @@ export function PlaytestHost() {
                         </option>
                       ))}
                     </select>
-                  </label>
-                  {editedEnemy && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Max HP
-                        <input
-                          type="number"
-                          min={1}
-                          step={10}
-                          value={editedEnemy.maxHp}
-                          onChange={e => updateEnemyField('maxHp', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Move Speed
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.05}
-                          value={editedEnemy.moveSpeed}
-                          onChange={e => updateEnemyField('moveSpeed', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Damage
-                        <input
-                          type="number"
-                          min={0}
-                          step={5}
-                          value={editedEnemy.damage}
-                          onChange={e => updateEnemyField('damage', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Attack Speed
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.1}
-                          value={editedEnemy.attackSpeed}
-                          onChange={e => updateEnemyField('attackSpeed', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Attack Range
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.5}
-                          value={editedEnemy.attackRange}
-                          onChange={e => updateEnemyField('attackRange', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Armor
-                        <input
-                          type="number"
-                          min={0}
-                          step={1}
-                          value={editedEnemy.armor}
-                          onChange={e => updateEnemyField('armor', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Fire Resistance (%)
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          step={5}
-                          value={editedEnemy.fireResistancePct}
-                          onChange={e => updateEnemyField('fireResistancePct', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Freeze Resistance (%)
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          step={5}
-                          value={editedEnemy.freezeResistancePct}
-                          onChange={e => updateEnemyField('freezeResistancePct', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Energy Reward
-                        <input
-                          type="number"
-                          min={0}
-                          step={25}
-                          value={editedEnemy.energyReward}
-                          onChange={e => updateEnemyField('energyReward', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label style={{ fontSize: 11, color: '#94A3B8' }}>
-                        Crystal Reward
-                        <input
-                          type="number"
-                          min={0}
-                          step={1}
-                          value={editedEnemy.crystalReward}
-                          onChange={e => updateEnemyField('crystalReward', e.target.value)}
-                          style={{ ...inputStyle, marginTop: 2 }}
-                        />
-                      </label>
-                      <label
-                        style={{
-                          gridColumn: '1 / -1',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          fontSize: 12,
-                          color: '#CBD5E1',
-                          marginTop: 2,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={editedEnemy.freezeImmune}
-                          onChange={e => updateEnemyFreezeImmune(e.target.checked)}
-                        />
-                        Freeze Immune
-                      </label>
+                    <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 4 }}>
+                      DPS: {(editedEnemy.damage * editedEnemy.attackSpeed).toFixed(1)} · Speed: {editedEnemy.moveSpeed} cells/s · Reward:{' '}
+                      {editedEnemy.energyReward} EN / {editedEnemy.crystalReward} CR
                     </div>
-                  )}
-                </>
-              )}
+                  </div>
+                </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-                <button type="button" onClick={handleApplyAndRestart} style={btnStyle(true, '#4ADE80')}>
-                  Apply &amp; Restart Playtest
-                </button>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  <button type="button" onClick={handleResetDefaultPreset} style={btnStyle(false)}>
-                    Reset Default Preset
-                  </button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Max HP
+                    <input
+                      type="number"
+                      min={1}
+                      step={10}
+                      value={editedEnemy.maxHp}
+                      onChange={e => updateEnemyField('maxHp', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Move Speed (cells/s)
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.05}
+                      value={editedEnemy.moveSpeed}
+                      onChange={e => updateEnemyField('moveSpeed', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Damage
+                    <input
+                      type="number"
+                      min={0}
+                      step={5}
+                      value={editedEnemy.damage}
+                      onChange={e => updateEnemyField('damage', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Attack Speed (/s)
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.1}
+                      value={editedEnemy.attackSpeed}
+                      onChange={e => updateEnemyField('attackSpeed', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Attack Range (cells)
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      value={editedEnemy.attackRange}
+                      onChange={e => updateEnemyField('attackRange', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Armor
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={editedEnemy.armor}
+                      onChange={e => updateEnemyField('armor', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#FB923C' }}>
+                    Fire Resist (%)
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={editedEnemy.fireResistancePct}
+                      onChange={e => updateEnemyField('fireResistancePct', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#7DD3FC' }}>
+                    Freeze Resist (%)
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={editedEnemy.freezeResistancePct}
+                      onChange={e => updateEnemyField('freezeResistancePct', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#FDE047' }}>
+                    Energy Drop
+                    <input
+                      type="number"
+                      min={0}
+                      step={25}
+                      value={editedEnemy.energyReward}
+                      onChange={e => updateEnemyField('energyReward', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#38BDF8' }}>
+                    Crystal Drop
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={editedEnemy.crystalReward}
+                      onChange={e => updateEnemyField('crystalReward', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#E2E8F0', paddingTop: 14 }}>
+                    <input
+                      type="checkbox"
+                      checked={editedEnemy.freezeImmune}
+                      onChange={e => updateEnemyFreezeImmune(e.target.checked)}
+                    />
+                    Freeze Immune
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {balanceTab === 'waves' && draftPreset && editedWave && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, background: '#1e293b', padding: 10, borderRadius: 8 }}>
+                  <label style={{ fontSize: 11, color: '#38BDF8' }}>
+                    Fusion Glove Cooldown (s)
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={draftPreset.fusionGloveCooldownSeconds ?? 0}
+                      onChange={e => updateGloveCooldown(e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <div>
+                    <div style={{ fontSize: 11, color: '#BAE6FD', marginBottom: 3 }}>Wave Crystal Rewards (W1 – W5)</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+                      {draftPreset.waves.map((w, idx) => (
+                        <label key={w.id} style={{ fontSize: 10, color: '#94A3B8', textAlign: 'center' }}>
+                          W{idx + 1}
+                          <input
+                            type="number"
+                            min={0}
+                            max={5}
+                            step={1}
+                            value={draftPreset.waveCrystals[idx] ?? 1}
+                            onChange={e => updateWaveCrystal(idx, e.target.value)}
+                            style={{ ...inputStyle, marginTop: 2, textAlign: 'center' }}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wave selector tabs */}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {draftPreset.waves.map((w, idx) => (
+                    <button
+                      key={w.id}
+                      type="button"
+                      className={`mfd-btn ${tuneWaveIdx === idx ? 'mfd-btn-crystal' : ''}`}
+                      style={{ padding: '5px 10px', fontSize: 12 }}
+                      onClick={() => setTuneWaveIdx(idx)}
+                    >
+                      Wave {idx + 1} ({w.spawnGroups.reduce((acc, g) => acc + g.count, 0)} E)
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Initial Delay (s)
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      value={editedWave.initialDelaySeconds}
+                      onChange={e => updateWaveTiming(tuneWaveIdx, 'initialDelaySeconds', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                    Delay Before Next Wave (s)
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      value={editedWave.delayBeforeNextWaveSeconds}
+                      onChange={e => updateWaveTiming(tuneWaveIdx, 'delayBeforeNextWaveSeconds', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {editedWave.spawnGroups.map((grp, gIdx) => (
+                    <div
+                      key={gIdx}
+                      style={{
+                        background: '#1e293b',
+                        border: '1px solid #334155',
+                        borderRadius: 8,
+                        padding: 8,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}
+                    >
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 0.7fr 0.8fr 0.8fr auto', gap: 6, alignItems: 'end' }}>
+                        <label style={{ fontSize: 10, color: '#94A3B8' }}>
+                          Enemy
+                          <select
+                            value={grp.enemyId}
+                            onChange={e => updateSpawnGroupField(tuneWaveIdx, gIdx, g => { g.enemyId = e.target.value; })}
+                            style={{ ...inputStyle, marginTop: 2 }}
+                          >
+                            {ALL_ENEMY_IDS.map(id => (
+                              <option key={id} value={id}>
+                                {id.toUpperCase()}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label style={{ fontSize: 10, color: '#94A3B8' }}>
+                          Count
+                          <input
+                            type="number"
+                            min={1}
+                            max={40}
+                            step={1}
+                            value={grp.count}
+                            onChange={e => {
+                              const val = cloneNumberInput(e.target.value, 1, 40);
+                              if (val !== null) updateSpawnGroupField(tuneWaveIdx, gIdx, g => { g.count = Math.round(val); });
+                            }}
+                            style={{ ...inputStyle, marginTop: 2 }}
+                          />
+                        </label>
+                        <label style={{ fontSize: 10, color: '#94A3B8' }}>
+                          Start (s)
+                          <input
+                            type="number"
+                            min={0}
+                            step={0.5}
+                            value={grp.startOffsetSeconds}
+                            onChange={e => {
+                              const val = cloneNumberInput(e.target.value, 0);
+                              if (val !== null) updateSpawnGroupField(tuneWaveIdx, gIdx, g => { g.startOffsetSeconds = val; });
+                            }}
+                            style={{ ...inputStyle, marginTop: 2 }}
+                          />
+                        </label>
+                        <label style={{ fontSize: 10, color: '#94A3B8' }}>
+                          Interval (s)
+                          <input
+                            type="number"
+                            min={0.2}
+                            step={0.1}
+                            value={grp.intervalSeconds}
+                            onChange={e => {
+                              const val = cloneNumberInput(e.target.value, 0.2);
+                              if (val !== null) updateSpawnGroupField(tuneWaveIdx, gIdx, g => { g.intervalSeconds = val; });
+                            }}
+                            style={{ ...inputStyle, marginTop: 2 }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          disabled={editedWave.spawnGroups.length <= 1}
+                          onClick={() => removeSpawnGroup(tuneWaveIdx, gIdx)}
+                          style={{ ...smallBtnStyle(false), color: '#FCA5A5', padding: '5px 8px' }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 10, color: '#94A3B8' }}>Lanes:</span>
+                        {[0, 1, 2, 3, 4].map(lane => {
+                          const enabled = grp.allowedLanes.includes(lane);
+                          return (
+                            <button
+                              key={lane}
+                              type="button"
+                              onClick={() =>
+                                updateSpawnGroupField(tuneWaveIdx, gIdx, g => {
+                                  if (enabled) {
+                                    if (g.allowedLanes.length > 1) {
+                                      g.allowedLanes = g.allowedLanes.filter(l => l !== lane);
+                                    }
+                                  } else {
+                                    g.allowedLanes = [...g.allowedLanes, lane].sort((a, b) => a - b);
+                                  }
+                                })
+                              }
+                              style={smallBtnStyle(enabled, '#4ade80')}
+                            >
+                              L{lane + 1}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                   <button
                     type="button"
-                    onClick={() => void handleCopyTunedJson()}
-                    style={btnStyle(copiedJson, '#38BDF8')}
+                    className="mfd-btn"
+                    style={{ padding: '6px 10px', fontSize: 12 }}
+                    onClick={() => addSpawnGroup(tuneWaveIdx)}
                   >
-                    {copiedJson ? 'Copied!' : 'Copy Tuned JSON'}
+                    + Add Spawn Group to Wave {tuneWaveIdx + 1}
                   </button>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'log' && (
-            <div
-              style={{
-                maxHeight: 480,
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                paddingRight: 2,
-              }}
-            >
+            {balanceTab === 'json' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <textarea
+                  value={jsonInputText}
+                  onChange={e => setJsonInputText(e.target.value)}
+                  rows={14}
+                  style={{
+                    ...inputStyle,
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    resize: 'vertical',
+                  }}
+                />
+                {jsonError && <div style={{ fontSize: 12, color: '#F87171' }}>{jsonError}</div>}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    className="mfd-btn mfd-btn-crystal"
+                    style={{ flex: 1, padding: '7px 12px', fontSize: 12 }}
+                    onClick={handleImportJson}
+                  >
+                    Import JSON &amp; Restart
+                  </button>
+                  <button
+                    type="button"
+                    className="mfd-btn"
+                    style={{ flex: 1, padding: '7px 12px', fontSize: 12 }}
+                    onClick={() => void handleCopyTunedJson()}
+                  >
+                    {copiedJson ? 'Copied Tuned JSON!' : 'Copy Tuned JSON'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8, paddingTop: 8, borderTop: '1px solid #334155', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="mfd-btn mfd-btn-primary"
+                style={{ flex: 1, padding: '8px 14px', fontSize: 13 }}
+                onClick={handleApplyAndRestart}
+              >
+                Apply &amp; Restart Playtest
+              </button>
+              <button
+                type="button"
+                className="mfd-btn"
+                style={{ padding: '8px 14px', fontSize: 13 }}
+                onClick={handleResetCampaignPresetClick}
+              >
+                Reset Campaign Defaults
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Warning Dialog before wiping saved localStorage preset */}
+      {showResetConfirm && (
+        <div
+          className="mfd-modal-backdrop"
+          role="alertdialog"
+          aria-modal="true"
+          aria-label="Confirm Reset Campaign Defaults"
+          style={{ zIndex: 80 }}
+          onClick={() => setShowResetConfirm(false)}
+        >
+          <div
+            className="mfd-modal"
+            style={{ maxWidth: 460, borderColor: '#facc15', display: 'flex', flexDirection: 'column', gap: 12 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{ margin: 0, fontSize: 18, color: '#FACC15' }}>
+              ⚠ Reset Saved Balance Preset?
+            </h3>
+            <p style={{ margin: 0, fontSize: 13, color: '#E2E8F0', lineHeight: 1.5 }}>
+              A customized balance preset is currently saved in your browser (<code style={{ color: '#38BDF8' }}>localStorage</code>).
+              Resetting to Campaign defaults will permanently delete your saved changes and restart the battlefield.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+              <button
+                type="button"
+                className="mfd-btn"
+                style={{ padding: '7px 14px', fontSize: 12 }}
+                onClick={() => setShowResetConfirm(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="mfd-btn mfd-btn-danger"
+                style={{ padding: '7px 14px', fontSize: 12 }}
+                onClick={executeResetCampaignPreset}
+              >
+                Delete Saved &amp; Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 2: Spawn Enemies / Place Tier-2 Fusion Defenders / Inspect Selected */}
+      {activeModal === 'spawn' && (
+        <div
+          className="mfd-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Spawn Enemies and Tier-2 Units"
+          onClick={() => setActiveModal(null)}
+        >
+          <div
+            className="mfd-modal"
+            style={{ maxWidth: 820, display: 'flex', flexDirection: 'column', gap: 14 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, fontSize: 20, color: '#38BDF8' }}>👾 Spawn Enemies, Tier-2 Units &amp; Recipes</h2>
+              <button type="button" className="mfd-btn" style={{ padding: '6px 12px' }} onClick={() => setActiveModal(null)}>
+                Close [Esc]
+              </button>
+            </div>
+
+            {/* Selected Defender Inspector */}
+            {selectedDefender && (
+              <div style={{ background: '#1e293b', border: '1px solid #38bdf8', borderRadius: 8, padding: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <img src={defenderSpriteUrl(selectedDefender.definitionId)} alt={selectedDefender.name} width={32} height={32} className="mfd-pixel" />
+                    <strong style={{ fontSize: 14 }}>{selectedDefender.name} (T{selectedDefender.tier})</strong>
+                    <span style={{ fontSize: 11, color: '#94A3B8' }}>
+                      R{selectedDefender.row}·C{selectedDefender.column} · HP {Math.ceil(selectedDefender.hp)}/{selectedDefender.maxHp}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      type="button"
+                      className="mfd-btn mfd-btn-crystal"
+                      style={{ padding: '4px 10px', fontSize: 11 }}
+                      onClick={() => controller?.activateAbility(selectedDefender.id)}
+                    >
+                      Cast {selectedDefender.abilityName}
+                    </button>
+                    <button
+                      type="button"
+                      className="mfd-btn mfd-btn-danger"
+                      style={{ padding: '4px 10px', fontSize: 11 }}
+                      onClick={() => controller?.removeDefender(selectedDefender.id)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: '#CBD5E1' }}>{selectedDefender.abilitySummary}</div>
+              </div>
+            )}
+
+            {/* Quick Place All 15 Tier-2 Fusion Defenders (Free Sandbox) */}
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#FACC15', marginBottom: 6 }}>
+                FREE PLACE 15 FUSION DEFENDERS (TIER-2) — Click one to place directly on grid:
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 6 }}>
+                {fusionDefenders.map(def => (
+                  <button
+                    key={def.id}
+                    type="button"
+                    className="mfd-btn"
+                    style={{
+                      padding: '5px 8px',
+                      justifyContent: 'flex-start',
+                      fontSize: 11,
+                      background: '#0f172a',
+                      borderColor: tool.kind === 'place' && tool.definitionId === def.id ? '#facc15' : '#334155',
+                    }}
+                    title={def.abilitySummary}
+                    onClick={() => {
+                      setPlacementMode('free');
+                      setTool({ kind: 'place', definitionId: def.id, freeSandbox: true });
+                      setActiveModal(null);
+                    }}
+                  >
+                    <img src={defenderSpriteUrl(def.id)} alt={def.name} width={26} height={26} className="mfd-pixel" />
+                    <span style={{ textAlign: 'left', lineHeight: 1.15 }}>
+                      <span style={{ display: 'block', color: '#F8FAFC' }}>{def.name}</span>
+                      <span style={{ fontSize: 9, color: '#38BDF8' }}>{def.abilityName}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Enemy Spawner */}
+            <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, padding: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <strong style={{ fontSize: 12, color: '#F87171' }}>ENEMY SPAWNER</strong>
+                {snapshot?.showAuxLanes && (
+                  <label style={{ fontSize: 11, color: '#CBD5E1', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    Target Lane:
+                    <select
+                      value={spawnLane}
+                      onChange={e => setSpawnLane(Number(e.target.value))}
+                      style={{ ...inputStyle, width: 110 }}
+                    >
+                      {[0, 1, 2, 3, 4].map(l => (
+                        <option key={l} value={l}>
+                          Lane {l + 1} (R{l})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 10 }}>
+                {(modMeta?.enemyMeta ?? []).map(enemy => (
+                  <button
+                    key={enemy.id}
+                    type="button"
+                    className="mfd-btn"
+                    style={{ padding: '6px 8px', fontSize: 11, background: '#0f172a' }}
+                    onClick={() => controller?.spawnEnemy(enemy.id, spawnLane)}
+                  >
+                    <img src={enemySpriteUrl(enemy.id)} alt={enemy.name} width={24} height={24} className="mfd-pixel" />
+                    <span>+ {enemy.name}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 90px auto', gap: 8, alignItems: 'end' }}>
+                <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                  Burst Enemy
+                  <select
+                    value={burstEnemyId}
+                    onChange={e => setBurstEnemyId(e.target.value)}
+                    style={{ ...inputStyle, marginTop: 2 }}
+                  >
+                    {(modMeta?.enemyMeta ?? []).map(e => (
+                      <option key={e.id} value={e.id}>
+                        {e.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                  Count
+                  <input
+                    type="number"
+                    min={1}
+                    max={15}
+                    step={1}
+                    value={burstCount}
+                    onChange={e => setBurstCount(Number(e.target.value))}
+                    style={{ ...inputStyle, marginTop: 2 }}
+                  />
+                </label>
+                <label style={{ fontSize: 11, color: '#CBD5E1' }}>
+                  Interval (s)
+                  <input
+                    type="number"
+                    min={0.2}
+                    max={3.0}
+                    step={0.1}
+                    value={burstInterval}
+                    onChange={e => setBurstInterval(Number(e.target.value))}
+                    style={{ ...inputStyle, marginTop: 2 }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="mfd-btn mfd-btn-danger"
+                  style={{ padding: '6px 12px', fontSize: 12 }}
+                  onClick={handleSendWaveBurst}
+                >
+                  Send Burst (L{spawnLane + 1})
+                </button>
+              </div>
+            </div>
+
+            {/* Fusion Recipes Reference */}
+            {modMeta && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#FACC15', marginRight: 4 }}>15 FUSION RECIPES:</span>
+                {modMeta.fusionMeta.map(r => (
+                  <span key={r.id} className="mfd-badge" style={{ fontSize: 10 }}>
+                    {r.label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Event Log */}
+      {activeModal === 'log' && (
+        <div
+          className="mfd-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Playtest Event Log"
+          onClick={() => setActiveModal(null)}
+        >
+          <div
+            className="mfd-modal"
+            style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 10 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, fontSize: 18, color: '#FACC15' }}>📜 Event Log ({snapshot?.eventLog.length ?? 0})</h2>
+              <button type="button" className="mfd-btn" style={{ padding: '6px 12px' }} onClick={() => setActiveModal(null)}>
+                Close [Esc]
+              </button>
+            </div>
+            <div style={{ maxHeight: 420, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
               {snapshot && snapshot.eventLog.length > 0 ? (
                 [...snapshot.eventLog].reverse().map(entry => {
                   const statusColor =
-                    entry.status === 'applied'
-                      ? '#4ADE80'
-                      : entry.status === 'rejected'
-                        ? '#FB7185'
-                        : '#94A3B8';
+                    entry.status === 'applied' ? '#4ADE80' : entry.status === 'rejected' ? '#FB7185' : '#94A3B8';
                   return (
                     <div
                       key={entry.id}
                       style={{
                         padding: '6px 8px',
                         borderRadius: 6,
-                        backgroundColor: '#0F172A',
+                        backgroundColor: '#1e293b',
                         borderLeft: `3px solid ${statusColor}`,
                         fontSize: 12,
-                        lineHeight: 1.4,
                       }}
                     >
-                      <span style={{ fontFamily: 'monospace', color: '#64748B', marginRight: 6 }}>
-                        [T{entry.tick}]
-                      </span>
+                      <span style={{ color: '#64748B', marginRight: 6 }}>[T{entry.tick}]</span>
                       <span style={{ color: statusColor, fontWeight: 700, marginRight: 6 }}>
                         {entry.category.toUpperCase()}
                       </span>
@@ -1546,40 +2289,9 @@ export function PlaytestHost() {
                 <p style={{ margin: 0, fontSize: 12, color: '#94A3B8' }}>No events recorded yet.</p>
               )}
             </div>
-          )}
-
-            {modMeta && (
-              <div
-                style={{
-                  paddingTop: 8,
-                  borderTop: '1px solid #334155',
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 6,
-                  alignItems: 'center',
-                }}
-              >
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#FBBF24' }}>7 FUSION RECIPES:</span>
-                {modMeta.fusionMeta.map(recipe => (
-                  <span
-                    key={recipe.id}
-                    style={{
-                      fontSize: 11,
-                      padding: '2px 7px',
-                      borderRadius: 999,
-                      backgroundColor: '#0F172A',
-                      border: '1px solid #334155',
-                      color: '#CBD5E1',
-                    }}
-                  >
-                    {recipe.label}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }

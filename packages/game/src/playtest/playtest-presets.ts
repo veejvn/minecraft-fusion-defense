@@ -45,6 +45,7 @@ export interface PlaytestDefenderConfig {
   id: string;
   tier: 1 | 2;
   summonEnergyCost: number;
+  summonCooldownSeconds?: number;
   maxHp: number;
   damage: number;
   attackSpeed: number;
@@ -73,6 +74,7 @@ export interface PlaytestEnemyConfig {
 /** Complete test-only dataset driving a PlaytestController session. */
 export interface PlaytestPresetConfig {
   seed: number;
+  fusionGloveCooldownSeconds?: number;
   defenders: PlaytestDefenderConfig[];
   enemies: PlaytestEnemyConfig[];
   abilities: AbilityDefinition[];
@@ -1201,6 +1203,7 @@ export function buildRuntimeInputsFromPreset(
       id: defender.id,
       classification: defender.tier === 1 ? 'base' : 'fusion',
       summonEnergyCost: defender.summonEnergyCost,
+      summonCooldownSeconds: defender.summonCooldownSeconds ?? 0,
       unlocked: true,
     })),
     enemies: [
@@ -1230,6 +1233,7 @@ export function buildRuntimeInputsFromPreset(
     },
     enableRandomEnergyItems: false,
     enableRandomCrystalItems: false,
+    fusionGloveCooldownSeconds: preset.fusionGloveCooldownSeconds ?? 0,
   };
 
   const combatInput: CombatSessionInput = {
@@ -1289,11 +1293,23 @@ export function buildRuntimeInputsFromPreset(
           seed: preset.seed,
           waves: preset.waves.map(wave => ({
             ...wave,
-            spawnGroups: wave.spawnGroups.map(group => ({
-              ...group,
-              allowedLanes: allowMultiLaneWaves ? [0, 1, 2, 3, 4] : [0],
-              laneMode: allowMultiLaneWaves ? 'sequential' : 'fixed',
-            })),
+            spawnGroups: wave.spawnGroups.map(group => {
+              if (!allowMultiLaneWaves) {
+                return {
+                  ...group,
+                  allowedLanes: [0],
+                  laneMode: 'fixed',
+                };
+              }
+              const hasCustomLanes = group.allowedLanes.length > 1 || group.allowedLanes[0] !== 0;
+              return hasCustomLanes
+                ? { ...group }
+                : {
+                    ...group,
+                    allowedLanes: [0, 1, 2, 3, 4],
+                    laneMode: 'sequential',
+                  };
+            }),
           })),
         };
 

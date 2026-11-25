@@ -1,81 +1,46 @@
 import * as Phaser from 'phaser';
-import type { Cell } from '../battlefield/grid';
-import { EFFECT_SPRITE_ASSETS } from '../assets/asset-manifest';
+import {
+  DEFENDER_SPRITE_ASSETS,
+  EFFECT_SPRITE_ASSETS,
+  ENEMY_SPRITE_ASSETS,
+  ITEM_SPRITE_ASSETS,
+  MAP_TILE_ASSETS,
+  applyNearestFilterToManifestTextures,
+  preloadGameAssets,
+} from '../assets/asset-manifest';
 import {
   BasicAttackVisualTracker,
   renderBasicAttackEffects,
 } from '../assets/basic-attack-vfx';
+import type { Cell } from '../battlefield/grid';
+import type {
+  PlaytestController,
+  PlaytestDefenderView,
+  PlaytestHudSnapshot,
+  PlaytestItemView,
+} from '../playtest/playtest-controller';
 import {
   PLAYTEST_PIXEL_TEXTURE_KEYS,
   registerPlaytestPixelTextures,
 } from '../playtest/procedural-pixel-art';
-import type {
-  PlaytestController,
-  PlaytestDefenderView,
-  PlaytestEnemyView,
-  PlaytestHudSnapshot,
-  PlaytestItemView,
-} from '../playtest/playtest-controller';
 
 /** Active canvas pointer tool controlled by the Playtest UI. */
 export type PlaytestTool =
   | { readonly kind: 'select' }
   | { readonly kind: 'place'; readonly definitionId: string; readonly freeSandbox: boolean }
   | { readonly kind: 'crystal' }
-  | { readonly kind: 'remove' };
+  | { readonly kind: 'glove'; readonly pickedDefenderId?: string }
+  | { readonly kind: 'shovel' };
 
-/** Visual rendering mode for comparing procedural pixel art vs block placeholders. */
-export type PlaytestVisualStyle = 'ai-64' | 'pixel-code' | 'blocks';
+/** External HUD drag-and-drop payload forwarded into PlaytestScene. */
+export type PlaytestExternalDragPayload =
+  | { readonly kind: 'place'; readonly definitionId: string; readonly freeSandbox: boolean }
+  | { readonly kind: 'crystal' }
+  | { readonly kind: 'glove' }
+  | { readonly kind: 'shovel' };
 
-interface AiSpriteEntry {
-  readonly key: string;
-  readonly url: string;
-  readonly size1Lane: number;
-  readonly size5Lane: number;
-  readonly floating?: boolean;
-}
-
-const PLAYTEST_AI_GRASS_ASSET = {
-  key: 'mfd-ai64-grass',
-  url: '/playtest-preview/ai-grassland-tile-64.png',
-} as const;
-
-const PLAYTEST_AI_DEFENDER_ASSETS: Readonly<Record<string, AiSpriteEntry>> = {
-  iron_golem: { key: 'mfd-ai64-iron-golem', url: '/playtest-preview/ai-iron-golem-64.png', size1Lane: 104, size5Lane: 74 },
-  snow_golem: { key: 'mfd-ai64-snow-golem', url: '/playtest-preview/ai-snow-golem-64.png', size1Lane: 96, size5Lane: 68 },
-  skeleton: { key: 'mfd-ai64-skeleton', url: '/playtest-preview/ai-skeleton-64.png', size1Lane: 96, size5Lane: 68 },
-  wolf: { key: 'mfd-ai64-wolf', url: '/playtest-preview/ai-wolf-64.png', size1Lane: 92, size5Lane: 64 },
-  blaze: { key: 'mfd-ai64-blaze', url: '/playtest-preview/ai-blaze-64.png', size1Lane: 96, size5Lane: 68, floating: true },
-  skeleton_sniper: { key: 'mfd-def-skeleton_sniper', url: '/assets/sprites/defenders/skeleton_sniper.png', size1Lane: 98, size5Lane: 70 },
-  steel_guardian: { key: 'mfd-def-steel_guardian', url: '/assets/sprites/defenders/steel_guardian.png', size1Lane: 108, size5Lane: 76 },
-  iron_ranger: { key: 'mfd-def-iron_ranger', url: '/assets/sprites/defenders/iron_ranger.png', size1Lane: 98, size5Lane: 70 },
-  ice_golem: { key: 'mfd-def-ice_golem', url: '/assets/sprites/defenders/ice_golem.png', size1Lane: 100, size5Lane: 72 },
-  frost_guardian: { key: 'mfd-def-frost_guardian', url: '/assets/sprites/defenders/frost_guardian.png', size1Lane: 106, size5Lane: 74 },
-  frostbite_ranger: { key: 'mfd-def-frostbite_ranger', url: '/assets/sprites/defenders/frostbite_ranger.png', size1Lane: 98, size5Lane: 70 },
-  alpha_wolf: { key: 'mfd-def-alpha_wolf', url: '/assets/sprites/defenders/alpha_wolf.png', size1Lane: 98, size5Lane: 70 },
-  ironfang_guardian: { key: 'mfd-def-ironfang_guardian', url: '/assets/sprites/defenders/ironfang_guardian.png', size1Lane: 98, size5Lane: 70 },
-  bonefang_hunter: { key: 'mfd-def-bonefang_hunter', url: '/assets/sprites/defenders/bonefang_hunter.png', size1Lane: 96, size5Lane: 68 },
-  frostfang: { key: 'mfd-def-frostfang', url: '/assets/sprites/defenders/frostfang.png', size1Lane: 96, size5Lane: 68 },
-  infernal_archon: { key: 'mfd-def-infernal_archon', url: '/assets/sprites/defenders/infernal_archon.png', size1Lane: 102, size5Lane: 72, floating: true },
-  magma_colossus: { key: 'mfd-def-magma_colossus', url: '/assets/sprites/defenders/magma_colossus.png', size1Lane: 108, size5Lane: 76 },
-  steam_warden: { key: 'mfd-def-steam_warden', url: '/assets/sprites/defenders/steam_warden.png', size1Lane: 102, size5Lane: 72 },
-  inferno_archer: { key: 'mfd-def-inferno_archer', url: '/assets/sprites/defenders/inferno_archer.png', size1Lane: 98, size5Lane: 70 },
-  flame_fang: { key: 'mfd-def-flame_fang', url: '/assets/sprites/defenders/flame_fang.png', size1Lane: 96, size5Lane: 68 },
-};
-
-const PLAYTEST_AI_ENEMY_ASSETS: Readonly<Record<string, AiSpriteEntry>> = {
-  zombie: { key: 'mfd-ai64-zombie', url: '/playtest-preview/ai-zombie-64.png', size1Lane: 80, size5Lane: 58 },
-  husk: { key: 'mfd-ai64-husk', url: '/playtest-preview/ai-husk-64.png', size1Lane: 84, size5Lane: 60 },
-  vindicator: { key: 'mfd-ai64-vindicator', url: '/playtest-preview/ai-vindicator-64.png', size1Lane: 84, size5Lane: 60 },
-  pillager: { key: 'mfd-ai64-pillager', url: '/playtest-preview/ai-pillager-64.png', size1Lane: 84, size5Lane: 60 },
-};
-
-const ALL_PLAYTEST_AI_ASSETS = [
-  PLAYTEST_AI_GRASS_ASSET,
-  ...Object.values(PLAYTEST_AI_DEFENDER_ASSETS),
-  ...Object.values(PLAYTEST_AI_ENEMY_ASSETS),
-  ...Object.values(EFFECT_SPRITE_ASSETS),
-] as const;
+/** Visual rendering mode for comparing pixel-art PNG assets vs procedural fallback. */
+export type PlaytestVisualStyle = 'pixel-art' | 'procedural';
 
 interface GridGeometry {
   readonly originX: number;
@@ -88,14 +53,7 @@ interface GridGeometry {
 
 type DragState =
   | {
-      kind: 'crystal';
-      startX: number;
-      startY: number;
-      currentX: number;
-      currentY: number;
-    }
-  | {
-      kind: 'defender-pending';
+      kind: 'glove-pending';
       sourceId: string;
       sourceCell: Cell;
       startX: number;
@@ -104,7 +62,7 @@ type DragState =
       currentY: number;
     }
   | {
-      kind: 'defender-fuse';
+      kind: 'glove-drag';
       sourceId: string;
       sourceCell: Cell;
       startX: number;
@@ -115,104 +73,80 @@ type DragState =
 
 const CANVAS_WIDTH = 1280;
 const CANVAS_HEIGHT = 720;
-const TOP_BAR_HEIGHT = 76;
-const CRYSTAL_ORB_X = 1040;
-const CRYSTAL_ORB_Y = 38;
-const CRYSTAL_ORB_RADIUS = 24;
-const CRYSTAL_HIT_RADIUS = 28;
-const ITEM_HIT_RADIUS = 22;
-const DRAG_THRESHOLD_PX = 16;
+const GRID_COLS = 9;
+const ITEM_HIT_RADIUS = 26;
+const DRAG_THRESHOLD_PX = 14;
 const METEOR_TRAVEL_TICKS = 8;
-
-const DEFAULT_LABEL_STYLE: Phaser.Types.GameObjects.Text.TextStyle = {
-  fontFamily: 'monospace',
-  fontSize: '12px',
-  color: '#F8FAFC',
-  fontStyle: 'bold',
-};
+const INFERNO_TRAVEL_TICKS = 5;
 
 function getGridGeometry(showAuxLanes: boolean): GridGeometry {
   if (!showAuxLanes) {
     return {
-      originX: 140,
-      originY: 230,
-      cellW: 110,
+      originX: 136,
+      originY: 250,
+      cellW: 112,
       cellH: 180,
       rows: 1,
-      cols: 9,
+      cols: GRID_COLS,
     };
   }
   return {
-    originX: 140,
-    originY: 120,
-    cellW: 110,
-    cellH: 104,
+    originX: 136,
+    originY: 22,
+    cellW: 112,
+    cellH: 132,
     rows: 5,
-    cols: 9,
+    cols: GRID_COLS,
   };
 }
 
-function getToolLabel(tool: PlaytestTool): string {
-  switch (tool.kind) {
-    case 'select':
-      return 'TOOL: SELECT / FUSE';
-    case 'place':
-      return `TOOL: ${tool.freeSandbox ? 'FREE' : 'SUMMON'} ${tool.definitionId.toUpperCase()}`;
-    case 'crystal':
-      return 'TOOL: CAST ABILITY';
-    case 'remove':
-      return 'TOOL: REMOVE';
-  }
-}
-
 /**
- * Interactive Phaser 3.90 playtest scene rendering BattleRuntime snapshots
- * with pooled text labels and persistent cleared graphics layers.
+ * Interactive Playtest & Balance Phaser Scene mirroring GrasslandBattleScene:
+ * 5x9 (or 1x9) pixel-art Grassland battlefield, all 49 PNG sprites, basic attack VFX,
+ * ability VFX, direct shop-card fusion, Fusion Glove Move/Fuse, Shovel, and Power Crystal.
  */
 export class PlaytestScene extends Phaser.Scene {
   private readonly controller: PlaytestController;
   private readonly onFirstRender: () => void;
+  private readonly onToolChange?: (tool: PlaytestTool) => void;
 
   private tool: PlaytestTool = { kind: 'select' };
-  private visualStyle: PlaytestVisualStyle = 'ai-64';
+  private visualStyle: PlaytestVisualStyle = 'pixel-art';
+  private showGridCoords = false;
   private snapshot!: PlaytestHudSnapshot;
   private unsubscribe: (() => void) | null = null;
   private dragState: DragState | null = null;
   private hoverCell: Cell | null = null;
-  private hoverCrystalOrb = false;
+  private externalDrag: { readonly payload: PlaytestExternalDragPayload; readonly cell: Cell | null } | null = null;
   private needsRender = true;
+  private firstRendered = false;
   private readonly attackTracker = new BasicAttackVisualTracker();
 
   private bgGraphics!: Phaser.GameObjects.Graphics;
-  private gridOverlayGraphics!: Phaser.GameObjects.Graphics;
+  private overlayGraphics!: Phaser.GameObjects.Graphics;
   private unitGraphics!: Phaser.GameObjects.Graphics;
-  private unitHudGraphics!: Phaser.GameObjects.Graphics;
+  private hudGraphics!: Phaser.GameObjects.Graphics;
   private fxGraphics!: Phaser.GameObjects.Graphics;
+  private hintText!: Phaser.GameObjects.Text;
 
-  private topStatsText!: Phaser.GameObjects.Text;
-  private topModeText!: Phaser.GameObjects.Text;
-  private topToolText!: Phaser.GameObjects.Text;
-  private crystalOrbText!: Phaser.GameObjects.Text;
-  private baseLabelText!: Phaser.GameObjects.Text;
-  private spawnLabelText!: Phaser.GameObjects.Text;
-  private laneHeaderText!: Phaser.GameObjects.Text;
-  private columnTexts: Phaser.GameObjects.Text[] = [];
-  private terminalTitleText!: Phaser.GameObjects.Text;
-  private terminalSubText!: Phaser.GameObjects.Text;
-
-  private labelPool: Phaser.GameObjects.Text[] = [];
-  private labelPoolCursor = 0;
   private tileSpritePool: Phaser.GameObjects.Image[] = [];
-  private tileSpritePoolCursor = 0;
+  private tileSpriteCursor = 0;
   private unitSpritePool: Phaser.GameObjects.Image[] = [];
-  private unitSpritePoolCursor = 0;
+  private unitSpriteCursor = 0;
   private fxSpritePool: Phaser.GameObjects.Image[] = [];
-  private fxSpritePoolCursor = 0;
+  private fxSpriteCursor = 0;
+  private labelPool: Phaser.GameObjects.Text[] = [];
+  private labelCursor = 0;
 
-  constructor(controller: PlaytestController, onFirstRender: () => void) {
+  constructor(
+    controller: PlaytestController,
+    onFirstRender: () => void,
+    onToolChange?: (tool: PlaytestTool) => void,
+  ) {
     super({ key: 'PlaytestScene' });
     this.controller = controller;
     this.onFirstRender = onFirstRender;
+    this.onToolChange = onToolChange;
   }
 
   /** Update active pointer tool from React HUD. */
@@ -221,16 +155,113 @@ export class PlaytestScene extends Phaser.Scene {
     this.needsRender = true;
   }
 
-  /** Switch between code-authored pixel textures and block placeholders. */
+  /** Switch between pixel-art PNG textures and procedural pixel/block fallback. */
   setVisualStyle(style: PlaytestVisualStyle): void {
     this.visualStyle = style;
     this.needsRender = true;
   }
 
+  /** Toggle (row, col) grid coordinate labels. */
+  setShowGridCoords(show: boolean): void {
+    this.showGridCoords = show;
+    this.needsRender = true;
+  }
+
+  private clearToolToSelect(): void {
+    if (this.tool.kind === 'select') return;
+    this.tool = { kind: 'select' };
+    this.onToolChange?.(this.tool);
+    this.needsRender = true;
+  }
+
+  private clientPointToCanvas(clientX: number, clientY: number): { x: number; y: number } | null {
+    const canvas = this.game?.canvas;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    const x = ((clientX - rect.left) / rect.width) * CANVAS_WIDTH;
+    const y = ((clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
+    if (x < 0 || x > CANVAS_WIDTH || y < 0 || y > CANVAS_HEIGHT) return null;
+    return { x, y };
+  }
+
+  /** Update live hover highlight when dragging a HUD card/tool over the canvas. */
+  setExternalDragAtClientPoint(
+    payload: PlaytestExternalDragPayload | null,
+    clientX: number,
+    clientY: number,
+  ): void {
+    if (!payload) {
+      if (this.externalDrag !== null) {
+        this.externalDrag = null;
+        this.needsRender = true;
+      }
+      return;
+    }
+    const pt = this.clientPointToCanvas(clientX, clientY);
+    const geom = getGridGeometry(this.snapshot.showAuxLanes);
+    const cell = pt ? this.screenToCell(pt.x, pt.y, geom) : null;
+    this.externalDrag = { payload, cell };
+    this.needsRender = true;
+  }
+
+  /** Execute drop from HUD card/tool onto the battlefield cell under the cursor. */
+  dropExternalDragAtClientPoint(
+    payload: PlaytestExternalDragPayload,
+    clientX: number,
+    clientY: number,
+  ): boolean {
+    this.externalDrag = null;
+    const pt = this.clientPointToCanvas(clientX, clientY);
+    const geom = getGridGeometry(this.snapshot.showAuxLanes);
+    const cell = pt ? this.screenToCell(pt.x, pt.y, geom) : null;
+    this.needsRender = true;
+    if (!cell) return false;
+
+    const defender = this.findDefenderAtCell(cell);
+    if (payload.kind === 'place') {
+      if (defender) {
+        if (payload.freeSandbox) return false;
+        const ok = this.controller.summonAndFuseDefender(payload.definitionId, defender.id);
+        if (ok) this.clearToolToSelect();
+        return ok;
+      }
+      const ok = this.controller.placeDefender(payload.definitionId, cell, payload.freeSandbox);
+      if (ok && !payload.freeSandbox) {
+        this.clearToolToSelect();
+      }
+      return ok;
+    }
+    if (payload.kind === 'crystal') {
+      if (!defender) return false;
+      const ok = this.controller.activateAbility(defender.id, cell);
+      if (ok) this.clearToolToSelect();
+      return ok;
+    }
+    if (payload.kind === 'shovel') {
+      if (!defender) return false;
+      const ok = this.controller.removeDefender(defender.id);
+      if (ok) this.clearToolToSelect();
+      return ok;
+    }
+    if (payload.kind === 'glove') {
+      if (!defender) return false;
+      if (this.snapshot.gloveCooldown.onCooldown) {
+        this.controller.moveDefender(defender.id, { row: defender.row, column: defender.column });
+        return false;
+      }
+      this.tool = { kind: 'glove', pickedDefenderId: defender.id };
+      this.onToolChange?.(this.tool);
+      this.needsRender = true;
+      return true;
+    }
+    return false;
+  }
+
   init(): void {
     this.dragState = null;
     this.hoverCell = null;
-    this.hoverCrystalOrb = false;
+    this.externalDrag = null;
     this.attackTracker.reset();
     this.needsRender = true;
     this.snapshot = this.controller.getSnapshot();
@@ -238,16 +269,12 @@ export class PlaytestScene extends Phaser.Scene {
 
   preload(): void {
     this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, () => {
-      // Safe no-op fallback: render methods check hasLoadedTexture and fall back to pixel-code.
+      // Safe fallback to procedural textures if any optional image fails to load.
     });
-    for (const asset of ALL_PLAYTEST_AI_ASSETS) {
-      if (!this.textures.exists(asset.key)) {
-        this.load.image(asset.key, asset.url);
-      }
-    }
+    preloadGameAssets(this, Phaser.Textures.FilterMode.NEAREST);
   }
 
-  private hasLoadedTexture(key: string): boolean {
+  private hasTexture(key: string): boolean {
     if (!this.textures.exists(key)) return false;
     return this.textures.get(key).key !== '__MISSING';
   }
@@ -255,27 +282,30 @@ export class PlaytestScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setBackgroundColor('#0F172A');
     this.input.mouse?.disableContextMenu();
-
     registerPlaytestPixelTextures(this, Phaser.Textures.FilterMode.NEAREST);
-    for (const asset of ALL_PLAYTEST_AI_ASSETS) {
-      if (this.hasLoadedTexture(asset.key)) {
-        this.textures.get(asset.key).setFilter(Phaser.Textures.FilterMode.NEAREST);
-      }
-    }
+    applyNearestFilterToManifestTextures(this, Phaser.Textures.FilterMode.NEAREST);
 
     this.bgGraphics = this.add.graphics().setDepth(0);
-    this.gridOverlayGraphics = this.add.graphics().setDepth(3);
+    this.overlayGraphics = this.add.graphics().setDepth(3);
     this.unitGraphics = this.add.graphics().setDepth(10);
-    this.unitHudGraphics = this.add.graphics().setDepth(14);
-    this.fxGraphics = this.add.graphics().setDepth(20);
+    this.hudGraphics = this.add.graphics().setDepth(14);
+    this.fxGraphics = this.add.graphics().setDepth(22);
 
-    this.createStaticLabels();
+    this.hintText = this.add
+      .text(CANVAS_WIDTH / 2, 707, '', {
+        fontFamily: 'monospace',
+        fontSize: '12px',
+        color: '#CBD5E1',
+      })
+      .setOrigin(0.5, 0.5)
+      .setDepth(30);
 
     this.snapshot = this.controller.getSnapshot();
     this.attackTracker.syncFromSnapshot(
       this.snapshot.defenders,
       this.snapshot.enemies,
       getGridGeometry(this.snapshot.showAuxLanes),
+      this.snapshot.tick,
     );
     this.unsubscribe = this.controller.subscribe(next => {
       this.snapshot = next;
@@ -283,6 +313,7 @@ export class PlaytestScene extends Phaser.Scene {
         next.defenders,
         next.enemies,
         getGridGeometry(next.showAuxLanes),
+        next.tick,
       );
       this.needsRender = true;
     });
@@ -293,284 +324,51 @@ export class PlaytestScene extends Phaser.Scene {
     this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, this.handlePointerCancel, this);
 
     const cleanup = () => {
-      if (this.unsubscribe) {
-        this.unsubscribe();
-        this.unsubscribe = null;
-      }
+      this.unsubscribe?.();
+      this.unsubscribe = null;
       this.input.off(Phaser.Input.Events.POINTER_DOWN, this.handlePointerDown, this);
       this.input.off(Phaser.Input.Events.POINTER_MOVE, this.handlePointerMove, this);
       this.input.off(Phaser.Input.Events.POINTER_UP, this.handlePointerUp, this);
       this.input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE, this.handlePointerCancel, this);
       this.dragState = null;
       this.hoverCell = null;
-      this.hoverCrystalOrb = false;
-      this.labelPool = [];
+      this.externalDrag = null;
       this.tileSpritePool = [];
       this.unitSpritePool = [];
       this.fxSpritePool = [];
-      this.columnTexts = [];
+      this.labelPool = [];
     };
-
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, cleanup);
     this.events.once(Phaser.Scenes.Events.DESTROY, cleanup);
-    this.events.once(Phaser.Scenes.Events.RENDER, this.onFirstRender);
 
     this.renderScene();
-    this.needsRender = false;
+    if (!this.firstRendered) {
+      this.firstRendered = true;
+      this.onFirstRender();
+    }
   }
 
   update(_time: number, delta: number): void {
-    this.controller.stepMs(delta);
+    const stepped = this.controller.stepMs(delta);
     const hasBasicAttackAnims = this.attackTracker.advance(delta, this.snapshot.paused);
-    const hasAnimations =
+    const snap = this.snapshot;
+    if (
+      stepped > 0 ||
       hasBasicAttackAnims ||
-      this.snapshot.items.length > 0 ||
-      this.snapshot.projectiles.length > 0 ||
-      this.snapshot.flashes.length > 0 ||
-      this.dragState !== null;
-
-    if (this.needsRender || hasAnimations) {
+      this.needsRender ||
+      this.dragState !== null ||
+      snap.items.length > 0 ||
+      snap.projectiles.length > 0 ||
+      snap.flashes.length > 0 ||
+      snap.defenders.length > 0 ||
+      snap.enemies.length > 0
+    ) {
       this.renderScene();
       this.needsRender = false;
     }
   }
 
-  private createStaticLabels(): void {
-    this.topStatsText = this.add
-      .text(24, 14, '', { fontFamily: 'monospace', fontSize: '16px', color: '#F8FAFC', fontStyle: 'bold' })
-      .setDepth(30);
-
-    this.topModeText = this.add
-      .text(24, 44, '', { fontFamily: 'monospace', fontSize: '13px', color: '#94A3B8' })
-      .setDepth(30);
-
-    this.topToolText = this.add
-      .text(560, 44, '', { fontFamily: 'monospace', fontSize: '13px', color: '#38BDF8', fontStyle: 'bold' })
-      .setDepth(30);
-
-    this.crystalOrbText = this.add
-      .text(CRYSTAL_ORB_X + 36, CRYSTAL_ORB_Y, 'DRAG\nCRYSTAL', {
-        fontFamily: 'monospace',
-        fontSize: '12px',
-        color: '#E0F2FE',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0, 0.5)
-      .setDepth(30);
-
-    this.baseLabelText = this.add
-      .text(90, 320, 'BASE', { fontFamily: 'monospace', fontSize: '16px', color: '#38BDF8', fontStyle: 'bold' })
-      .setOrigin(0.5)
-      .setDepth(5);
-
-    this.spawnLabelText = this.add
-      .text(1185, 320, 'SPAWN', { fontFamily: 'monospace', fontSize: '16px', color: '#F87171', fontStyle: 'bold' })
-      .setOrigin(0.5)
-      .setDepth(5);
-
-    this.laneHeaderText = this.add
-      .text(24, 230, 'LANE 1\nPRIMARY', {
-        fontFamily: 'monospace',
-        fontSize: '12px',
-        color: '#4ADE80',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0, 0.5)
-      .setDepth(5);
-
-    this.columnTexts = [];
-    for (let col = 0; col < 9; col++) {
-      const label = this.add
-        .text(0, 0, `C${col}`, { fontFamily: 'monospace', fontSize: '13px', color: '#94A3B8', fontStyle: 'bold' })
-        .setOrigin(0.5, 1)
-        .setDepth(5);
-      this.columnTexts.push(label);
-    }
-
-    this.terminalTitleText = this.add
-      .text(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 14, '', {
-        fontFamily: 'monospace',
-        fontSize: '44px',
-        color: '#FFFFFF',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5)
-      .setDepth(40)
-      .setVisible(false);
-
-    this.terminalSubText = this.add
-      .text(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 32, '', {
-        fontFamily: 'monospace',
-        fontSize: '16px',
-        color: '#E2E8F0',
-      })
-      .setOrigin(0.5)
-      .setDepth(40)
-      .setVisible(false);
-  }
-
-  private resetLabelPool(): void {
-    this.labelPoolCursor = 0;
-  }
-
-  private hideUnusedPooledLabels(): void {
-    for (let i = this.labelPoolCursor; i < this.labelPool.length; i++) {
-      this.labelPool[i].setVisible(false);
-    }
-  }
-
-  private resetSpritePools(): void {
-    this.tileSpritePoolCursor = 0;
-    this.unitSpritePoolCursor = 0;
-    this.fxSpritePoolCursor = 0;
-  }
-
-  private hideUnusedPooledSprites(): void {
-    for (let i = this.tileSpritePoolCursor; i < this.tileSpritePool.length; i++) {
-      this.tileSpritePool[i].setVisible(false);
-    }
-    for (let i = this.unitSpritePoolCursor; i < this.unitSpritePool.length; i++) {
-      this.unitSpritePool[i].setVisible(false);
-    }
-    for (let i = this.fxSpritePoolCursor; i < this.fxSpritePool.length; i++) {
-      this.fxSpritePool[i].setVisible(false);
-    }
-  }
-
-  private acquirePooledSprite(
-    pool: Phaser.GameObjects.Image[],
-    cursor: number,
-    depth: number,
-    x: number,
-    y: number,
-    textureKey: string,
-    displayW: number,
-    displayH: number,
-    alpha = 1,
-    tint?: number,
-  ): Phaser.GameObjects.Image {
-    let img = pool[cursor];
-    if (!img) {
-      img = this.add.image(x, y, textureKey).setDepth(depth);
-      pool.push(img);
-    }
-    img
-      .setTexture(textureKey)
-      .setPosition(x, y)
-      .setOrigin(0.5, 0.5)
-      .setDisplaySize(displayW, displayH)
-      .setAlpha(alpha)
-      .clearTint()
-      .setVisible(true);
-    if (tint !== undefined) {
-      img.setTint(tint);
-    }
-    return img;
-  }
-
-  private acquireTileSprite(
-    x: number,
-    y: number,
-    textureKey: string,
-    displayW: number,
-    displayH: number,
-    alpha = 1,
-    tint?: number,
-  ): Phaser.GameObjects.Image {
-    const img = this.acquirePooledSprite(
-      this.tileSpritePool,
-      this.tileSpritePoolCursor,
-      1,
-      x,
-      y,
-      textureKey,
-      displayW,
-      displayH,
-      alpha,
-      tint,
-    );
-    this.tileSpritePoolCursor += 1;
-    return img;
-  }
-
-  private acquireUnitSprite(
-    x: number,
-    y: number,
-    textureKey: string,
-    displayW: number,
-    displayH: number,
-    alpha = 1,
-    tint?: number,
-  ): Phaser.GameObjects.Image {
-    const img = this.acquirePooledSprite(
-      this.unitSpritePool,
-      this.unitSpritePoolCursor,
-      12,
-      x,
-      y,
-      textureKey,
-      displayW,
-      displayH,
-      alpha,
-      tint,
-    );
-    this.unitSpritePoolCursor += 1;
-    return img;
-  }
-
-  private acquireFxSprite(
-    x: number,
-    y: number,
-    textureKey: string,
-    displayW: number,
-    displayH: number,
-    alpha = 1,
-    tint?: number,
-  ): Phaser.GameObjects.Image {
-    const img = this.acquirePooledSprite(
-      this.fxSpritePool,
-      this.fxSpritePoolCursor,
-      18,
-      x,
-      y,
-      textureKey,
-      displayW,
-      displayH,
-      alpha,
-      tint,
-    );
-    this.fxSpritePoolCursor += 1;
-    return img;
-  }
-
-  private acquireLabel(
-    x: number,
-    y: number,
-    text: string,
-    color = '#F8FAFC',
-    fontSize = '12px',
-    originX = 0.5,
-    originY = 0.5,
-    depth = 25,
-  ): Phaser.GameObjects.Text {
-    let label = this.labelPool[this.labelPoolCursor];
-    if (!label) {
-      label = this.add.text(x, y, text, DEFAULT_LABEL_STYLE);
-      this.labelPool.push(label);
-    }
-    this.labelPoolCursor += 1;
-    label
-      .setPosition(x, y)
-      .setText(text)
-      .setColor(color)
-      .setFontSize(fontSize)
-      .setOrigin(originX, originY)
-      .setDepth(depth)
-      .setVisible(true);
-    return label;
-  }
-
-  private getCellRect(cell: Cell, geom: GridGeometry): { x: number; y: number; w: number; h: number } {
+  private getCellRect(cell: Cell, geom: GridGeometry) {
     return {
       x: geom.originX + cell.column * geom.cellW,
       y: geom.originY + cell.row * geom.cellH,
@@ -579,52 +377,41 @@ export class PlaytestScene extends Phaser.Scene {
     };
   }
 
-  private getItemCoords(item: PlaytestItemView, geom: GridGeometry): { x: number; y: number } {
-    if (item.position.kind === 'normalized') {
-      return {
-        x: geom.originX + item.position.point.x * geom.cols * geom.cellW,
-        y: geom.originY + item.position.point.y * geom.rows * geom.cellH,
-      };
-    }
-    if (item.position.kind === 'cell') {
-      const clampedRow = Math.min(item.position.cell.row, geom.rows - 1);
-      return {
-        x: geom.originX + (item.position.cell.column + 0.5) * geom.cellW,
-        y: geom.originY + (clampedRow + 0.5) * geom.cellH,
-      };
-    }
-    const clampedLane = Math.min(item.position.lane, geom.rows - 1);
-    return {
-      x: geom.originX + item.position.position * geom.cellW,
-      y: geom.originY + (clampedLane + 0.5) * geom.cellH,
-    };
-  }
-
-  private hitTestCell(x: number, y: number, geom: GridGeometry): Cell | null {
-    const col = Math.floor((x - geom.originX) / geom.cellW);
-    const row = Math.floor((y - geom.originY) / geom.cellH);
-    if (col < 0 || col >= geom.cols || row < 0 || row >= geom.rows) {
-      return null;
-    }
+  private screenToCell(px: number, py: number, geom: GridGeometry): Cell | null {
+    const col = Math.floor((px - geom.originX) / geom.cellW);
+    const row = Math.floor((py - geom.originY) / geom.cellH);
+    if (row < 0 || row >= geom.rows || col < 0 || col >= geom.cols) return null;
     return { row, column: col };
   }
 
-  private hitTestCrystalOrb(x: number, y: number): boolean {
-    return Phaser.Math.Distance.Between(x, y, CRYSTAL_ORB_X, CRYSTAL_ORB_Y) <= CRYSTAL_HIT_RADIUS;
+  private getItemCoords(item: PlaytestItemView, geom: GridGeometry): { x: number; y: number } {
+    if (item.position.kind === 'cell') {
+      const clampedRow = Math.min(item.position.cell.row, geom.rows - 1);
+      const r = this.getCellRect({ row: clampedRow, column: item.position.cell.column }, geom);
+      return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+    }
+    if (item.position.kind === 'lane') {
+      const clampedLane = Math.min(item.position.lane, geom.rows - 1);
+      return {
+        x: geom.originX + item.position.position * geom.cellW,
+        y: geom.originY + (clampedLane + 0.5) * geom.cellH,
+      };
+    }
+    return {
+      x: geom.originX + item.position.point.x * (geom.cols * geom.cellW),
+      y: geom.originY + item.position.point.y * (geom.rows * geom.cellH),
+    };
   }
 
-  private hitTestItem(x: number, y: number, geom: GridGeometry): PlaytestItemView | null {
-    let best: PlaytestItemView | null = null;
-    let bestDist = ITEM_HIT_RADIUS;
-    for (const item of this.snapshot.items) {
+  private findItemAt(px: number, py: number, geom: GridGeometry): PlaytestItemView | null {
+    for (let i = this.snapshot.items.length - 1; i >= 0; i--) {
+      const item = this.snapshot.items[i];
       const pos = this.getItemCoords(item, geom);
-      const dist = Phaser.Math.Distance.Between(x, y, pos.x, pos.y);
-      if (dist <= bestDist) {
-        best = item;
-        bestDist = dist;
+      if (Phaser.Math.Distance.Between(px, py, pos.x, pos.y) <= ITEM_HIT_RADIUS) {
+        return item;
       }
     }
-    return best;
+    return null;
   }
 
   private findDefenderAtCell(cell: Cell): PlaytestDefenderView | undefined {
@@ -632,866 +419,880 @@ export class PlaytestScene extends Phaser.Scene {
   }
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
-    const x = pointer.x;
-    const y = pointer.y;
+    const px = pointer.x;
+    const py = pointer.y;
     const geom = getGridGeometry(this.snapshot.showAuxLanes);
 
-    if (pointer.button === 2) {
-      const cell = this.hitTestCell(x, y, geom);
-      if (cell) {
-        const defender = this.findDefenderAtCell(cell);
-        if (defender) {
-          this.controller.removeDefender(defender.id);
-          this.needsRender = true;
-        }
-      }
+    if (pointer.rightButtonDown()) {
+      this.dragState = null;
+      this.clearToolToSelect();
+      this.needsRender = true;
       return;
     }
 
-    if (pointer.button !== 0) return;
-
-    const item = this.hitTestItem(x, y, geom);
+    const item = this.findItemAt(px, py, geom);
     if (item) {
       this.controller.collectItem(item.id);
       this.needsRender = true;
       return;
     }
 
-    if (this.hitTestCrystalOrb(x, y)) {
-      this.dragState = {
-        kind: 'crystal',
-        startX: x,
-        startY: y,
-        currentX: x,
-        currentY: y,
-      };
-      this.needsRender = true;
+    const cell = this.screenToCell(px, py, geom);
+    if (!cell) {
+      if (this.tool.kind === 'select') {
+        this.controller.selectDefender(null);
+      }
       return;
     }
-
-    const cell = this.hitTestCell(x, y, geom);
-    if (!cell) return;
 
     const defender = this.findDefenderAtCell(cell);
-    if (defender) {
-      this.dragState = {
-        kind: 'defender-pending',
-        sourceId: defender.id,
-        sourceCell: cell,
-        startX: x,
-        startY: y,
-        currentX: x,
-        currentY: y,
-      };
+    if (this.tool.kind === 'place') {
+      if (defender) {
+        if (this.tool.freeSandbox) return;
+        const ok = this.controller.summonAndFuseDefender(this.tool.definitionId, defender.id);
+        if (ok) this.clearToolToSelect();
+        this.needsRender = true;
+        return;
+      }
+      const ok = this.controller.placeDefender(this.tool.definitionId, cell, this.tool.freeSandbox);
+      if (ok && !this.tool.freeSandbox) {
+        this.clearToolToSelect();
+      }
       this.needsRender = true;
       return;
     }
 
-    if (this.tool.kind === 'place') {
-      this.controller.placeDefender(this.tool.definitionId, cell, this.tool.freeSandbox);
-    } else if (this.tool.kind === 'select') {
-      this.controller.selectDefender(null);
+    if (this.tool.kind === 'crystal') {
+      if (defender) {
+        const ok = this.controller.activateAbility(defender.id, cell);
+        if (ok) this.clearToolToSelect();
+        this.needsRender = true;
+      }
+      return;
     }
+
+    if (this.tool.kind === 'shovel') {
+      if (defender) {
+        const ok = this.controller.removeDefender(defender.id);
+        if (ok) this.clearToolToSelect();
+        this.needsRender = true;
+      }
+      return;
+    }
+
+    if (this.tool.kind === 'glove') {
+      const pickedId = this.tool.pickedDefenderId;
+      if (pickedId) {
+        if (!defender) {
+          const ok = this.controller.moveDefender(pickedId, cell);
+          if (ok) this.clearToolToSelect();
+          this.needsRender = true;
+          return;
+        }
+        if (defender.id === pickedId) {
+          this.tool = { kind: 'glove' };
+          this.onToolChange?.(this.tool);
+          this.needsRender = true;
+          return;
+        }
+        const ok = this.controller.fuseDefenders(pickedId, defender.id);
+        if (ok) this.clearToolToSelect();
+        this.needsRender = true;
+        return;
+      }
+
+      if (defender) {
+        if (this.snapshot.gloveCooldown.onCooldown) {
+          this.controller.moveDefender(defender.id, { row: defender.row, column: defender.column });
+          return;
+        }
+        this.dragState = {
+          kind: 'glove-pending',
+          sourceId: defender.id,
+          sourceCell: { row: defender.row, column: defender.column },
+          startX: px,
+          startY: py,
+          currentX: px,
+          currentY: py,
+        };
+        this.needsRender = true;
+      }
+      return;
+    }
+
+    // Select mode: click defender to inspect & enable [Space] quick ability cast
+    this.controller.selectDefender(defender ? defender.id : null);
     this.needsRender = true;
   }
 
   private handlePointerMove(pointer: Phaser.Input.Pointer): void {
-    const x = pointer.x;
-    const y = pointer.y;
+    const px = pointer.x;
+    const py = pointer.y;
     const geom = getGridGeometry(this.snapshot.showAuxLanes);
-    this.hoverCell = this.hitTestCell(x, y, geom);
-    this.hoverCrystalOrb = this.hitTestCrystalOrb(x, y);
+    const cell = this.screenToCell(px, py, geom);
+    if (
+      (cell === null && this.hoverCell !== null) ||
+      (cell !== null && (this.hoverCell?.row !== cell.row || this.hoverCell?.column !== cell.column))
+    ) {
+      this.hoverCell = cell;
+      this.needsRender = true;
+    }
 
-    if (this.dragState) {
-      this.dragState.currentX = x;
-      this.dragState.currentY = y;
-      if (this.dragState.kind === 'defender-pending') {
-        const dist = Phaser.Math.Distance.Between(
-          this.dragState.startX,
-          this.dragState.startY,
-          x,
-          y,
-        );
-        if (dist > DRAG_THRESHOLD_PX) {
-          this.dragState = {
-            kind: 'defender-fuse',
-            sourceId: this.dragState.sourceId,
-            sourceCell: this.dragState.sourceCell,
-            startX: this.dragState.startX,
-            startY: this.dragState.startY,
-            currentX: x,
-            currentY: y,
-          };
-        }
-      }
+    if (!this.dragState) return;
+    this.dragState.currentX = px;
+    this.dragState.currentY = py;
+    if (
+      this.dragState.kind === 'glove-pending' &&
+      Phaser.Math.Distance.Between(this.dragState.startX, this.dragState.startY, px, py) >= DRAG_THRESHOLD_PX
+    ) {
+      this.dragState = {
+        kind: 'glove-drag',
+        sourceId: this.dragState.sourceId,
+        sourceCell: this.dragState.sourceCell,
+        startX: this.dragState.startX,
+        startY: this.dragState.startY,
+        currentX: px,
+        currentY: py,
+      };
     }
     this.needsRender = true;
   }
 
   private handlePointerUp(pointer: Phaser.Input.Pointer): void {
-    if (!this.dragState || pointer.button !== 0) return;
-
-    const drag = this.dragState;
+    if (!this.dragState) return;
+    const state = this.dragState;
     this.dragState = null;
 
-    const x = pointer.x;
-    const y = pointer.y;
-    const geom = getGridGeometry(this.snapshot.showAuxLanes);
-    const cell = this.hitTestCell(x, y, geom);
-    const targetDefender = cell ? this.findDefenderAtCell(cell) : undefined;
-
-    if (drag.kind === 'crystal') {
-      if (targetDefender) {
-        this.controller.activateAbility(targetDefender.id);
-      }
-    } else if (drag.kind === 'defender-fuse') {
-      if (targetDefender && targetDefender.id !== drag.sourceId) {
-        this.controller.fuseDefenders(drag.sourceId, targetDefender.id);
-      }
-    } else if (drag.kind === 'defender-pending') {
-      if (this.tool.kind === 'crystal') {
-        this.controller.activateAbility(drag.sourceId);
-      } else if (this.tool.kind === 'remove') {
-        this.controller.removeDefender(drag.sourceId);
-      } else {
-        this.controller.selectDefender(drag.sourceId);
-      }
+    if (state.kind === 'glove-pending') {
+      this.tool = { kind: 'glove', pickedDefenderId: state.sourceId };
+      this.onToolChange?.(this.tool);
+      this.needsRender = true;
+      return;
     }
 
+    if (state.kind === 'glove-drag') {
+      const geom = getGridGeometry(this.snapshot.showAuxLanes);
+      const cell = this.screenToCell(pointer.x, pointer.y, geom);
+      if (cell) {
+        const target = this.findDefenderAtCell(cell);
+        const ok = target
+          ? target.id !== state.sourceId
+            ? this.controller.fuseDefenders(state.sourceId, target.id)
+            : false
+          : this.controller.moveDefender(state.sourceId, cell);
+        if (ok) this.clearToolToSelect();
+      }
+    }
     this.needsRender = true;
   }
 
   private handlePointerCancel(): void {
-    if (this.dragState) {
-      this.dragState = null;
-      this.needsRender = true;
+    this.dragState = null;
+    this.needsRender = true;
+  }
+
+  private resetPools(): void {
+    this.tileSpriteCursor = 0;
+    this.unitSpriteCursor = 0;
+    this.fxSpriteCursor = 0;
+    this.labelCursor = 0;
+  }
+
+  private hideUnusedPools(): void {
+    for (let i = this.tileSpriteCursor; i < this.tileSpritePool.length; i++) this.tileSpritePool[i].setVisible(false);
+    for (let i = this.unitSpriteCursor; i < this.unitSpritePool.length; i++) this.unitSpritePool[i].setVisible(false);
+    for (let i = this.fxSpriteCursor; i < this.fxSpritePool.length; i++) this.fxSpritePool[i].setVisible(false);
+    for (let i = this.labelCursor; i < this.labelPool.length; i++) this.labelPool[i].setVisible(false);
+  }
+
+  private acquireSprite(
+    pool: Phaser.GameObjects.Image[],
+    cursor: number,
+    depth: number,
+    x: number,
+    y: number,
+    key: string,
+    w: number,
+    h: number,
+    alpha = 1,
+    tint?: number,
+  ): Phaser.GameObjects.Image {
+    let img = pool[cursor];
+    if (!img) {
+      img = this.add.image(x, y, key).setDepth(depth);
+      pool.push(img);
     }
+    img
+      .setTexture(key)
+      .setPosition(x, y)
+      .setOrigin(0.5, 0.5)
+      .setDisplaySize(w, h)
+      .setAlpha(alpha)
+      .clearTint()
+      .setVisible(true);
+    if (tint !== undefined) img.setTint(tint);
+    return img;
+  }
+
+  private putTile(x: number, y: number, key: string, w: number, h: number, alpha = 1): void {
+    this.acquireSprite(this.tileSpritePool, this.tileSpriteCursor++, 1, x, y, key, w, h, alpha);
+  }
+
+  private putUnit(x: number, y: number, key: string, w: number, h: number, alpha = 1, tint?: number): void {
+    this.acquireSprite(this.unitSpritePool, this.unitSpriteCursor++, 12, x, y, key, w, h, alpha, tint);
+  }
+
+  private putFx(x: number, y: number, key: string, w: number, h: number, alpha = 1, tint?: number): void {
+    this.acquireSprite(this.fxSpritePool, this.fxSpriteCursor++, 18, x, y, key, w, h, alpha, tint);
+  }
+
+  private putLabel(x: number, y: number, text: string, color = '#F8FAFC', fontSize = '11px'): void {
+    let lbl = this.labelPool[this.labelCursor];
+    if (!lbl) {
+      lbl = this.add
+        .text(x, y, text, {
+          fontFamily: 'monospace',
+          fontSize,
+          fontStyle: 'bold',
+          color,
+        })
+        .setOrigin(0.5, 0.5)
+        .setDepth(24);
+      this.labelPool.push(lbl);
+    }
+    lbl
+      .setPosition(x, y)
+      .setText(text)
+      .setStyle({
+        fontFamily: 'monospace',
+        fontSize,
+        fontStyle: 'bold',
+        color,
+      })
+      .setVisible(true);
+    this.labelCursor += 1;
   }
 
   private renderScene(): void {
     const snap = this.snapshot;
     const geom = getGridGeometry(snap.showAuxLanes);
 
+    this.resetPools();
     this.bgGraphics.clear();
-    this.gridOverlayGraphics.clear();
+    this.overlayGraphics.clear();
     this.unitGraphics.clear();
-    this.unitHudGraphics.clear();
+    this.hudGraphics.clear();
     this.fxGraphics.clear();
-    this.resetLabelPool();
-    this.resetSpritePools();
 
-    this.renderTopBar(snap);
-    this.renderGrid(snap, geom);
-    this.renderSlowZones(snap, geom);
-    this.renderRedirectAuras(snap, geom);
+    this.renderBackdropAndGrid(snap, geom);
+    this.renderZonesAndAuras(snap, geom);
     this.renderDefenders(snap, geom);
     this.renderEnemies(snap, geom);
     this.renderProjectiles(snap, geom);
     renderBasicAttackEffects(
       this.attackTracker,
       this.fxGraphics,
-      this.visualStyle !== 'blocks',
-      key => this.hasLoadedTexture(key),
-      (x, y, key, size, alpha, tint) => this.acquireFxSprite(x, y, key, size, size, alpha, tint),
+      this.visualStyle === 'pixel-art',
+      key => this.hasTexture(key),
+      (x, y, key, size, alpha, tint) => this.putFx(x, y, key, size, size, alpha, tint),
     );
     this.renderItems(snap, geom);
     this.renderFlashes(snap, geom);
-    this.renderDragAndHover(snap, geom);
-    this.renderTerminalBanner(snap);
+    this.renderDragOverlay(geom);
+    this.updateHintText();
 
-    this.hideUnusedPooledLabels();
-    this.hideUnusedPooledSprites();
+    this.hideUnusedPools();
   }
 
-  private renderTopBar(snap: PlaytestHudSnapshot): void {
-    this.bgGraphics.fillStyle(0x1e293b, 0.96);
-    this.bgGraphics.fillRect(0, 0, CANVAS_WIDTH, TOP_BAR_HEIGHT);
-    this.bgGraphics.lineStyle(2, 0x334155, 1);
-    this.bgGraphics.lineBetween(0, TOP_BAR_HEIGHT, CANVAS_WIDTH, TOP_BAR_HEIGHT);
-
-    const pendingStr = snap.pendingCrystals > 0 ? ` (+${snap.pendingCrystals} pending)` : '';
-    this.topStatsText.setText(
-      `ENERGY: ${snap.energy}   |   CRYSTALS: ${snap.crystals}/5${pendingStr}   |   T${snap.tick} (${snap.elapsedSeconds.toFixed(1)}s)`,
-    );
-
-    const waveStr =
-      snap.mode === 'sandbox'
-        ? 'MODE: SANDBOX'
-        : `MODE: 5-WAVE (${(snap.currentWaveIndex ?? 0) + 1}/${snap.totalWaves} · ${snap.waveStatus.toUpperCase()})`;
-    const speedStr = snap.paused ? `PAUSED · ${snap.speedMultiplier}x` : `RUNNING · ${snap.speedMultiplier}x`;
-    this.topModeText.setText(`${waveStr}   |   ${speedStr}`);
-    this.topToolText.setText(getToolLabel(this.tool));
-
-    // Draggable Power Crystal Orb
-    const canDragCrystal = snap.crystals > 0 && snap.terminal === null;
-    const orbAlpha = canDragCrystal ? 1 : 0.4;
-    this.bgGraphics.fillStyle(0x0ea5e9, 0.25 * orbAlpha);
-    this.bgGraphics.fillCircle(CRYSTAL_ORB_X, CRYSTAL_ORB_Y, CRYSTAL_ORB_RADIUS + 5);
-    this.bgGraphics.fillStyle(0x38bdf8, orbAlpha);
-    this.bgGraphics.fillCircle(CRYSTAL_ORB_X, CRYSTAL_ORB_Y, CRYSTAL_ORB_RADIUS);
-    this.bgGraphics.lineStyle(
-      this.hoverCrystalOrb ? 3 : 2,
-      this.hoverCrystalOrb ? 0xfef08a : 0xe0f2fe,
-      orbAlpha,
-    );
-    this.bgGraphics.strokeCircle(CRYSTAL_ORB_X, CRYSTAL_ORB_Y, CRYSTAL_ORB_RADIUS);
-
-    // Inner crystal diamond facet (or pixel sprite in ai-64 / pixel-code mode)
-    if (this.visualStyle !== 'blocks') {
-      this.acquireUnitSprite(
-        CRYSTAL_ORB_X,
-        CRYSTAL_ORB_Y,
-        PLAYTEST_PIXEL_TEXTURE_KEYS.crystal,
-        32,
-        32,
-        orbAlpha,
-      );
-    } else {
-      this.bgGraphics.fillStyle(0xe0f2fe, 0.9 * orbAlpha);
-      this.bgGraphics.fillTriangle(
-        CRYSTAL_ORB_X,
-        CRYSTAL_ORB_Y - 12,
-        CRYSTAL_ORB_X + 10,
-        CRYSTAL_ORB_Y,
-        CRYSTAL_ORB_X - 10,
-        CRYSTAL_ORB_Y,
-      );
-      this.bgGraphics.fillStyle(0x0284c7, 0.9 * orbAlpha);
-      this.bgGraphics.fillTriangle(
-        CRYSTAL_ORB_X,
-        CRYSTAL_ORB_Y + 12,
-        CRYSTAL_ORB_X + 10,
-        CRYSTAL_ORB_Y,
-        CRYSTAL_ORB_X - 10,
-        CRYSTAL_ORB_Y,
-      );
-    }
-
-    this.crystalOrbText.setAlpha(orbAlpha);
-  }
-
-  private renderGrid(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
+  private renderBackdropAndGrid(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
     const gridW = geom.cols * geom.cellW;
     const gridH = geom.rows * geom.cellH;
-    const gridCenterY = geom.originY + gridH / 2;
 
-    // Base defense zone (left)
-    this.bgGraphics.fillStyle(0x1e3a5f, 0.55);
-    this.bgGraphics.fillRect(geom.originX - 88, geom.originY, 84, gridH);
-    this.bgGraphics.lineStyle(4, 0x38bdf8, 0.9);
-    this.bgGraphics.lineBetween(geom.originX, geom.originY - 6, geom.originX, geom.originY + gridH + 6);
-    this.baseLabelText.setPosition(geom.originX - 46, gridCenterY);
+    this.bgGraphics.fillStyle(0x090f1d, 1);
+    this.bgGraphics.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    this.bgGraphics.fillStyle(0x13221a, 1);
+    this.bgGraphics.fillRoundedRect(geom.originX - 78, geom.originY - 12, gridW + 156, gridH + 24, 12);
 
-    // Spawn portal zone (right)
-    this.bgGraphics.fillStyle(0x4c1d95, 0.35);
-    this.bgGraphics.fillRect(geom.originX + gridW + 4, geom.originY, 94, gridH);
-    this.bgGraphics.lineStyle(4, 0xf87171, 0.85);
-    this.bgGraphics.lineBetween(
-      geom.originX + gridW,
-      geom.originY - 6,
-      geom.originX + gridW,
-      geom.originY + gridH + 6,
-    );
-    this.spawnLabelText.setPosition(geom.originX + gridW + 51, gridCenterY);
+    const usePng = this.visualStyle === 'pixel-art';
+    const lightTile = MAP_TILE_ASSETS.grassland_tile_light.key;
+    const darkTile = MAP_TILE_ASSETS.grassland_tile_dark.key;
+    const baseGateKey = MAP_TILE_ASSETS.base_gate_tile.key;
+    const spawnKey = MAP_TILE_ASSETS.spawn_portal_tile.key;
 
-    this.laneHeaderText.setPosition(16, geom.originY + geom.cellH / 2);
+    for (let r = 0; r < geom.rows; r++) {
+      const cy = geom.originY + (r + 0.5) * geom.cellH;
+      if (usePng && this.hasTexture(baseGateKey)) {
+        this.putTile(geom.originX - 38, cy, baseGateKey, 72, geom.cellH - 2, 0.95);
+      } else {
+        this.bgGraphics.fillStyle(0x1e293b, 0.95);
+        this.bgGraphics.fillRect(geom.originX - 74, geom.originY + r * geom.cellH + 2, 70, geom.cellH - 4);
+      }
+      if (usePng && this.hasTexture(spawnKey)) {
+        this.putTile(geom.originX + gridW + 38, cy, spawnKey, 72, geom.cellH - 2, 0.95);
+      } else {
+        this.bgGraphics.fillStyle(0x3b0764, 0.85);
+        this.bgGraphics.fillRect(geom.originX + gridW + 4, geom.originY + r * geom.cellH + 2, 70, geom.cellH - 4);
+      }
 
-    for (let col = 0; col < geom.cols; col++) {
-      this.columnTexts[col].setPosition(geom.originX + (col + 0.5) * geom.cellW, geom.originY - 8);
-    }
+      for (let c = 0; c < geom.cols; c++) {
+        const cell = { row: r, column: c };
+        const rect = this.getCellRect(cell, geom);
+        const even = (r + c) % 2 === 0;
+        const pngKey = even ? lightTile : darkTile;
+        const fallbackKey = even ? PLAYTEST_PIXEL_TEXTURE_KEYS.grassEven : PLAYTEST_PIXEL_TEXTURE_KEYS.grassOdd;
 
-    // Checkerboard grass tiles
-    const useAiGrass =
-      this.visualStyle === 'ai-64' && this.hasLoadedTexture(PLAYTEST_AI_GRASS_ASSET.key);
-    for (let row = 0; row < geom.rows; row++) {
-      const isPrimary = row === 0;
-      for (let col = 0; col < geom.cols; col++) {
-        const x = geom.originX + col * geom.cellW;
-        const y = geom.originY + row * geom.cellH;
-        const even = (row + col) % 2 === 0;
-        if (useAiGrass) {
-          this.acquireTileSprite(
-            x + geom.cellW / 2,
-            y + geom.cellH / 2,
-            PLAYTEST_AI_GRASS_ASSET.key,
-            geom.cellW - 2,
-            geom.cellH - 2,
-            isPrimary ? 1 : 0.55,
-            isPrimary ? (even ? undefined : 0xdcfce7) : even ? 0x94a3b8 : 0x7e92a8,
-          );
-          this.gridOverlayGraphics.lineStyle(1, isPrimary ? 0x4ade80 : 0x334155, isPrimary ? 0.55 : 0.7);
-          this.gridOverlayGraphics.strokeRect(x, y, geom.cellW, geom.cellH);
-        } else if (this.visualStyle !== 'blocks') {
-          this.acquireTileSprite(
-            x + geom.cellW / 2,
-            y + geom.cellH / 2,
-            even ? PLAYTEST_PIXEL_TEXTURE_KEYS.grassEven : PLAYTEST_PIXEL_TEXTURE_KEYS.grassOdd,
-            geom.cellW - 2,
-            geom.cellH - 2,
-            isPrimary ? 1 : 0.55,
-            isPrimary ? undefined : 0x94a3b8,
-          );
-          this.gridOverlayGraphics.lineStyle(1, isPrimary ? 0x4ade80 : 0x334155, isPrimary ? 0.55 : 0.7);
-          this.gridOverlayGraphics.strokeRect(x, y, geom.cellW, geom.cellH);
+        if (usePng && this.hasTexture(pngKey)) {
+          this.putTile(rect.x + rect.w / 2, rect.y + rect.h / 2, pngKey, rect.w - 1, rect.h - 1, 1);
+        } else if (this.hasTexture(fallbackKey)) {
+          this.putTile(rect.x + rect.w / 2, rect.y + rect.h / 2, fallbackKey, rect.w - 1, rect.h - 1, 1);
         } else {
-          const fill = isPrimary
-            ? even
-              ? 0x1e5631
-              : 0x256d3b
-            : even
-              ? 0x163824
-              : 0x1b452c;
-          this.bgGraphics.fillStyle(fill, isPrimary ? 0.95 : 0.72);
-          this.bgGraphics.fillRect(x + 1, y + 1, geom.cellW - 2, geom.cellH - 2);
-          this.bgGraphics.lineStyle(1, isPrimary ? 0x4ade80 : 0x334155, isPrimary ? 0.45 : 0.65);
-          this.bgGraphics.strokeRect(x, y, geom.cellW, geom.cellH);
+          this.bgGraphics.fillStyle(even ? 0x166534 : 0x14532d, 1);
+          this.bgGraphics.fillRect(rect.x, rect.y, rect.w, rect.h);
+        }
+
+        if (this.showGridCoords) {
+          this.putLabel(rect.x + 18, rect.y + 12, `${r},${c}`, '#A7F3D0', '10px');
         }
       }
     }
 
-    // Primary Row 0 highlight border
-    this.gridOverlayGraphics.lineStyle(3, 0x4ade80, 0.85);
-    this.gridOverlayGraphics.strokeRect(geom.originX, geom.originY, gridW, geom.cellH);
+    this.bgGraphics.lineStyle(2, 0x34d399, 0.65);
+    this.bgGraphics.strokeRect(geom.originX, geom.originY, gridW, gridH);
+    this.putLabel(geom.originX - 38, geom.originY + 14, 'BASE', '#93C5FD', '11px');
+    this.putLabel(geom.originX + gridW + 38, geom.originY + 14, 'SPAWN', '#F9A8D4', '11px');
 
-    // Off-lane enemy indicator when auxiliary lanes are hidden
-    if (!snap.showAuxLanes) {
-      const hiddenCount = snap.enemies.filter(e => e.lane > 0).length;
-      if (hiddenCount > 0) {
-        this.acquireLabel(
-          CANVAS_WIDTH / 2,
-          geom.originY + geom.cellH + 26,
-          `+${hiddenCount} Enemies on hidden Lanes 2–5 (toggle Show 5 Lanes to inspect)`,
-          '#FBBF24',
-          '13px',
-        );
+    const previewTool =
+      this.externalDrag?.payload ?? (this.tool.kind !== 'select' ? this.tool : null);
+    const previewCell = this.externalDrag ? this.externalDrag.cell : this.hoverCell;
+    if (previewTool && previewCell) {
+      const rect = this.getCellRect(previewCell, geom);
+      const occupant = this.findDefenderAtCell(previewCell);
+      if (previewTool.kind === 'place') {
+        const cardFusionOut =
+          occupant && !previewTool.freeSandbox
+            ? this.controller.getCardFusionOutputId(previewTool.definitionId, occupant.id)
+            : null;
+        const ok = !occupant || cardFusionOut !== null;
+        const boxColor = cardFusionOut ? 0xfacc15 : ok ? 0x22c55e : 0xef4444;
+        const borderColor = cardFusionOut ? 0xfef08a : ok ? 0x4ade80 : 0xf87171;
+        this.overlayGraphics.fillStyle(boxColor, 0.28);
+        this.overlayGraphics.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+        this.overlayGraphics.lineStyle(2.5, borderColor, 0.95);
+        this.overlayGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+
+        const ghostDefId = cardFusionOut ?? previewTool.definitionId;
+        const pngKey = DEFENDER_SPRITE_ASSETS[ghostDefId]?.key;
+        const procKey = PLAYTEST_PIXEL_TEXTURE_KEYS.ironGolem;
+        const ghostKey =
+          usePng && pngKey && this.hasTexture(pngKey)
+            ? pngKey
+            : this.hasTexture(procKey)
+              ? procKey
+              : null;
+        if (ghostKey) {
+          this.putFx(
+            rect.x + rect.w / 2,
+            rect.y + rect.h / 2,
+            ghostKey,
+            64,
+            64,
+            cardFusionOut ? 0.85 : ok ? 0.68 : 0.36,
+            ok ? undefined : 0xf87171,
+          );
+        }
+        if (cardFusionOut) {
+          this.putLabel(
+            rect.x + rect.w / 2,
+            rect.y + 14,
+            `FUSE -> ${cardFusionOut.replace(/_/g, ' ').toUpperCase()}`,
+            '#FEF08A',
+            '10px',
+          );
+        }
+      } else if (previewTool.kind === 'crystal' && occupant) {
+        this.overlayGraphics.fillStyle(0x38bdf8, 0.3);
+        this.overlayGraphics.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+        this.overlayGraphics.lineStyle(3, 0x38bdf8, 1);
+        this.overlayGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+      } else if (previewTool.kind === 'shovel' && occupant) {
+        this.overlayGraphics.fillStyle(0xef4444, 0.32);
+        this.overlayGraphics.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+        this.overlayGraphics.lineStyle(3, 0xf87171, 1);
+        this.overlayGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+        this.putLabel(rect.x + rect.w / 2, rect.y + 14, 'REMOVE', '#FECACA', '11px');
+      } else if (previewTool.kind === 'glove') {
+        const pickedId =
+          previewTool.kind === 'glove' && 'pickedDefenderId' in previewTool
+            ? previewTool.pickedDefenderId
+            : undefined;
+        if (pickedId) {
+          if (!occupant) {
+            this.overlayGraphics.fillStyle(0x34d399, 0.25);
+            this.overlayGraphics.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+            this.overlayGraphics.lineStyle(2.5, 0x6ee7b7, 0.95);
+            this.overlayGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+            this.putLabel(rect.x + rect.w / 2, rect.y + 14, 'MOVE HERE', '#A7F3D0', '10px');
+          }
+        } else if (occupant) {
+          this.overlayGraphics.fillStyle(0xfacc15, 0.25);
+          this.overlayGraphics.fillRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+          this.overlayGraphics.lineStyle(3, 0xfef08a, 1);
+          this.overlayGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+          this.putLabel(rect.x + rect.w / 2, rect.y + 14, 'PICK UP', '#FEF08A', '10px');
+        }
+      }
+    }
+
+    const activeGloveSourceId =
+      this.dragState?.kind === 'glove-drag'
+        ? this.dragState.sourceId
+        : this.tool.kind === 'glove'
+          ? this.tool.pickedDefenderId
+          : undefined;
+    if (activeGloveSourceId) {
+      const srcDef = snap.defenders.find(d => d.id === activeGloveSourceId);
+      if (srcDef && srcDef.row < geom.rows) {
+        const sr = this.getCellRect({ row: srcDef.row, column: srcDef.column }, geom);
+        this.overlayGraphics.lineStyle(3, 0x38bdf8, 0.95);
+        this.overlayGraphics.strokeRect(sr.x + 3, sr.y + 3, sr.w - 6, sr.h - 6);
+      }
+      for (const candidate of snap.defenders) {
+        if (candidate.id === activeGloveSourceId || candidate.row >= geom.rows) continue;
+        const outId = this.controller.getFusionOutputId(activeGloveSourceId, candidate.id);
+        if (!outId) continue;
+        const r = this.getCellRect({ row: candidate.row, column: candidate.column }, geom);
+        this.overlayGraphics.fillStyle(0xfacc15, 0.28);
+        this.overlayGraphics.fillRect(r.x + 3, r.y + 3, r.w - 6, r.h - 6);
+        this.overlayGraphics.lineStyle(3, 0xfef08a, 1);
+        this.overlayGraphics.strokeRect(r.x + 3, r.y + 3, r.w - 6, r.h - 6);
       }
     }
   }
 
-  private renderSlowZones(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
+  private renderZonesAndAuras(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
+    const pulse = 0.65 + 0.35 * Math.sin(this.time.now * 0.006);
     for (const zone of snap.slowZones) {
-      if (zone.row >= geom.rows || zone.column >= geom.cols) continue;
+      if (zone.row >= geom.rows) continue;
       const rect = this.getCellRect({ row: zone.row, column: zone.column }, geom);
-      this.gridOverlayGraphics.fillStyle(0x22d3ee, 0.28);
-      this.gridOverlayGraphics.fillRect(rect.x + 3, rect.y + 3, rect.w - 6, rect.h - 6);
-      this.gridOverlayGraphics.lineStyle(2, 0x67e8f9, 0.85);
-      this.gridOverlayGraphics.strokeRect(rect.x + 3, rect.y + 3, rect.w - 6, rect.h - 6);
-
-      this.acquireLabel(
-        rect.x + rect.w / 2,
-        rect.y + rect.h - 14,
-        `SLOW -${Math.round(zone.slowPct * 100)}%`,
-        '#A5F3FC',
-        '11px',
-      );
+      this.overlayGraphics.fillStyle(0x38bdf8, 0.24 * pulse);
+      this.overlayGraphics.fillRect(rect.x + 4, rect.y + 4, rect.w - 8, rect.h - 8);
+      this.overlayGraphics.lineStyle(2, 0x7dd3fc, 0.9);
+      this.overlayGraphics.strokeRect(rect.x + 4, rect.y + 4, rect.w - 8, rect.h - 8);
+      this.putLabel(rect.x + rect.w / 2, rect.y + rect.h - 12, 'ICE ZONE', '#BAE6FD', '10px');
     }
-  }
 
-  private renderRedirectAuras(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
     for (const aura of snap.redirectAuras) {
       if (aura.ownerRow >= geom.rows) continue;
       const minR = Math.max(0, aura.ownerRow - aura.radius);
       const maxR = Math.min(geom.rows - 1, aura.ownerRow + aura.radius);
       const minC = Math.max(0, aura.ownerColumn - aura.radius);
       const maxC = Math.min(geom.cols - 1, aura.ownerColumn + aura.radius);
-
-      const x = geom.originX + minC * geom.cellW + 2;
-      const y = geom.originY + minR * geom.cellH + 2;
-      const w = (maxC - minC + 1) * geom.cellW - 4;
-      const h = (maxR - minR + 1) * geom.cellH - 4;
-
-      this.gridOverlayGraphics.fillStyle(0xfbbf24, 0.08);
-      this.gridOverlayGraphics.fillRect(x, y, w, h);
-      this.gridOverlayGraphics.lineStyle(2, 0xfbbf24, 0.75);
-      this.gridOverlayGraphics.strokeRect(x, y, w, h);
-
-      const ownerRect = this.getCellRect({ row: aura.ownerRow, column: aura.ownerColumn }, geom);
-      const ox = ownerRect.x + ownerRect.w / 2;
-      const oy = ownerRect.y + ownerRect.h / 2;
-
-      for (const allyId of aura.protectedAllyIds) {
-        const ally = snap.defenders.find(d => d.id === allyId);
-        if (!ally || ally.row >= geom.rows) continue;
-        const allyRect = this.getCellRect({ row: ally.row, column: ally.column }, geom);
-        this.unitGraphics.lineStyle(2, 0xfde047, 0.75);
-        this.unitGraphics.lineBetween(ox, oy, allyRect.x + allyRect.w / 2, allyRect.y + allyRect.h / 2);
-      }
+      const x = geom.originX + minC * geom.cellW + 4;
+      const y = geom.originY + minR * geom.cellH + 4;
+      const w = (maxC - minC + 1) * geom.cellW - 8;
+      const h = (maxR - minR + 1) * geom.cellH - 8;
+      this.overlayGraphics.lineStyle(2.5, 0xfbbf24, 0.78 * pulse);
+      this.overlayGraphics.strokeRect(x, y, w, h);
     }
   }
 
   private renderDefenders(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
-    const fuseSourceId = this.dragState?.kind === 'defender-fuse' ? this.dragState.sourceId : null;
+    const t = this.time.now;
+    const usePng = this.visualStyle === 'pixel-art';
+    const frostShieldKey = EFFECT_SPRITE_ASSETS.vfx_frost_shield.key;
+    const bastionShieldKey = EFFECT_SPRITE_ASSETS.vfx_iron_bastion.key;
+    const howlRingKey = EFFECT_SPRITE_ASSETS.vfx_howl_ring.key;
 
     for (const def of snap.defenders) {
       if (def.row >= geom.rows) continue;
       const rect = this.getCellRect({ row: def.row, column: def.column }, geom);
-      const pad = 10;
-      const cardX = rect.x + pad;
-      const cardY = rect.y + 10;
-      const cardW = rect.w - pad * 2;
-      const cardH = rect.h - 20;
+      const baseCx = rect.x + rect.w / 2;
+      const cx = baseCx + this.attackTracker.getDefenderOffsetX(def.id);
+      const isHovering = def.definitionId === 'blaze' || def.definitionId === 'infernal_archon';
+      const bob = isHovering
+        ? Math.sin(t * 0.005 + def.column) * 4
+        : Math.sin(t * 0.003 + def.row) * 1.5;
+      const cy = rect.y + rect.h / 2 + bob - 2;
+      const size = def.tier === 2 ? 78 : 70;
 
-      const isSelected = def.id === snap.selectedDefenderId;
-      const isValidFuseTarget =
-        fuseSourceId !== null && fuseSourceId !== def.id && this.controller.canFuse(fuseSourceId, def.id);
-      const aiEntry = this.visualStyle === 'ai-64' ? PLAYTEST_AI_DEFENDER_ASSETS[def.definitionId] : undefined;
-      const useAiSprite = aiEntry !== undefined && this.hasLoadedTexture(aiEntry.key);
-      const useCodeSprite = !useAiSprite && this.visualStyle !== 'blocks' && def.definitionId === 'iron_golem';
-      const usePixelSprite = useAiSprite || useCodeSprite;
+      if (snap.selectedDefenderId === def.id) {
+        this.overlayGraphics.lineStyle(2.5, 0x38bdf8, 0.95);
+        this.overlayGraphics.strokeRect(rect.x + 4, rect.y + 4, rect.w - 8, rect.h - 8);
+      }
 
-      if (usePixelSprite) {
-        const textureKey = useAiSprite ? aiEntry.key : PLAYTEST_PIXEL_TEXTURE_KEYS.ironGolem;
-        const baseCenterX = rect.x + rect.w / 2;
-        const centerX = baseCenterX + this.attackTracker.getDefenderOffsetX(def.id);
-        const shadowY = rect.y + rect.h - 28;
-        const isFloating = Boolean(useAiSprite && aiEntry.floating);
-        this.unitGraphics.fillStyle(0x020617, isFloating ? 0.24 : 0.38);
-        this.unitGraphics.fillEllipse(
-          baseCenterX,
-          shadowY,
-          geom.rows === 1 ? (isFloating ? 50 : 74) : isFloating ? 36 : 52,
-          geom.rows === 1 ? (isFloating ? 14 : 18) : isFloating ? 10 : 12,
-        );
+      this.unitGraphics.fillStyle(0x020617, 0.35);
+      this.unitGraphics.fillEllipse(baseCx, rect.y + rect.h / 2 + 30, size * 0.65, 12);
 
-        if (isSelected || isValidFuseTarget) {
-          this.unitGraphics.lineStyle(4, isSelected ? 0xfef08a : 0x4ade80, 0.95);
-          this.unitGraphics.strokeRoundedRect(cardX, cardY, cardW, cardH, 8);
+      if (def.buffDamagePct > 0 || def.buffAttackSpeedPct > 0) {
+        if (usePng && this.hasTexture(howlRingKey)) {
+          this.putTile(cx, cy + 6, howlRingKey, size + 16, size + 16, 0.7);
+        } else {
+          this.unitGraphics.lineStyle(2, 0xfde047, 0.85);
+          this.unitGraphics.strokeCircle(cx, cy, size * 0.52);
         }
+      }
 
-        const spriteSize = useAiSprite
-          ? geom.rows === 1
-            ? aiEntry.size1Lane
-            : aiEntry.size5Lane
-          : geom.rows === 1
-            ? 96
-            : 64;
-        const spriteTint = def.isFrozen ? 0x67e8f9 : def.isStunned ? 0xfef08a : undefined;
-        this.acquireUnitSprite(
-          centerX,
-          rect.y + rect.h * 0.44,
-          textureKey,
-          spriteSize,
-          spriteSize,
-          1,
-          spriteTint,
-        );
-
-        this.acquireLabel(
-          cardX + cardW / 2,
-          cardY + 8,
-          `${def.shortLabel} T${def.tier}`,
-          '#F8FAFC',
-          geom.rows === 1 ? '11px' : '10px',
-        );
+      const assetKey = DEFENDER_SPRITE_ASSETS[def.definitionId]?.key;
+      const tint = def.isStunned ? 0xfef08a : def.isFrozen ? 0x67e8f9 : undefined;
+      if (usePng && assetKey && this.hasTexture(assetKey)) {
+        this.putUnit(cx, cy, assetKey, size, size, 1, tint);
+      } else if (this.hasTexture(PLAYTEST_PIXEL_TEXTURE_KEYS.ironGolem)) {
+        this.putUnit(cx, cy, PLAYTEST_PIXEL_TEXTURE_KEYS.ironGolem, size * 0.85, size * 0.85, 1, tint ?? def.color);
       } else {
-        // Card fill
-        this.unitGraphics.fillStyle(def.color, 0.94);
-        this.unitGraphics.fillRoundedRect(cardX, cardY, cardW, cardH, 8);
+        this.unitGraphics.fillStyle(def.color, 1);
+        this.unitGraphics.fillRoundedRect(cx - size / 2, cy - size / 2, size, size, 8);
+        this.putLabel(cx, cy, def.shortLabel, '#0F172A', '13px');
+      }
 
-        // Border highlight
-        let borderColor = def.accentColor;
-        let borderWidth = def.tier === 2 ? 3 : 2;
-        if (isSelected) {
-          borderColor = 0xfef08a;
-          borderWidth = 4;
-        } else if (isValidFuseTarget) {
-          borderColor = 0x4ade80;
-          borderWidth = 4;
+      if (def.shieldAmount > 0) {
+        const shieldKey = def.definitionId === 'frost_guardian' ? frostShieldKey : bastionShieldKey;
+        if (usePng && this.hasTexture(shieldKey)) {
+          this.putFx(cx, cy, shieldKey, size + 14, size + 14, 0.82);
+        } else {
+          this.hudGraphics.lineStyle(2.5, 0x38bdf8, 0.9);
+          this.hudGraphics.strokeCircle(cx, cy, size * 0.56);
         }
-        this.unitGraphics.lineStyle(borderWidth, borderColor, 1);
-        this.unitGraphics.strokeRoundedRect(cardX, cardY, cardW, cardH, 8);
-
-        // Label + Tier tag
-        this.acquireLabel(
-          cardX + cardW / 2,
-          cardY + cardH * 0.32,
-          `${def.shortLabel} T${def.tier}`,
-          '#0F172A',
-          geom.rows === 1 ? '17px' : '13px',
-        );
       }
 
-      // HP bar (always above sprite/card on unitHudGraphics)
-      const barW = cardW - 14;
-      const barX = cardX + 7;
-      const hpBarY = cardY + cardH - 18;
-      const hpRatio = def.maxHp > 0 ? Math.max(0, Math.min(1, def.hp / def.maxHp)) : 0;
-      const hpColor = hpRatio > 0.5 ? 0x22c55e : hpRatio > 0.25 ? 0xf59e0b : 0xef4444;
+      const barW = 68;
+      const barX = cx - barW / 2;
+      const barY = rect.y + 8;
+      const hpRatio = def.maxHp > 0 ? Phaser.Math.Clamp(def.hp / def.maxHp, 0, 1) : 0;
+      this.hudGraphics.fillStyle(0x020617, 0.92);
+      this.hudGraphics.fillRect(barX, barY, barW, 8);
+      this.hudGraphics.fillStyle(def.tier === 2 ? 0xfacc15 : 0x22c55e, 1);
+      this.hudGraphics.fillRect(barX + 1, barY + 1, (barW - 2) * hpRatio, 6);
 
-      this.unitHudGraphics.fillStyle(0x0f172a, 0.9);
-      this.unitHudGraphics.fillRect(barX, hpBarY, barW, 8);
-      this.unitHudGraphics.fillStyle(hpColor, 1);
-      this.unitHudGraphics.fillRect(barX + 1, hpBarY + 1, Math.max(0, (barW - 2) * hpRatio), 6);
-
-      // Shield bar (cyan for Frost Guardian, gold for Steel Guardian)
       if (def.shieldAmount > 0 && def.shieldMaxAmount > 0) {
-        const shieldBarY = hpBarY - 8;
-        const shieldRatio = Math.max(0, Math.min(1, def.shieldAmount / def.shieldMaxAmount));
-        const shieldColor = def.definitionId === 'frost_guardian' ? 0x22d3ee : 0xfbbf24;
-        this.unitHudGraphics.fillStyle(0x0f172a, 0.9);
-        this.unitHudGraphics.fillRect(barX, shieldBarY, barW, 6);
-        this.unitHudGraphics.fillStyle(shieldColor, 1);
-        this.unitHudGraphics.fillRect(barX + 1, shieldBarY + 1, Math.max(0, (barW - 2) * shieldRatio), 4);
+        const sRatio = Phaser.Math.Clamp(def.shieldAmount / def.shieldMaxAmount, 0, 1);
+        this.hudGraphics.fillStyle(0x38bdf8, 1);
+        this.hudGraphics.fillRect(barX + 1, barY + 6, (barW - 2) * sRatio, 3);
       }
 
-      // Status / Buff pills
-      if (def.badges.length > 0) {
-        const pillText = def.badges.map(b => b.label).slice(0, 2).join(' ');
-        const pillColor =
-          def.isStunned || def.isFrozen ? '#FCA5A5' : def.buffDamagePct > 0 ? '#FDE047' : '#BAE6FD';
-        this.acquireLabel(
-          cardX + cardW / 2,
-          usePixelSprite ? cardY + cardH - 27 : cardY + cardH * 0.58,
-          pillText,
-          pillColor,
-          '10px',
-        );
+      if (def.tier === 2) {
+        this.putLabel(barX + barW + 10, barY + 4, 'T2', '#FACC15', '10px');
       }
     }
   }
 
   private renderEnemies(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
-    // Deterministic vertical stagger when multiple enemies share near-identical x in a lane
-    const laneLastX = new Map<number, number>();
-    const laneStaggerIdx = new Map<number, number>();
-    const staggerOffsets = [0, -22, 22, -38, 38];
+    const t = this.time.now;
+    const usePng = this.visualStyle === 'pixel-art';
+    const iceBlockKey = EFFECT_SPRITE_ASSETS.vfx_ice_block.key;
+    const markKey = EFFECT_SPRITE_ASSETS.vfx_predator_mark.key;
 
     for (const enemy of snap.enemies) {
       if (enemy.lane >= geom.rows) continue;
-
-      const prevX = laneLastX.get(enemy.lane);
-      let staggerIndex = 0;
-      if (prevX !== undefined && Math.abs(enemy.x - prevX) < 0.35) {
-        staggerIndex = (laneStaggerIdx.get(enemy.lane) ?? 0) + 1;
-      }
-      laneLastX.set(enemy.lane, enemy.x);
-      laneStaggerIdx.set(enemy.lane, staggerIndex);
-
-      const staggerScale = geom.rows === 1 ? 1 : 0.55;
-      const offsetY = staggerOffsets[staggerIndex % staggerOffsets.length] * staggerScale;
-
       const ex = geom.originX + enemy.x * geom.cellW;
-      const ey = geom.originY + (enemy.lane + 0.5) * geom.cellH + offsetY;
-      const aiEntry = this.visualStyle === 'ai-64' ? PLAYTEST_AI_ENEMY_ASSETS[enemy.definitionId] : undefined;
-      const useAiSprite = aiEntry !== undefined && this.hasLoadedTexture(aiEntry.key);
-      const useCodeSprite = !useAiSprite && this.visualStyle !== 'blocks' && enemy.definitionId === 'zombie';
-      const usePixelSprite = useAiSprite || useCodeSprite;
-      const size = useAiSprite
-        ? geom.rows === 1
-          ? aiEntry.size1Lane
-          : aiEntry.size5Lane
-        : useCodeSprite
-          ? geom.rows === 1
-            ? 64
-            : 48
-          : geom.rows === 1
-            ? 42
-            : 30;
+      const sway = enemy.isFrozen || enemy.isStunned ? 0 : Math.sin(t * 0.008 + enemy.lane) * 2;
+      const ey = geom.originY + (enemy.lane + 0.5) * geom.cellH + sway;
+      const size = 62;
 
-      if (usePixelSprite) {
-        this.unitGraphics.fillStyle(0x020617, 0.36);
-        this.unitGraphics.fillEllipse(ex, ey + size * 0.38, size * 0.65, 10);
+      this.unitGraphics.fillStyle(0x020617, 0.35);
+      this.unitGraphics.fillEllipse(ex, ey + 28, 38, 10);
 
-        const spriteTint = enemy.isFrozen
-          ? 0x67e8f9
-          : enemy.isStunned
-            ? 0xfef08a
-            : enemy.burnCount > 0
-              ? 0xfb923c
+      const assetKey = ENEMY_SPRITE_ASSETS[enemy.definitionId]?.key;
+      const tint = enemy.isFrozen
+        ? 0x67e8f9
+        : enemy.isStunned
+          ? 0xfef08a
+          : enemy.burnCount > 0
+            ? 0xfb923c
+            : enemy.slowPct > 0
+              ? 0x93c5fd
               : undefined;
-        const textureKey = useAiSprite ? aiEntry.key : PLAYTEST_PIXEL_TEXTURE_KEYS.zombie;
-        this.acquireUnitSprite(ex, ey, textureKey, size, size, 1, spriteTint);
+
+      if (usePng && assetKey && this.hasTexture(assetKey)) {
+        this.putUnit(ex, ey, assetKey, size, size, 1, tint);
+      } else if (this.hasTexture(PLAYTEST_PIXEL_TEXTURE_KEYS.zombie)) {
+        this.putUnit(ex, ey, PLAYTEST_PIXEL_TEXTURE_KEYS.zombie, size, size, 1, tint ?? enemy.color);
       } else {
-        // Enemy block/circle
-        this.unitGraphics.fillStyle(enemy.color, 0.96);
-        this.unitGraphics.fillRoundedRect(ex - size / 2, ey - size / 2, size, size, 7);
+        this.unitGraphics.fillStyle(enemy.color, 1);
+        this.unitGraphics.fillRoundedRect(ex - 26, ey - 26, 52, 52, 6);
+        this.putLabel(ex, ey, enemy.shortLabel, '#FFFFFF', '11px');
+      }
 
-        const outline = enemy.isFrozen
-          ? 0x67e8f9
-          : enemy.isStunned
-            ? 0xfef08a
-            : enemy.burnCount > 0
-              ? 0xfb923c
-              : 0xf8fafc;
-        this.unitGraphics.lineStyle(2, outline, 0.95);
-        this.unitGraphics.strokeRoundedRect(ex - size / 2, ey - size / 2, size, size, 7);
-
-        this.acquireLabel(ex, ey, enemy.shortLabel, '#FFFFFF', geom.rows === 1 ? '13px' : '11px');
+      if (enemy.isFrozen && usePng && this.hasTexture(iceBlockKey)) {
+        this.putFx(ex, ey, iceBlockKey, 66, 66, 0.72);
       }
 
       if (this.attackTracker.isEnemyHitFlashing(enemy.id)) {
         this.fxGraphics.fillStyle(0xffffff, 0.42);
-        this.fxGraphics.fillCircle(ex, ey, size * 0.38);
+        this.fxGraphics.fillCircle(ex, ey, 24);
         this.fxGraphics.lineStyle(2.5, 0xfef08a, 0.9);
-        this.fxGraphics.strokeCircle(ex, ey, size * 0.42);
+        this.fxGraphics.strokeCircle(ex, ey, 26);
       }
 
-      // HP bar above enemy
-      const barW = 46;
-      const barX = ex - barW / 2;
-      const barY = ey - size / 2 - 11;
-      const hpRatio = enemy.maxHp > 0 ? Math.max(0, Math.min(1, enemy.hp / enemy.maxHp)) : 0;
-      this.unitHudGraphics.fillStyle(0x0f172a, 0.95);
-      this.unitHudGraphics.fillRect(barX, barY, barW, 7);
-      this.unitHudGraphics.fillStyle(0xef4444, 1);
-      this.unitHudGraphics.fillRect(barX + 1, barY + 1, Math.max(0, (barW - 2) * hpRatio), 5);
+      if (enemy.isVulnerable) {
+        if (usePng && this.hasTexture(markKey)) {
+          this.putFx(ex, ey - 42, markKey, 28, 28, 1);
+        } else {
+          this.putLabel(ex, ey - 42, 'MARK +40%', '#F87171', '10px');
+        }
+      }
 
-      // Compact status tags
+      const barW = 50;
+      const barX = ex - barW / 2;
+      const barY = ey - 36;
+      const hpRatio = enemy.maxHp > 0 ? Phaser.Math.Clamp(enemy.hp / enemy.maxHp, 0, 1) : 0;
+      this.hudGraphics.fillStyle(0x020617, 0.92);
+      this.hudGraphics.fillRect(barX, barY, barW, 7);
+      this.hudGraphics.fillStyle(0xef4444, 1);
+      this.hudGraphics.fillRect(barX + 1, barY + 1, (barW - 2) * hpRatio, 5);
+
       const tags: string[] = [];
       if (enemy.isFrozen) tags.push('FRZ');
       if (enemy.isStunned) tags.push('STUN');
       if (enemy.slowPct > 0) tags.push('SLOW');
       if (enemy.burnCount > 0) tags.push(enemy.burnCount > 1 ? `BURN×${enemy.burnCount}` : 'BURN');
-
       if (tags.length > 0) {
-        this.acquireLabel(ex, ey + size / 2 + 9, tags.join(' '), '#FDE68A', '10px');
+        this.putLabel(ex, ey + 36, tags.join(' '), '#FDE68A', '10px');
       }
     }
   }
 
   private renderProjectiles(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
-    const pulse = 0.65 + 0.35 * Math.sin(this.time.now * 0.015);
+    const usePng = this.visualStyle === 'pixel-art';
+    const pulse = 0.7 + 0.3 * Math.sin(this.time.now * 0.014);
 
     for (const proj of snap.projectiles) {
       if (proj.kind === 'lane') {
         if (proj.lane >= geom.rows) continue;
         const px = geom.originX + proj.x * geom.cellW;
         const py = geom.originY + (proj.lane + 0.5) * geom.cellH;
+        const effectKey =
+          proj.abilityId === 'guardian_charge'
+            ? EFFECT_SPRITE_ASSETS.proj_iron_wolf.key
+            : proj.abilityId === 'glacier_barrage'
+              ? EFFECT_SPRITE_ASSETS.proj_frost_pierce_arrow.key
+              : proj.abilityId === 'siege_volley'
+                ? EFFECT_SPRITE_ASSETS.proj_steel_bolt.key
+                : proj.abilityId === 'piercing_barrage'
+                  ? EFFECT_SPRITE_ASSETS.proj_piercing_arrow.key
+                  : EFFECT_SPRITE_ASSETS.proj_arrow.key;
+        const size = proj.abilityId === 'guardian_charge' ? 68 : 34;
 
-        if (proj.abilityId === 'piercing_barrage' || proj.pierce) {
-          // Glowing cyan-gold piercing beam/arrow
-          this.unitGraphics.lineStyle(8, 0x38bdf8, 0.45);
-          this.unitGraphics.lineBetween(px - 28, py, px + 14, py);
-          this.unitGraphics.lineStyle(3, 0xfef08a, 1);
-          this.unitGraphics.lineBetween(px - 24, py, px + 16, py);
-          this.unitGraphics.fillStyle(0xfef08a, 1);
-          this.unitGraphics.fillTriangle(px + 20, py, px + 8, py - 6, px + 8, py + 6);
+        if (usePng && this.hasTexture(effectKey)) {
+          this.putFx(px, py, effectKey, size, size, 1);
         } else {
-          // Arrow storm projectile
-          this.unitGraphics.lineStyle(3, 0xfbbf24, 1);
-          this.unitGraphics.lineBetween(px - 14, py, px + 10, py);
-          this.unitGraphics.fillStyle(0xf8fafc, 1);
-          this.unitGraphics.fillTriangle(px + 14, py, px + 5, py - 4, px + 5, py + 4);
+          this.fxGraphics.lineStyle(4, proj.pierce ? 0x38bdf8 : 0xfbbf24, 1);
+          this.fxGraphics.lineBetween(px - 18, py, px + 14, py);
         }
       } else {
-        if (proj.impactCell.row >= geom.rows || proj.impactCell.column >= geom.cols) continue;
+        if (proj.impactCell.row >= geom.rows) continue;
         const rect = this.getCellRect(proj.impactCell, geom);
         const tx = rect.x + rect.w / 2;
         const ty = rect.y + rect.h / 2;
+        this.fxGraphics.lineStyle(2.5, 0xf87171, pulse);
+        this.fxGraphics.strokeCircle(tx, ty, 22);
 
-        // Pulsing red target circle on impactCell
-        this.unitGraphics.lineStyle(2.5, 0xf87171, pulse);
-        this.unitGraphics.strokeCircle(tx, ty, 24);
-        this.unitGraphics.fillStyle(0xef4444, 0.14 * pulse);
-        this.unitGraphics.fillCircle(tx, ty, 24);
-
-        // Descending fiery streak
-        const progress = Phaser.Math.Clamp(1 - proj.remainingTravelTicks / METEOR_TRAVEL_TICKS, 0, 1);
-        const startX = tx + 42 * (1 - progress);
-        const startY = ty - 150 * (1 - progress);
-        this.unitGraphics.lineStyle(4, 0xf97316, 0.95);
-        this.unitGraphics.lineBetween(startX + 12, startY - 28, startX, startY);
-        this.unitGraphics.fillStyle(0xfef08a, 1);
-        this.unitGraphics.fillCircle(startX, startY, 5);
+        const totalTicks = proj.abilityId === 'inferno' ? INFERNO_TRAVEL_TICKS : METEOR_TRAVEL_TICKS;
+        const progress = Phaser.Math.Clamp(1 - proj.remainingTravelTicks / totalTicks, 0, 1);
+        const curX = proj.abilityId === 'inferno' ? tx - 65 * (1 - progress) : tx + 44 * (1 - progress);
+        const arcLift = proj.abilityId === 'inferno' ? Math.sin(progress * Math.PI) * 58 : 135 * (1 - progress);
+        const curY = ty - arcLift;
+        const projKey =
+          proj.abilityId === 'inferno'
+            ? EFFECT_SPRITE_ASSETS.proj_fireball.key
+            : EFFECT_SPRITE_ASSETS.proj_meteor_arrow.key;
+        if (usePng && this.hasTexture(projKey)) {
+          this.putFx(curX, curY, projKey, 34, 34, 1);
+        } else {
+          this.fxGraphics.fillStyle(0xf97316, 1);
+          this.fxGraphics.fillCircle(curX, curY, 7);
+        }
       }
     }
   }
 
   private renderItems(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
-    const pulse = 1 + 0.12 * Math.sin(this.time.now * 0.008);
+    const pulse = 1 + 0.1 * Math.sin(this.time.now * 0.008);
+    const usePng = this.visualStyle === 'pixel-art';
 
     for (const item of snap.items) {
       const pos = this.getItemCoords(item, geom);
-      if (this.visualStyle !== 'blocks') {
-        const size = 32 * pulse;
-        if (item.kind === 'energy') {
-          this.unitGraphics.fillStyle(0xfacc15, 0.24);
-          this.unitGraphics.fillCircle(pos.x, pos.y, 18 * pulse);
-          this.acquireUnitSprite(pos.x, pos.y, PLAYTEST_PIXEL_TEXTURE_KEYS.energy, size, size, 1);
-          this.acquireLabel(pos.x, pos.y + 18, `+${item.amount}`, '#FEF08A', '10px');
-        } else {
-          this.unitGraphics.fillStyle(0x38bdf8, 0.28);
-          this.unitGraphics.fillCircle(pos.x, pos.y, 19 * pulse);
-          this.acquireUnitSprite(pos.x, pos.y, PLAYTEST_PIXEL_TEXTURE_KEYS.crystal, size, size, 1);
-          this.acquireLabel(pos.x, pos.y + 18, 'CRY', '#E0F2FE', '10px');
-        }
-        continue;
-      }
-
+      const size = 40 * pulse;
       if (item.kind === 'energy') {
-        const r = 14 * pulse;
-        this.unitGraphics.fillStyle(0xfacc15, 0.25);
-        this.unitGraphics.fillCircle(pos.x, pos.y, r + 6);
-        this.unitGraphics.fillStyle(0xfbbf24, 0.95);
-        this.unitGraphics.fillCircle(pos.x, pos.y, r);
-        this.unitGraphics.lineStyle(2, 0xfef9c3, 1);
-        this.unitGraphics.strokeCircle(pos.x, pos.y, r);
-        this.acquireLabel(pos.x, pos.y, `+${item.amount}`, '#0F172A', '10px');
+        this.unitGraphics.fillStyle(0xfacc15, 0.28);
+        this.unitGraphics.fillCircle(pos.x, pos.y, 20 * pulse);
+        const key =
+          usePng && this.hasTexture(ITEM_SPRITE_ASSETS.energy_orb.key)
+            ? ITEM_SPRITE_ASSETS.energy_orb.key
+            : PLAYTEST_PIXEL_TEXTURE_KEYS.energy;
+        if (this.hasTexture(key)) {
+          this.putFx(pos.x, pos.y, key, size, size, 1);
+        }
+        this.putLabel(pos.x, pos.y + 22, `+${item.amount}`, '#FEF08A', '11px');
       } else {
-        const r = 15 * pulse;
-        this.unitGraphics.fillStyle(0x38bdf8, 0.28);
-        this.unitGraphics.fillCircle(pos.x, pos.y, r + 6);
-        this.unitGraphics.fillStyle(0x0ea5e9, 0.95);
-        this.unitGraphics.fillPoints(
-          [
-            new Phaser.Geom.Point(pos.x, pos.y - r),
-            new Phaser.Geom.Point(pos.x + r, pos.y),
-            new Phaser.Geom.Point(pos.x, pos.y + r),
-            new Phaser.Geom.Point(pos.x - r, pos.y),
-          ],
-          true,
-        );
-        this.unitGraphics.lineStyle(2, 0xe0f2fe, 1);
-        this.unitGraphics.strokePoints(
-          [
-            new Phaser.Geom.Point(pos.x, pos.y - r),
-            new Phaser.Geom.Point(pos.x + r, pos.y),
-            new Phaser.Geom.Point(pos.x, pos.y + r),
-            new Phaser.Geom.Point(pos.x - r, pos.y),
-          ],
-          true,
-        );
-        this.acquireLabel(pos.x, pos.y, 'CRY', '#FFFFFF', '9px');
+        this.unitGraphics.fillStyle(0x38bdf8, 0.3);
+        this.unitGraphics.fillCircle(pos.x, pos.y, 22 * pulse);
+        const key =
+          usePng && this.hasTexture(ITEM_SPRITE_ASSETS.power_crystal.key)
+            ? ITEM_SPRITE_ASSETS.power_crystal.key
+            : PLAYTEST_PIXEL_TEXTURE_KEYS.crystal;
+        if (this.hasTexture(key)) {
+          this.putFx(pos.x, pos.y, key, size, size, 1);
+        }
+        this.putLabel(pos.x, pos.y + 22, 'CRYSTAL', '#BAE6FD', '10px');
       }
     }
   }
 
   private renderFlashes(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
+    const usePng = this.visualStyle === 'pixel-art';
     const gridW = geom.cols * geom.cellW;
     const gridH = geom.rows * geom.cellH;
 
     for (const flash of snap.flashes) {
-      const alpha = Phaser.Math.Clamp(flash.ttlMs / 750, 0.1, 0.85);
-
-      if (flash.abilityId === 'absolute_zero') {
-        this.fxGraphics.fillStyle(flash.color, 0.28 * alpha);
-        this.fxGraphics.fillRect(geom.originX, geom.originY, gridW, gridH);
-        this.acquireLabel(geom.originX + gridW / 2, geom.originY + gridH / 2, flash.label, '#E0F2FE', '22px');
+      const alpha = Phaser.Math.Clamp(flash.ttlMs / 800, 0.15, 0.9);
+      if (flash.kind === 'summon' && flash.cell) {
+        if (flash.cell.row >= geom.rows) continue;
+        const rect = this.getCellRect(flash.cell, geom);
+        const cx = rect.x + rect.w / 2;
+        const cy = rect.y + rect.h / 2;
+        const popAlpha = Phaser.Math.Clamp(flash.ttlMs / 450, 0.2, 0.95);
+        const ringRadius = 26 + (1 - popAlpha) * 28;
+        this.fxGraphics.fillStyle(0x22c55e, 0.22 * popAlpha);
+        this.fxGraphics.fillCircle(cx, cy, ringRadius);
+        this.fxGraphics.lineStyle(3, 0x4ade80, popAlpha);
+        this.fxGraphics.strokeCircle(cx, cy, ringRadius);
+        this.putLabel(cx, rect.y + 18, `${flash.label}!`, '#86EFAC', '12px');
         continue;
       }
 
-      if (
-        flash.lane !== undefined &&
-        (flash.abilityId === 'blizzard' ||
-          flash.abilityId === 'earthquake' ||
-          flash.abilityId === 'inferno')
-      ) {
-        if (flash.lane < geom.rows) {
-          const y = geom.originY + flash.lane * geom.cellH;
-          this.fxGraphics.fillStyle(flash.color, 0.3 * alpha);
-          this.fxGraphics.fillRect(geom.originX, y, gridW, geom.cellH);
-          this.acquireLabel(
-            geom.originX + gridW / 2,
-            y + 22,
-            flash.label,
-            '#FFFFFF',
-            '16px',
-          );
+      if (flash.kind === 'fusion' && flash.cell) {
+        if (flash.cell.row >= geom.rows) continue;
+        const rect = this.getCellRect(flash.cell, geom);
+        const cx = rect.x + rect.w / 2;
+        const cy = rect.y + rect.h / 2;
+        this.fxGraphics.lineStyle(4, 0xfacc15, alpha);
+        this.fxGraphics.strokeCircle(cx, cy, 46);
+        this.putLabel(cx, rect.y + 18, flash.label, '#FEF08A', '13px');
+        continue;
+      }
+
+      const aid = flash.abilityId;
+      if (aid === 'absolute_zero' || aid === 'solar_cataclysm') {
+        this.fxGraphics.fillStyle(aid === 'absolute_zero' ? 0x38bdf8 : 0xf97316, 0.25 * alpha);
+        this.fxGraphics.fillRect(geom.originX, geom.originY, gridW, gridH);
+        this.putLabel(geom.originX + gridW / 2, geom.originY + gridH / 2, flash.label, '#FFFFFF', '22px');
+        continue;
+      }
+
+      if (aid === 'wildfire_rush') {
+        const fireWolfKey = EFFECT_SPRITE_ASSETS.proj_fire_wolf.key;
+        for (let r = 0; r < geom.rows; r++) {
+          const laneEnemy = snap.enemies.find(e => e.lane === r);
+          const lx = laneEnemy
+            ? geom.originX + laneEnemy.x * geom.cellW
+            : geom.originX + 3.5 * geom.cellW;
+          const ly = geom.originY + (r + 0.5) * geom.cellH;
+          if (usePng && this.hasTexture(fireWolfKey)) {
+            this.putFx(lx, ly, fireWolfKey, 72, 72, alpha);
+          }
         }
         continue;
       }
 
-      if (flash.cell && flash.cell.row < geom.rows && flash.cell.column < geom.cols) {
+      if (flash.cell && flash.cell.row < geom.rows) {
         const rect = this.getCellRect(flash.cell, geom);
-        this.fxGraphics.fillStyle(flash.color, 0.35 * alpha);
-        this.fxGraphics.fillRoundedRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4, 8);
-        this.fxGraphics.lineStyle(3, flash.color, alpha);
-        this.fxGraphics.strokeRoundedRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4, 8);
-        this.acquireLabel(rect.x + rect.w / 2, rect.y - 10, flash.label, '#FEF08A', '13px');
+        const cx = rect.x + rect.w / 2;
+        const cy = rect.y + rect.h / 2;
+        if (aid === 'thermal_collapse' && usePng && this.hasTexture(EFFECT_SPRITE_ASSETS.vfx_steam_burst.key)) {
+          this.putFx(cx, cy, EFFECT_SPRITE_ASSETS.vfx_steam_burst.key, geom.cellW * 2.6, geom.cellH * 2.6, alpha);
+        } else if (aid === 'winter_pounce' && usePng && this.hasTexture(EFFECT_SPRITE_ASSETS.vfx_frost_claw.key)) {
+          this.putFx(cx + geom.cellW * 1.1, cy, EFFECT_SPRITE_ASSETS.vfx_frost_claw.key, geom.cellW * 2.5, geom.cellH * 0.9, alpha);
+        } else if ((aid === 'earthquake' || aid === 'eruption') && usePng && this.hasTexture(EFFECT_SPRITE_ASSETS.vfx_earth_crack.key)) {
+          this.putFx(cx + geom.cellW, cy, EFFECT_SPRITE_ASSETS.vfx_earth_crack.key, 120, 96, alpha, aid === 'eruption' ? 0xf97316 : undefined);
+        } else if ((aid === 'pack_frenzy' || aid === 'alpha_howl') && usePng && this.hasTexture(EFFECT_SPRITE_ASSETS.vfx_howl_ring.key)) {
+          this.putFx(cx, cy, EFFECT_SPRITE_ASSETS.vfx_howl_ring.key, aid === 'alpha_howl' ? geom.cellW * 2.4 : 96, aid === 'alpha_howl' ? geom.cellH * 2.4 : 96, alpha);
+        } else {
+          this.fxGraphics.lineStyle(3, flash.color, alpha);
+          this.fxGraphics.strokeCircle(cx, cy, 48);
+        }
+        this.putLabel(cx, rect.y + 20, flash.label, '#FFFFFF', '12px');
       }
     }
   }
 
-  private renderDragAndHover(snap: PlaytestHudSnapshot, geom: GridGeometry): void {
-    if (this.hoverCell) {
-      const rect = this.getCellRect(this.hoverCell, geom);
-      const hoverColor =
-        this.tool.kind === 'remove'
-          ? 0xf87171
-          : this.tool.kind === 'crystal'
-            ? 0x38bdf8
-            : 0xfef08a;
-      this.fxGraphics.lineStyle(2.5, hoverColor, 0.85);
-      this.fxGraphics.strokeRect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4);
+  private renderDragOverlay(geom: GridGeometry): void {
+    let sourceId: string | undefined;
+    let srcCell: Cell | undefined;
+    let endX = 0;
+    let endY = 0;
+
+    if (this.dragState?.kind === 'glove-drag') {
+      sourceId = this.dragState.sourceId;
+      srcCell = this.dragState.sourceCell;
+      endX = this.dragState.currentX;
+      endY = this.dragState.currentY;
+    } else if (this.tool.kind === 'glove' && this.tool.pickedDefenderId && this.hoverCell) {
+      const pickedId = this.tool.pickedDefenderId;
+      const picked = this.snapshot.defenders.find(d => d.id === pickedId);
+      if (picked && picked.row < geom.rows) {
+        sourceId = picked.id;
+        srcCell = { row: picked.row, column: picked.column };
+        const hr = this.getCellRect(this.hoverCell, geom);
+        endX = hr.x + hr.w / 2;
+        endY = hr.y + hr.h / 2;
+      }
     }
 
-    if (!this.dragState) return;
+    if (!sourceId || !srcCell) return;
 
-    if (this.dragState.kind === 'crystal') {
-      const cx = this.dragState.currentX;
-      const cy = this.dragState.currentY;
-      this.fxGraphics.lineStyle(2, 0x38bdf8, 0.75);
-      this.fxGraphics.lineBetween(CRYSTAL_ORB_X, CRYSTAL_ORB_Y, cx, cy);
-      this.fxGraphics.fillStyle(0x38bdf8, 0.9);
-      this.fxGraphics.fillCircle(cx, cy, 16);
-      this.fxGraphics.lineStyle(2, 0xe0f2fe, 1);
-      this.fxGraphics.strokeCircle(cx, cy, 16);
+    this.fxGraphics.lineStyle(3, 0xfacc15, 0.9);
+    const srcRect = this.getCellRect(srcCell, geom);
+    this.fxGraphics.lineBetween(srcRect.x + srcRect.w / 2, srcRect.y + srcRect.h / 2, endX, endY);
 
-      if (this.hoverCell) {
-        const target = this.findDefenderAtCell(this.hoverCell);
-        if (target) {
-          const rect = this.getCellRect(this.hoverCell, geom);
-          this.fxGraphics.lineStyle(4, 0x38bdf8, 1);
-          this.fxGraphics.strokeRoundedRect(rect.x + 4, rect.y + 4, rect.w - 8, rect.h - 8, 8);
-        }
-      }
-    } else if (this.dragState.kind === 'defender-fuse') {
-      const sourceRect = this.getCellRect(this.dragState.sourceCell, geom);
-      const sx = sourceRect.x + sourceRect.w / 2;
-      const sy = sourceRect.y + sourceRect.h / 2;
-      const target = this.hoverCell ? this.findDefenderAtCell(this.hoverCell) : undefined;
-      const validFuse =
-        target !== undefined &&
-        target.id !== this.dragState.sourceId &&
-        this.controller.canFuse(this.dragState.sourceId, target.id);
-
-      const lineColor = validFuse ? 0x4ade80 : target ? 0xf87171 : 0x94a3b8;
-      this.fxGraphics.lineStyle(4, lineColor, 0.95);
-      this.fxGraphics.lineBetween(sx, sy, this.dragState.currentX, this.dragState.currentY);
-      this.fxGraphics.fillStyle(lineColor, 1);
-      this.fxGraphics.fillCircle(this.dragState.currentX, this.dragState.currentY, 8);
-
-      if (target && target.id !== this.dragState.sourceId && this.hoverCell) {
-        const rect = this.getCellRect(this.hoverCell, geom);
-        this.fxGraphics.lineStyle(4, lineColor, 1);
-        this.fxGraphics.strokeRoundedRect(rect.x + 4, rect.y + 4, rect.w - 8, rect.h - 8, 8);
-        this.acquireLabel(
-          rect.x + rect.w / 2,
-          rect.y - 12,
-          validFuse ? 'DROP TO FUSE!' : 'NO RECIPE',
-          validFuse ? '#4ADE80' : '#FCA5A5',
+    if (this.hoverCell) {
+      const target = this.findDefenderAtCell(this.hoverCell);
+      if (target && target.id !== sourceId) {
+        const outId = this.controller.getFusionOutputId(sourceId, target.id);
+        this.putLabel(
+          endX,
+          endY - 26,
+          outId ? `FUSE -> ${outId.replace(/_/g, ' ').toUpperCase()}` : 'INVALID FUSION',
+          outId ? '#4ADE80' : '#F87171',
           '12px',
         );
+      } else if (!target) {
+        this.putLabel(endX, endY - 26, 'MOVE DEFENDER (0 EN)', '#6EE7B7', '12px');
       }
     }
   }
 
-  private renderTerminalBanner(snap: PlaytestHudSnapshot): void {
-    if (snap.terminal === null) {
-      this.terminalTitleText.setVisible(false);
-      this.terminalSubText.setVisible(false);
+  private updateHintText(): void {
+    if (this.tool.kind === 'place') {
+      const name = this.tool.definitionId.replace(/_/g, ' ').toUpperCase();
+      this.hintText.setText(
+        this.tool.freeSandbox
+          ? `FREE SANDBOX PLACEMENT (${name}): Click any empty cell (0 EN, 0s CD) — Right-click to cancel`
+          : `SUMMON / FUSE (${name}): Click empty cell to place, or click compatible Defender to Fuse — Right-click to cancel`,
+      );
       return;
     }
-
-    const isVictory = snap.terminal === 'victory';
-    this.fxGraphics.fillStyle(0x020617, 0.72);
-    this.fxGraphics.fillRect(0, TOP_BAR_HEIGHT, CANVAS_WIDTH, CANVAS_HEIGHT - TOP_BAR_HEIGHT);
-    this.fxGraphics.fillStyle(isVictory ? 0x064e3b : 0x7f1d1d, 0.92);
-    this.fxGraphics.fillRoundedRect(CANVAS_WIDTH / 2 - 260, CANVAS_HEIGHT / 2 - 75, 520, 150, 14);
-    this.fxGraphics.lineStyle(3, isVictory ? 0x4ade80 : 0xf87171, 1);
-    this.fxGraphics.strokeRoundedRect(CANVAS_WIDTH / 2 - 260, CANVAS_HEIGHT / 2 - 75, 520, 150, 14);
-
-    this.terminalTitleText
-      .setText(isVictory ? 'VICTORY!' : 'DEFEAT!')
-      .setColor(isVictory ? '#4ADE80' : '#FCA5A5')
-      .setVisible(true);
-
-    this.terminalSubText
-      .setText(
-        isVictory
-          ? 'All waves defeated — use Reset in the top bar to playtest again'
-          : 'Enemy breached the base — use Reset in the top bar to retry',
-      )
-      .setVisible(true);
+    if (this.tool.kind === 'crystal') {
+      this.hintText.setText(
+        'POWER CRYSTAL MODE: Click any living Defender on the grid to activate its Special Ability — Right-click to cancel',
+      );
+      return;
+    }
+    if (this.tool.kind === 'glove') {
+      this.hintText.setText(
+        this.tool.pickedDefenderId
+          ? 'FUSION GLOVE: Click an empty cell to MOVE, or click a compatible Defender to FUSE — Right-click to cancel'
+          : 'FUSION GLOVE: Drag a Defender (or click to pick up) to Move or Fuse — Right-click to cancel',
+      );
+      return;
+    }
+    if (this.tool.kind === 'shovel') {
+      this.hintText.setText(
+        'SHOVEL MODE: Click any Defender on the grid to remove it (0% refund) — Right-click to cancel',
+      );
+      return;
+    }
+    this.hintText.setText(
+      'Click/Drag Shop Card onto empty cell to Summon or compatible Defender to Fuse · Use Glove (Move/Fuse) or Shovel (Remove) · Click unit + [Space] to inspect/cast',
+    );
   }
 }
