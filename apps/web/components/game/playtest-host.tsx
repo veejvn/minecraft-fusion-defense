@@ -83,6 +83,17 @@ function loadSavedPlaytestPreset(fallback: PlaytestPresetConfig): {
     }
     const savedDefMap = new Map(parsed.defenders.map(d => [d.id, d]));
     const savedEnemyMap = new Map(parsed.enemies.map(e => [e.id, e]));
+    const fallbackAbilityMap = new Map(fallback.abilities.map(a => [a.id, a]));
+    const syncedAbilities = (parsed.abilities.length >= fallback.abilities.length
+      ? parsed.abilities
+      : fallback.abilities
+    ).map(ability => {
+      const fb = fallbackAbilityMap.get(ability.id);
+      if (fb && !fb.requiresTarget && ability.requiresTarget) {
+        return { ...ability, requiresTarget: false };
+      }
+      return ability;
+    });
     const merged: PlaytestPresetConfig = {
       seed: parsed.seed,
       fusionGloveCooldownSeconds:
@@ -97,7 +108,7 @@ function loadSavedPlaytestPreset(fallback: PlaytestPresetConfig): {
         const saved = savedEnemyMap.get(enemy.id);
         return saved ? { ...enemy, ...saved } : { ...enemy };
       }),
-      abilities: parsed.abilities.length >= fallback.abilities.length ? parsed.abilities : fallback.abilities,
+      abilities: syncedAbilities,
       waves: parsed.waves.length > 0 ? parsed.waves : fallback.waves,
       waveCrystals: parsed.waveCrystals.length > 0 ? parsed.waveCrystals : fallback.waveCrystals,
     };

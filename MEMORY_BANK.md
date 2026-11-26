@@ -1,7 +1,7 @@
 # MEMORY_BANK — Minecraft Fusion Defense
 
-**Cập nhật lần cuối:** 2026-11-23T22:17:00+07:00  
-**Nhánh Git hiện tại:** `main` (đã thiết kế lại `/playtest` đồng bộ 1-1 với bản chính `/` kèm Balance Editor đầy đủ cho Defenders/Enemies/Waves/Cooldowns/JSON; xanh 100% `190/190` `@mfd/game`, `25/25` `@mfd/game-data`, `pnpm typecheck`, `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production`; sẵn sàng để Owner chơi thử & **Cân bằng game**; chưa commit/push)
+**Cập nhật lần cuối:** 2026-11-26T22:10:00+07:00  
+**Nhánh Git hiện tại:** `main` (đã hoàn tất `/playtest` đồng bộ 1-1 + lưu preset `localStorage` + sửa triệt để VFX đòn đánh thường + cho phép kích hoạt toàn bộ 20 kỹ năng kể cả khi không có Enemy trên lane/sân; sẵn sàng để Owner chơi thử & **Cân bằng game**; chưa commit/push)
 
 ---
 
@@ -116,6 +116,10 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
     2. **`PlaytestController` & `PlaytestScene` Parity:** Thêm `summonAndFuseDefender`, `moveDefender`, `getCardFusionOutputId`, `baseDefenderCards`, `gloveCooldown`, `lastToast` vào `PlaytestController`; viết lại `PlaytestScene` dùng `preloadGameAssets` (49 PNGs), lưới `5×9` chuẩn `GrasslandBattleScene` (hỗ trợ bật/tắt `5 Lanes` ↔ `1 Lane`), `BasicAttackVisualTracker`, đủ 20 VFX kỹ năng, kéo-thả HUD → Canvas kèm ghost `64×64` và preview hợp thể vàng.
     3. **UI `100dvh` & Live Balance Editor (`playtest-host.tsx`):** Giao diện 1 màn hình không cuộn giống `/`, HUD trên cùng giống hệt Campaign + thanh Playtest Lab gọn (`Mode: 5-Wave/Sandbox`, `5/1 Lanes`, `Rules: Campaign/Free T1-T2`, `+500 EN`, `+5 CR`, `+1 Tick`, `Reset`, `Coords`, `Spawn / T2`, `Balance`, `Log`), kèm Balance Editor cho 20 Defenders (kèm `Summon Cooldown`), 4 Enemies, Waves 1–5 + Glove CD + Crystal reward, và JSON Import/Export.
     - Kiểm chứng PASS sau chỉnh sửa: `190/190` `@mfd/game` (15 files), `25/25` `@mfd/game-data`, `pnpm typecheck` (`3/3`), `pnpm build`, `6/6` `test:e2e`, `2/2` `test:production` (gồm check `1366×768` zero-scroll & mở Balance Editor trên `/playtest`).
+  - **Sửa VFX đòn đánh thường, lưu `localStorage` `/playtest` & cho phép kích hoạt 20 kỹ năng khi trống mục tiêu (`2026-11-23`..`2026-11-26`):**
+    1. **VFX Đòn đánh thường (`basic-attack-vfx.ts`):** Expose `attackAnchorTick` lên snapshot để bắt đúng trường hợp `attackCount` reset về `1` khi chuyển sang Enemy mới, hỗ trợ đòn ngay tick spawn, giữ tọa độ kết liễu và reset theo tick.
+    2. **Lưu Balance Preset trên `/playtest` (`playtest-host.tsx`):** Auto-save vào `localStorage` (`mfd_playtest_balance_preset_v1`) qua F5/reload và hiện hộp thoại cảnh báo xác nhận trước khi `Reset Campaign Defaults`.
+    3. **Kích hoạt kỹ năng khi không có Enemy (`ability-engine.ts`, `playtest-presets.ts`, `ABILITY_CATALOG.md`):** Chuyển toàn bộ 20 Special Abilities (gồm `arrow_storm`, `inferno`, `meteor_arrow_rain`, `blizzard`, `earthquake`, `siege_volley`, v.v.) sang `requiresTarget: false` và cập nhật `fireCadenceShot` / `executeImmediateEffect` để bắn dọc Lane hoặc rơi về phía trước `(row, col + 3)` kể cả khi lane/sân đang trống (vẫn giữ cơ chế `requiresTarget: true` ở mức engine cho các test T-10). Sync luôn `requiresTarget` khi nạp preset cũ từ `localStorage`.
 
 ---
 

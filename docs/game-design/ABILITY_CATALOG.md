@@ -19,35 +19,35 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
 4. **Chi phí & Cooldown mặc định đã xác nhận:**
    - **Chi phí:** `1` **Power Crystal** cho mỗi lần kích hoạt hợp lệ (áp dụng đồng nhất cho cả 12 Abilities; số nguyên cấu hình qua `powerCrystalCost` trong data).
    - **Cooldown:** `0` giây (**không có cooldown**; trường `cooldownSeconds` vẫn hỗ trợ cấu hình `>= 0` ở mức engine nhưng cấu hình MVP hiện tại là `0`).
-5. **Điều kiện kích hoạt:** Chỉ cho phép khi Game State là `PLAYING`, Defender sở hữu còn sống trên Grid và không bị vô hiệu hóa (`stun`/`freeze` trừ khi cấu hình cho phép), đủ Power Crystal, hết Cooldown (nếu cấu hình `> 0`), và có mục tiêu hợp lệ đối với các Ability yêu cầu mục tiêu (`requiresTarget: true`).
-6. **Targeting & Phạm vi:** Ability khai báo rõ `targetScope` và `requiresTarget`. Kỹ năng tự thân/đồng minh/chủ động (`pack_frenzy`, `piercing_barrage`, `glacial_fortress`, `alpha_howl`, `iron_bastion`) được phép kích hoạt khi không có Enemy trên sân. Không mặc định lan xuyên Lane ngoài phạm vi đã khai báo.
+5. **Điều kiện kích hoạt:** Chỉ cho phép khi Game State là `PLAYING`, Defender sở hữu còn sống trên Grid và không bị vô hiệu hóa (`stun`/`freeze` trừ khi cấu hình cho phép), đủ Power Crystal, hết Cooldown (nếu cấu hình `> 0`), và có mục tiêu hợp lệ nếu cấu hình bật `requiresTarget: true`.
+6. **Targeting & Phạm vi (`Updated 2026-11-26`):** Theo quyết định của Owner ngày `2026-11-26`, **toàn bộ 20 Special Abilities của MVP đều đặt `requiresTarget: false`** để người chơi luôn kích hoạt được kỹ năng ngay cả khi chưa có Enemy trên Lane hoặc trên sân (các kỹ năng bắn/thả cầu lửa vẫn xả đạn dọc Lane hoặc rơi phía trước ô đứng của Defender; engine vẫn giữ hỗ trợ cờ `requiresTarget: true` ở cấp hợp đồng dữ liệu). Không mặc định lan xuyên Lane ngoài phạm vi đã khai báo.
 7. **Pause & Terminal:** `PAUSED` đóng băng toàn bộ Game Time (cooldown, status duration, Burn tick, multihit cadence, projectile, redirect aura); mọi yêu cầu kích hoạt khi `PAUSED` hoặc `VICTORY`/`DEFEAT` bị từ chối ngay tại cổng `enqueue`. Defender attack và Enemy movement tính đồng thời theo tick cố định. Terminal Priority theo quyết định Owner [G07-TERMINAL-PRIORITY-OWNER-2026-11-20.md](../decisions/PGD-02/owner-decisions/G07-TERMINAL-PRIORITY-OWNER-2026-11-20.md): *first valid resolved terminal event wins*.
 8. **Tương tác Fusion:** Fusion tốn `0` Energy / `0` Power Crystal, mọi Lane/khoảng cách, Output tại Target Cell ở `100%` own Max HP, **không kế thừa** bất kỳ buff/shield/redirect/cooldown nào của nguyên liệu và không tự kích hoạt Special Ability.
 
-## 3. Danh mục 20 Special Abilities trong MVP (`Confirmed 2026-11-21 & 2026-11-23`)
+## 3. Danh mục 20 Special Abilities trong MVP (`Confirmed 2026-11-21, 2026-11-23 & 2026-11-26`)
 
 | Ability ID | Tên Ability | Defender sở hữu | Loại | Cần mục tiêu (`requiresTarget`) | Chi phí / Cooldown | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- |
-| `blizzard` | Blizzard | `snow_golem` | Base | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
-| `earthquake` | Earthquake | `iron_golem` | Base | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed** |
-| `arrow_storm` | Arrow Storm | `skeleton` | Base | Có (`same-lane-enemy-in-range`) | `1` Crystal / `0s` | **Confirmed** |
+| `blizzard` | Blizzard | `snow_golem` | Base | Không (`false`, quét `same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
+| `earthquake` | Earthquake | `iron_golem` | Base | Không (`false`, quét `same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
+| `arrow_storm` | Arrow Storm | `skeleton` | Base | Không (`false`, bắn dọc Lane) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
 | `pack_frenzy` | Pack Frenzy | `wolf` | Base | Không (`self`) | `1` Crystal / `0s` | **Confirmed** |
-| `inferno` | Inferno | `blaze` | Base | Có (`same-lane-enemies`, lobbed arc) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
+| `inferno` | Inferno | `blaze` | Base | Không (`false`, lobbed arc dọc Lane) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
 | `piercing_barrage` | Piercing Barrage | `skeleton_sniper` | Fusion | Không (`same-lane` proactive) | `1` Crystal / `0s` | **Confirmed** |
-| `absolute_zero` | Absolute Zero | `ice_golem` | Fusion | Có (`all-enemies`) | `1` Crystal / `0s` | **Confirmed** |
+| `absolute_zero` | Absolute Zero | `ice_golem` | Fusion | Không (`false`, quét `all-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
 | `glacial_fortress` | Glacial Fortress | `frost_guardian` | Fusion | Không (`self` + front tile) | `1` Crystal / `0s` | **Confirmed** |
-| `wildfire_rush` | Wildfire Rush | `flame_fang` | Fusion | Có (`all-enemies` — first per lane) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
-| `meteor_arrow_rain` | Meteor Arrow Rain | `inferno_archer` | Fusion | Có (`area-3x3-closest-enemy`) | `1` Crystal / `0s` | **Confirmed** |
+| `wildfire_rush` | Wildfire Rush | `flame_fang` | Fusion | Không (`false`, first per lane) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
+| `meteor_arrow_rain` | Meteor Arrow Rain | `inferno_archer` | Fusion | Không (`false`, area 3×3) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
 | `alpha_howl` | Alpha Howl | `alpha_wolf` | Fusion | Không (`ally-3x3`) | `1` Crystal / `0s` | **Confirmed** |
 | `iron_bastion` | Iron Bastion | `steel_guardian` | Fusion | Không (`self` + `ally-3x3`) | `1` Crystal / `0s` | **Confirmed** |
-| `siege_volley` | Siege Volley | `iron_ranger` | Fusion | Có (`same-lane-enemy-in-range`) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
+| `siege_volley` | Siege Volley | `iron_ranger` | Fusion | Không (`false`, bắn dọc Lane) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
 | `guardian_charge` | Guardian Charge | `ironfang_guardian` | Fusion | Không (`same-lane` proactive) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
-| `eruption` | Eruption | `magma_colossus` | Fusion | Có (`same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `eruption` | Eruption | `magma_colossus` | Fusion | Không (`false`, quét `same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
 | `glacier_barrage` | Glacier Barrage | `frostbite_ranger` | Fusion | Không (`same-lane` proactive) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
-| `winter_pounce` | Winter Pounce | `frostfang` | Fusion | Có (`front-3-cells`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
-| `thermal_collapse` | Thermal Collapse | `steam_warden` | Fusion | Có (`area-3x3-self`) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
-| `predator_mark` | Predator Mark | `bonefang_hunter` | Fusion | Có (`same-lane-enemies` / closest) | `1` Crystal / `0s` | **Confirmed (v2.2)** |
-| `solar_cataclysm` | Solar Cataclysm | `infernal_archon` | Fusion | Có (`all-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-23)** |
+| `winter_pounce` | Winter Pounce | `frostfang` | Fusion | Không (`false`, quét `front-3-cells`) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
+| `thermal_collapse` | Thermal Collapse | `steam_warden` | Fusion | Không (`false`, quét `area-3x3-self`) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
+| `predator_mark` | Predator Mark | `bonefang_hunter` | Fusion | Không (`false`, tìm `same-lane-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
+| `solar_cataclysm` | Solar Cataclysm | `infernal_archon` | Fusion | Không (`false`, quét `all-enemies`) | `1` Crystal / `0s` | **Confirmed (2026-11-26)** |
 
 ## 4. Special Abilities của 5 Base Defenders (`Confirmed`)
 

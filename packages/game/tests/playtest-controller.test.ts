@@ -113,10 +113,11 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
   it('activates Confirmed v2.0 abilities, exposes views/flashes, and logs structured rejections', () => {
     const controller = new PlaytestController({ mode: 'sandbox' });
 
-    // Place Snow Golem, Iron Golem, Blaze, Skeleton Sniper, Frost Guardian, Steel Guardian, Alpha Wolf, Inferno Archer.
+    // Place Snow Golem, Iron Golem, Skeleton, Blaze, Skeleton Sniper, Frost Guardian, Steel Guardian, Alpha Wolf, Inferno Archer.
     controller.placeDefender('snow_golem', { row: 0, column: 0 }, true);
     controller.placeDefender('iron_golem', { row: 0, column: 1 }, true);
     controller.placeDefender('blaze', { row: 0, column: 2 }, true);
+    controller.placeDefender('skeleton', { row: 0, column: 3 }, true);
     controller.placeDefender('skeleton_sniper', { row: 1, column: 0 }, true);
     controller.placeDefender('frost_guardian', { row: 1, column: 1 }, true);
     controller.placeDefender('steel_guardian', { row: 1, column: 2 }, true);
@@ -139,13 +140,23 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
     controller.stepMs(50);
     expect(controller.getSnapshot().crystals).toBe(5);
 
-    // 2. no-target rejection for Blizzard when no enemies exist.
+    // 2. Targetless activation works for all Defenders (e.g. Blizzard & Skeleton Arrow Storm) even when no Enemies exist.
     expect(controller.activateAbility(byId('snow_golem').id)).toBe(true);
     controller.stepMs(50);
-    expect(controller.getSnapshot().crystals).toBe(5);
+    expect(controller.getSnapshot().crystals).toBe(4);
+    expect(controller.activateAbility(byId('skeleton').id)).toBe(true);
+    controller.stepMs(50);
+    expect(controller.getSnapshot().crystals).toBe(3);
     expect(
-      controller.getSnapshot().eventLog.some(entry => entry.message.includes('no-target')),
+      controller
+        .getSnapshot()
+        .projectiles.some(p => p.kind === 'lane' && p.abilityId === 'arrow_storm' && !p.pierce),
     ).toBe(true);
+
+    // Refill Crystals before testing Tier-2 proactive/defensive abilities.
+    expect(controller.grantCrystals()).toBe(true);
+    controller.stepMs(50);
+    expect(controller.getSnapshot().crystals).toBe(5);
 
     // 3. Proactive / Defensive abilities without enemies:
     // Piercing Barrage -> lane projectile view.

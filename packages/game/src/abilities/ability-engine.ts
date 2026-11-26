@@ -863,7 +863,7 @@ function fireCadenceShot(
         ownerEntity.cell,
         ownerDef,
       );
-      if (targetId === null) return false;
+      if (targetId === null && ability.requiresTarget) return false;
       const attackDamage = getDefenderAttackDamage(ctx.battle, ctx.session, ownerId);
       spawnLaneProjectile(
         ctx,
@@ -921,19 +921,33 @@ function fireCadenceShot(
             closestSameLane = { lane: entity.lane, position: entity.position, id };
           }
         }
-        if (!closestSameLane) return false;
-        impactCell = { row: closestSameLane.lane, column: clampColumn(Math.floor(closestSameLane.position)) };
+        if (!closestSameLane) {
+          if (ability.requiresTarget) return false;
+          impactCell = {
+            row: ownerEntity.cell.row,
+            column: clampColumn(ownerEntity.cell.column + 3),
+          };
+        } else {
+          impactCell = { row: closestSameLane.lane, column: clampColumn(Math.floor(closestSameLane.position)) };
+        }
       } else {
         const anyEnemy = findClosestLivingEnemy(ctx.battle, ctx.combat);
-        if (!anyEnemy) return false;
-        const center = lockedCenterCell ?? { row: anyEnemy.lane, column: anyEnemy.column };
-        const inAreaEnemy = findClosestLivingEnemy(ctx.battle, ctx.combat, {
-          center,
-          radius: effect.radius,
-        });
-        impactCell = inAreaEnemy
-          ? { row: inAreaEnemy.lane, column: inAreaEnemy.column }
-          : { row: center.row, column: center.column };
+        if (!anyEnemy) {
+          if (ability.requiresTarget) return false;
+          impactCell = lockedCenterCell ?? {
+            row: ownerEntity.cell.row,
+            column: clampColumn(ownerEntity.cell.column + 3),
+          };
+        } else {
+          const center = lockedCenterCell ?? { row: anyEnemy.lane, column: anyEnemy.column };
+          const inAreaEnemy = findClosestLivingEnemy(ctx.battle, ctx.combat, {
+            center,
+            radius: effect.radius,
+          });
+          impactCell = inAreaEnemy
+            ? { row: inAreaEnemy.lane, column: inAreaEnemy.column }
+            : { row: center.row, column: center.column };
+        }
       }
 
       const attackDamage = getDefenderAttackDamage(ctx.battle, ctx.session, ownerId);
@@ -1170,7 +1184,11 @@ function executeImmediateEffect(
           lockedCenterCell = { row: targetCell.row, column: targetCell.column };
         } else {
           const anchor = findClosestLivingEnemy(ctx.battle, ctx.combat);
-          if (anchor) lockedCenterCell = { row: anchor.lane, column: anchor.column };
+          if (anchor) {
+            lockedCenterCell = { row: anchor.lane, column: anchor.column };
+          } else if (!ability.requiresTarget) {
+            lockedCenterCell = { row: ownerCell.row, column: clampColumn(ownerCell.column + 3) };
+          }
         }
       }
       const intervalTicks = Math.max(

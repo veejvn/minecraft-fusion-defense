@@ -1959,4 +1959,147 @@ describe('Abilities v2.2 scopes, bonuses, vulnerable marks, and same-lane lobbed
     expect(s.abilities?.statuses.some(st => st.targetEntityId === 7n && st.kind === 'slow')).toBe(true);
     expect(s.combat?.entities.get(8n)?.hp).toBeLessThan(937.5); // blaze same-lane lobbed fireballs + wildfire_rush landed on lane 3
   });
+
+  it('allows targetless proactive casting (requiresTarget: false) for arrow_storm, inferno, meteor_arrow_rain, and siege_volley on empty lanes', () => {
+    const resource: ResourceSessionInput = {
+      seed: 10,
+      defenders: [
+        { id: 'skeleton', classification: 'base', summonEnergyCost: 0, unlocked: true },
+        { id: 'blaze', classification: 'base', summonEnergyCost: 0, unlocked: true },
+        { id: 'inferno_archer', classification: 'fusion', summonEnergyCost: 0, unlocked: true },
+        { id: 'iron_ranger', classification: 'fusion', summonEnergyCost: 0, unlocked: true },
+      ],
+      enemies: [{ id: 'enemy_pass', energy: 0, crystals: 0 }],
+      waves: [{ id: 'wave_1', crystals: 5 }],
+      energyItems: {
+        amount: 25,
+        intervalSeconds: 999,
+        region: { min: { x: 0.2, y: 0.2 }, max: { x: 0.8, y: 0.8 } },
+        positions: [{ x: 0.5, y: 0.5 }],
+      },
+    };
+    const combat: CombatSessionInput = {
+      spawnX: 9,
+      defenders: [
+        { id: 'skeleton', maxHp: 200, damage: 25, attackSpeed: 1, attackRange: 7, targeting: 'CLOSEST_TO_DEFENDER' },
+        { id: 'blaze', maxHp: 200, damage: 30, attackSpeed: 1, attackRange: 5, targeting: 'CLOSEST_TO_DEFENDER' },
+        { id: 'inferno_archer', maxHp: 200, damage: 30, attackSpeed: 1, attackRange: 7, targeting: 'CLOSEST_TO_DEFENDER' },
+        { id: 'iron_ranger', maxHp: 300, damage: 40, attackSpeed: 1, attackRange: 7, targeting: 'CLOSEST_TO_DEFENDER' },
+      ],
+      enemies: [{ id: 'enemy_pass', maxHp: 1000, moveSpeed: 1, behavior: 'IGNORE_DEFENDER' }],
+    };
+    const abilities: AbilityDefinition[] = [
+      {
+        id: 'arrow_storm',
+        ownerDefenderId: 'skeleton',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: false,
+        targetScope: 'same-lane-enemy-in-range',
+        effects: [
+          {
+            kind: 'multihit-projectile',
+            count: 3,
+            intervalSeconds: 0.2,
+            damageMultiplier: 1,
+            damageType: 'physical',
+            projectileSpeed: 6,
+            pierce: false,
+          },
+        ],
+      },
+      {
+        id: 'inferno',
+        ownerDefenderId: 'blaze',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: false,
+        targetScope: 'same-lane-enemies',
+        effects: [
+          {
+            kind: 'multihit-falling-area',
+            count: 2,
+            intervalSeconds: 0.2,
+            travelSeconds: 0.2,
+            radius: 0,
+            sameLaneOnly: true,
+            damageMultiplier: 1.25,
+            damageType: 'fire',
+            armorPiercing: true,
+          },
+        ],
+      },
+      {
+        id: 'meteor_arrow_rain',
+        ownerDefenderId: 'inferno_archer',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: false,
+        targetScope: 'area-3x3-closest-enemy',
+        effects: [
+          {
+            kind: 'multihit-falling-area',
+            count: 2,
+            intervalSeconds: 0.2,
+            travelSeconds: 0.2,
+            radius: 1,
+            damageMultiplier: 1,
+            damageType: 'fire',
+          },
+        ],
+      },
+      {
+        id: 'siege_volley',
+        ownerDefenderId: 'iron_ranger',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: false,
+        targetScope: 'same-lane-enemy-in-range',
+        effects: [
+          {
+            kind: 'projectile',
+            damageMultiplier: 4.5,
+            damageType: 'physical',
+            projectileSpeed: 8.5,
+            pierce: false,
+          },
+        ],
+      },
+    ];
+
+    const game = new BattleRuntime(
+      { ticksPerSecond: 10, maxCatchUpTicks: 250 },
+      resource,
+      combat,
+      undefined,
+      undefined,
+      { abilities },
+    );
+
+    game.enqueue({ type: 'wave-reward', sourceId: 'wave_1' }, 1);
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'skeleton', cell: { row: 0, column: 0 } } }, 1); // 0n
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'blaze', cell: { row: 1, column: 0 } } }, 1); // 1n
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'inferno_archer', cell: { row: 2, column: 0 } } }, 1); // 2n
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'iron_ranger', cell: { row: 3, column: 0 } } }, 1); // 3n
+    step(game); // tick 1
+
+    // Activate all 4 abilities with ZERO Enemies on the battlefield.
+    game.enqueue({ type: 'activate-ability', defenderId: 0n }, 2);
+    game.enqueue({ type: 'activate-ability', defenderId: 1n }, 2);
+    game.enqueue({ type: 'activate-ability', defenderId: 2n }, 2);
+    game.enqueue({ type: 'activate-ability', defenderId: 3n }, 2);
+    step(game, 2); // ticks 2..3
+
+    const afterCast = game.snapshot();
+    expect(afterCast.resources?.crystals).toBe(1); // 5 - 4 crystals spent cleanly
+    expect(afterCast.abilities?.projectiles.some(p => p.abilityId === 'arrow_storm')).toBe(true);
+    expect(afterCast.abilities?.projectiles.some(p => p.abilityId === 'inferno')).toBe(true);
+    expect(afterCast.abilities?.projectiles.some(p => p.abilityId === 'meteor_arrow_rain')).toBe(true);
+    expect(afterCast.abilities?.projectiles.some(p => p.abilityId === 'siege_volley')).toBe(true);
+
+    // Advance 4 more ticks -> remaining multihit cadence shots still fire even though battlefield is empty!
+    step(game, 4);
+    const afterCadence = game.snapshot();
+    expect(afterCadence.abilities?.projectiles.filter(p => p.abilityId === 'arrow_storm').length).toBeGreaterThanOrEqual(2);
+  });
 });

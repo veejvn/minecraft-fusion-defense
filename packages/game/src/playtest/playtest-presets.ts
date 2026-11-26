@@ -94,7 +94,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'earthquake',
     abilityName: 'Earthquake',
     abilitySummary: '3x AD physical + 2s Stun (same lane)',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'snow_golem',
@@ -106,7 +106,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'blizzard',
     abilityName: 'Blizzard',
     abilitySummary: '1x Ice AD + -50% Slow 5s (same lane)',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'skeleton',
@@ -118,7 +118,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'arrow_storm',
     abilityName: 'Arrow Storm',
     abilitySummary: '8 arrows @ 0.2s, 100% AD each (same lane)',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'wolf',
@@ -142,7 +142,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'inferno',
     abilityName: 'Inferno',
     abilitySummary: '4 lobbed Fireballs @ 0.25s, 125% Fire AD + Burn 25%/s 5s',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'steel_guardian',
@@ -178,7 +178,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'absolute_zero',
     abilityName: 'Absolute Zero',
     abilitySummary: 'Freeze all Enemies across 5 lanes for 4s',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'skeleton_sniper',
@@ -202,7 +202,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'siege_volley',
     abilityName: 'Siege Volley',
     abilitySummary: '1 heavy bolt: 450% AD + 20% target MaxHP + 1s Stun',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'frostbite_ranger',
@@ -238,7 +238,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'eruption',
     abilityName: 'Eruption',
     abilitySummary: '3.5x Fire AD (same lane) + Burn 30%/s 5s + 30% MaxHP Shield',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'steam_warden',
@@ -250,7 +250,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'thermal_collapse',
     abilityName: 'Thermal Collapse',
     abilitySummary: '3x3 around self: 250% Fire AD (400% vs Burn/Freeze) + Slow 5s',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'frostfang',
@@ -262,7 +262,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'winter_pounce',
     abilityName: 'Winter Pounce',
     abilitySummary: 'Front 3 cells: 250% Ice AD (400% vs Chill/Freeze) + Slow 4s',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'bonefang_hunter',
@@ -274,7 +274,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'predator_mark',
     abilityName: 'Predator Mark',
     abilitySummary: 'Mark highest-HP lane Enemy (+40% dmg taken 6s) + 250% AD strike',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'infernal_archon',
@@ -286,7 +286,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'solar_cataclysm',
     abilityName: 'Solar Cataclysm',
     abilitySummary: 'All 5 lanes: 2.5x Fire AD (armor-piercing) + Burn 30%/s 5s',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'inferno_archer',
@@ -298,7 +298,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'meteor_arrow_rain',
     abilityName: 'Meteor Arrow Rain',
     abilitySummary: '8 falling Fire arrows @ 0.2s in 3x3 closest Enemy + Burn',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'flame_fang',
@@ -310,7 +310,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     abilityId: 'wildfire_rush',
     abilityName: 'Wildfire Rush',
     abilitySummary: 'Summon 5 fire wolves to bite first Enemy per lane: 250% AD + Heavy Burn 6s',
-    requiresTarget: true,
+    requiresTarget: false,
   },
   {
     id: 'alpha_wolf',
@@ -654,7 +654,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'snow_golem',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'same-lane-enemies',
         effects: [
           {
@@ -671,7 +671,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'iron_golem',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'same-lane-enemies',
         effects: [
           {
@@ -688,7 +688,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'skeleton',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'same-lane-enemy-in-range',
         effects: [
           {
@@ -727,7 +727,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'blaze',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'same-lane-enemies',
         effects: [
           {
@@ -772,7 +772,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'ice_golem',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'all-enemies',
         effects: [
           {
@@ -802,7 +802,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'flame_fang',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'first-enemy-per-lane',
         effects: [
           {
@@ -826,7 +826,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'inferno_archer',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'area-3x3-closest-enemy',
         effects: [
           {
@@ -886,7 +886,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'iron_ranger',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'same-lane-enemy-in-range',
         effects: [
           {
@@ -924,7 +924,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'magma_colossus',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'same-lane-enemies',
         effects: [
           {
@@ -970,7 +970,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'frostfang',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'front-3-cells',
         effects: [
           {
@@ -989,7 +989,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'steam_warden',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'area-3x3-self',
         effects: [
           {
@@ -1009,7 +1009,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'bonefang_hunter',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'highest-hp-same-lane',
         effects: [
           {
@@ -1036,7 +1036,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         ownerDefenderId: 'infernal_archon',
         powerCrystalCost: 1,
         cooldownSeconds: 0,
-        requiresTarget: true,
+        requiresTarget: false,
         targetScope: 'all-enemies',
         effects: [
           {
