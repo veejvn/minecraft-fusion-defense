@@ -12,7 +12,12 @@ export interface ResourceSessionInput {
     readonly unlocked: boolean;
     readonly summonCooldownSeconds?: number;
   }[];
-  readonly enemies: readonly { readonly id: string; readonly energy: number; readonly crystals: number }[];
+  readonly enemies: readonly {
+    readonly id: string;
+    readonly energy: number;
+    readonly crystals: number;
+    readonly crystalDropChance?: number;
+  }[];
   readonly waves: readonly { readonly id: string; readonly crystals: number }[];
   readonly energyItems: {
     readonly amount: number;
@@ -79,6 +84,16 @@ export function validateResourceSession(input: ResourceSessionInput, rate: numbe
   for (const enemy of config.enemies) {
     count(enemy.energy);
     count(enemy.crystals);
+    if (enemy.crystalDropChance !== undefined) {
+      if (
+        typeof enemy.crystalDropChance !== 'number' ||
+        !Number.isFinite(enemy.crystalDropChance) ||
+        enemy.crystalDropChance < 0 ||
+        enemy.crystalDropChance > 1
+      ) {
+        throw new RangeError('Invalid Enemy crystal drop chance');
+      }
+    }
   }
   for (const wave of config.waves) count(wave.crystals);
   const energy = config.energyItems;
@@ -113,6 +128,10 @@ export function validateResourceSession(input: ResourceSessionInput, rate: numbe
   if (minInterval < 1 || minInterval > maxInterval) throw new RangeError('No eligible Crystal interval');
   return freezeData({
     ...config,
+    enemies: config.enemies.map(enemy => ({
+      ...enemy,
+      crystalDropChance: enemy.crystalDropChance ?? 1,
+    })),
     enableRandomEnergyItems: config.enableRandomEnergyItems ?? true,
     enableRandomCrystalItems: config.enableRandomCrystalItems ?? true,
     fusionGloveCooldownSeconds: config.fusionGloveCooldownSeconds ?? 0,

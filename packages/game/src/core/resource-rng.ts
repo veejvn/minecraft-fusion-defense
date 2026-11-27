@@ -20,3 +20,7 @@ export function uniformIndex(rng: ResourceRng, size: number): number {
   } while (sample >= limit);
   return sample % size;
 }
+
+export function uniformFraction(rng: ResourceRng): number {
+  return mulberry32(rng) / 0x100000000;
+}

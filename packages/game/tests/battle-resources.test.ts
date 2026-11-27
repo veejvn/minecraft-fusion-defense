@@ -319,4 +319,67 @@ describe('T-06.5 random and reward hooks', () => {
     }
     expect(replay()).toEqual(replay());
   });
+
+  it('supports deterministic percentage-based Enemy crystalDropChance (0, 1, fractional, and bounds validation)', () => {
+    const base = fixture();
+    expect(() =>
+      battle({
+        ...base,
+        enemies: [{ id: 'bad_neg', energy: 10, crystals: 1, crystalDropChance: -0.01 }],
+      }),
+    ).toThrow(RangeError);
+    expect(() =>
+      battle({
+        ...base,
+        enemies: [{ id: 'bad_over', energy: 10, crystals: 1, crystalDropChance: 1.01 }],
+      }),
+    ).toThrow(RangeError);
+    expect(() =>
+      battle({
+        ...base,
+        enemies: [{ id: 'bad_nan', energy: 10, crystals: 1, crystalDropChance: Number.NaN }],
+      }),
+    ).toThrow(RangeError);
+
+    const chanceInput: ResourceSessionInput = {
+      ...base,
+      seed: 42,
+      enemies: [
+        { id: 'zero_drop', energy: 25, crystals: 1, crystalDropChance: 0 },
+        { id: 'always_drop', energy: 30, crystals: 1, crystalDropChance: 1 },
+        { id: 'half_drop', energy: 40, crystals: 1, crystalDropChance: 0.5 },
+      ],
+    };
+
+    // 0% drop chance grants Energy without creating Crystal items; 100% always spawns.
+    const gEdge = battle(chanceInput);
+    gEdge.enqueue({ type: 'enemy-reward', sourceId: 1n, definitionId: 'zero_drop', lane: 0, position: 2 }, 1);
+    gEdge.enqueue({ type: 'enemy-reward', sourceId: 2n, definitionId: 'always_drop', lane: 0, position: 3 }, 1);
+    step(gEdge, 1);
+    expect(resources(gEdge).energy).toBe(50 + 25 + 30);
+    const edgeCrystals = [...resources(gEdge).items.values()].filter(i => i.kind === 'crystal');
+    expect(edgeCrystals).toHaveLength(1);
+    expect(edgeCrystals[0]?.source).toBe(2n);
+
+    // 50% drop chance is deterministic across identically seeded runs
+    const runHalfSeries = () => {
+      const g = battle(chanceInput);
+      const droppedIds: bigint[] = [];
+      for (let i = 1n; i <= 20n; i++) {
+        g.enqueue({ type: 'enemy-reward', sourceId: i, definitionId: 'half_drop', lane: 0, position: 2 }, 1);
+      }
+      step(g, 1);
+      for (const item of resources(g).items.values()) {
+        if (item.kind === 'crystal' && typeof item.source === 'bigint') {
+          droppedIds.push(item.source);
+        }
+      }
+      return droppedIds;
+    };
+    const runA = runHalfSeries();
+    const runB = runHalfSeries();
+    expect(runA).toEqual(runB);
+    expect(runA.length).toBeGreaterThan(0);
+    expect(runA.length).toBeLessThan(20);
+  });
 });

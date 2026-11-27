@@ -318,7 +318,7 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
     const afterMove = controller.getSnapshot();
     expect(afterMove.defenders[0].row).toBe(1);
     expect(afterMove.defenders[0].column).toBe(3);
-    expect(afterMove.gloveCooldown.totalSeconds).toBe(15);
+    expect(afterMove.gloveCooldown.totalSeconds).toBe(CAMPAIGN_GLOVE_COOLDOWN_SECONDS);
     expect(afterMove.gloveCooldown.onCooldown).toBe(true);
   });
 });

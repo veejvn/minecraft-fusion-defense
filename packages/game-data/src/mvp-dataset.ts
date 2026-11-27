@@ -240,6 +240,7 @@ export const mvpEnemySchema = z.strictObject({
   freezeImmune: z.boolean(),
   energyReward: nonNegativeIntegerSchema,
   crystalReward: nonNegativeIntegerSchema,
+  crystalDropChance: unitIntervalSchema,
 });
 
 export const mvpFusionRecipeSchema = z.strictObject({
@@ -513,6 +514,7 @@ export const playtestEnemySyncSchema = z.strictObject({
   freezeImmune: z.boolean(),
   energyReward: nonNegativeIntegerSchema,
   crystalReward: nonNegativeIntegerSchema,
+  crystalDropChance: unitIntervalSchema.optional(),
 });
 
 export const playtestPresetSyncSchema = z.strictObject({
@@ -633,6 +635,7 @@ export function mergePlaytestPresetIntoDataset(
       freezeImmune: tuned.freezeImmune,
       energyReward: tuned.energyReward,
       crystalReward: tuned.crystalReward,
+      crystalDropChance: tuned.crystalDropChance ?? baseEnemy.crystalDropChance,
     };
   });
 

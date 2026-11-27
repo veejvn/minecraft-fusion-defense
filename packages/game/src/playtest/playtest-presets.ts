@@ -77,6 +77,7 @@ export interface PlaytestEnemyConfig {
   freezeImmune: boolean;
   energyReward: number;
   crystalReward: number;
+  crystalDropChance: number;
 }
 
 /** Complete test-only dataset driving a PlaytestController session. */
@@ -160,6 +161,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
       freezeImmune: e.freezeImmune,
       energyReward: e.energyReward,
       crystalReward: e.crystalReward,
+      crystalDropChance: e.crystalDropChance,
     })),
     abilities: structuredClone(MVP_GAME_DATA.abilities),
     waves: structuredClone(MVP_GAME_DATA.sandboxLevel.waves),
@@ -201,6 +203,7 @@ export function buildRuntimeInputsFromPreset(
         id: enemy.id,
         energy: enemy.energyReward,
         crystals: enemy.crystalReward,
+        crystalDropChance: enemy.crystalDropChance,
       })),
       { id: 'sandbox_energy_grant', energy: 500, crystals: 0 },
     ],

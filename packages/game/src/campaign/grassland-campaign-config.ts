@@ -61,6 +61,7 @@ export interface CampaignEnemyCatalogItem {
   readonly spriteUrl: string;
   readonly energyReward: number;
   readonly crystalReward: number;
+  readonly crystalDropChance: number;
 }
 
 const DEFENDER_ROLES_BY_ID: Readonly<Record<string, string>> = Object.fromEntries(
@@ -143,6 +144,7 @@ export const CAMPAIGN_ENEMY_CATALOG: readonly CampaignEnemyCatalogItem[] =
       spriteUrl: ENEMY_SPRITE_ASSETS[meta.id]?.url ?? `/assets/sprites/enemies/${meta.id}.png`,
       energyReward: enemyStats?.energyReward ?? 50,
       crystalReward: enemyStats?.crystalReward ?? 0,
+      crystalDropChance: enemyStats?.crystalDropChance ?? 0,
     };
   });
 
@@ -186,6 +188,7 @@ export function createGrasslandCampaignInputs(
       id: e.id,
       energy: e.energyReward,
       crystals: e.crystalReward,
+      crystalDropChance: e.crystalDropChance,
     })),
     waves: GRASSLAND_CAMPAIGN_WAVES.map((w, idx) => ({
       id: w.id,

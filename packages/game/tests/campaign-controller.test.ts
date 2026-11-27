@@ -3,6 +3,7 @@ import { CampaignController } from '../src/campaign/campaign-controller';
 import {
   CAMPAIGN_DEFENDER_CATALOG,
   CAMPAIGN_ENEMY_CATALOG,
+  CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
   CAMPAIGN_RECIPE_CATALOG,
 } from '../src/campaign/grassland-campaign-config';
 import { ProgressionStore } from '../src/persistence/progression-store';
@@ -256,24 +257,25 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
       column: 1,
     });
     expect(afterMove.gloveCooldown.onCooldown).toBe(true);
-    expect(afterMove.gloveCooldown.totalSeconds).toBe(15);
-    expect(afterMove.gloveCooldown.remainingSeconds).toBeCloseTo(15, 1);
+    expect(afterMove.gloveCooldown.totalSeconds).toBe(CAMPAIGN_GLOVE_COOLDOWN_SECONDS);
+    expect(afterMove.gloveCooldown.remainingSeconds).toBeCloseTo(CAMPAIGN_GLOVE_COOLDOWN_SECONDS, 1);
 
     // Pause freezes Fusion Glove cooldown.
     controller.setPaused(true);
     controller.stepMs(4000);
-    expect(controller.getSnapshot().gloveCooldown.remainingSeconds).toBeCloseTo(15, 1);
+    expect(controller.getSnapshot().gloveCooldown.remainingSeconds).toBeCloseTo(CAMPAIGN_GLOVE_COOLDOWN_SECONDS, 1);
     controller.setPaused(false);
 
     // Attempting another move while Glove is on cooldown is rejected.
     expect(controller.moveDefender(guardian.id, { row: 2, column: 2 })).toBe(false);
     expect(controller.getSnapshot().lastToast?.message).toBe('Fusion Glove is recharging (on cooldown)');
 
-    // Save & Resume preserves Glove cooldown; after 15.5s it clears and Move succeeds again.
+    // Save & Resume preserves Glove cooldown; after configured cooldown clears and Move succeeds again.
     const reloaded = new CampaignController({ storage });
     expect(reloaded.resumeSavedBattle()).toBe(true);
     expect(reloaded.getSnapshot().gloveCooldown.onCooldown).toBe(true);
-    for (let i = 0; i < 310; i++) reloaded.stepMs(50);
+    const ticksToClear = Math.ceil(CAMPAIGN_GLOVE_COOLDOWN_SECONDS * 20) + 10;
+    for (let i = 0; i < ticksToClear; i++) reloaded.stepMs(50);
     expect(reloaded.getSnapshot().gloveCooldown.onCooldown).toBe(false);
     expect(reloaded.moveDefender(guardian.id, { row: 2, column: 2 })).toBe(true);
 

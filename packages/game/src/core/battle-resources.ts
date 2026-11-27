@@ -1,7 +1,7 @@
 import { BATTLEFIELD_COLUMNS, cellIndex, isLane, type Cell } from '../battlefield/grid';
 import type { EntityId } from '../entities/runtime-entity';
 import { applyBattleCommand, type BattleState } from './battle-state';
-import { uniformIndex, type ResourceRng } from './resource-rng';
+import { uniformFraction, uniformIndex, type ResourceRng } from './resource-rng';
 import { count, deadline, type Point, type ResourceSession } from './resource-session';
 
 const ENERGY_GRANT = 50;
@@ -269,8 +269,19 @@ function applyResourceCommand(ctx: Context, command: ResourceCommand): string | 
         return 'invalid-enemy-reward';
       }
       state.energy = count(state.energy + definition.energy);
-      for (let i = 0; i < definition.crystals; i++) {
-        spawn(ctx, 'crystal', 1, { kind: 'lane', lane: command.lane, position: command.position }, command.sourceId);
+      if (definition.crystals > 0) {
+        const dropChance = definition.crystalDropChance ?? 1;
+        const shouldDrop =
+          dropChance >= 1
+            ? true
+            : dropChance <= 0
+              ? false
+              : uniformFraction(ctx.rng) < dropChance;
+        if (shouldDrop) {
+          for (let i = 0; i < definition.crystals; i++) {
+            spawn(ctx, 'crystal', 1, { kind: 'lane', lane: command.lane, position: command.position }, command.sourceId);
+          }
+        }
       }
       state.rewardedEnemies.add(command.sourceId);
       return;

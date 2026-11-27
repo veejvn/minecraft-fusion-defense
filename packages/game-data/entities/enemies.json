@@ -16,7 +16,8 @@
     "freezeResistancePct": 0,
     "freezeImmune": false,
     "energyReward": 50,
-    "crystalReward": 0
+    "crystalReward": 1,
+    "crystalDropChance": 0
   },
   {
     "id": "husk",
@@ -35,7 +36,8 @@
     "freezeResistancePct": 0,
     "freezeImmune": false,
     "energyReward": 100,
-    "crystalReward": 0
+    "crystalReward": 1,
+    "crystalDropChance": 0.1
   },
   {
     "id": "vindicator",
@@ -54,7 +56,8 @@
     "freezeResistancePct": 0,
     "freezeImmune": false,
     "energyReward": 125,
-    "crystalReward": 1
+    "crystalReward": 1,
+    "crystalDropChance": 0.35
   },
   {
     "id": "pillager",
@@ -73,6 +76,7 @@
     "freezeResistancePct": 0,
     "freezeImmune": false,
     "energyReward": 125,
-    "crystalReward": 1
+    "crystalReward": 1,
+    "crystalDropChance": 0.4
   }
 ]

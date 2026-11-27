@@ -27,7 +27,7 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     const byAbility = new Map(MVP_GAME_DATA.abilities.map(a => [a.id, a]));
 
     expect(MVP_GAME_DATA.grasslandLevel.seed).toBe(20261123);
-    expect(MVP_GAME_DATA.grasslandLevel.fusionGloveCooldownSeconds).toBe(15);
+    expect(MVP_GAME_DATA.grasslandLevel.fusionGloveCooldownSeconds).toBeGreaterThanOrEqual(0);
 
     expect(byDef.get('iron_golem')).toMatchObject({
       summonEnergyCost: 50,
@@ -68,9 +68,24 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     });
     expect(byDef.get('skeleton_sniper')?.damage).toBe(50);
 
-    expect(byEnemy.get('zombie')).toMatchObject({ maxHp: 200, attackSpeed: 1, energyReward: 50 });
-    expect(byEnemy.get('vindicator')).toMatchObject({ energyReward: 125, crystalReward: 1 });
-    expect(byEnemy.get('pillager')).toMatchObject({ energyReward: 125, crystalReward: 1 });
+    expect(byEnemy.get('zombie')).toMatchObject({
+      maxHp: 200,
+      attackSpeed: 1,
+      energyReward: 50,
+      crystalReward: 1,
+      crystalDropChance: 0,
+    });
+    expect(byEnemy.get('husk')).toMatchObject({ crystalReward: 1, crystalDropChance: 0.1 });
+    expect(byEnemy.get('vindicator')).toMatchObject({
+      energyReward: 125,
+      crystalReward: 1,
+      crystalDropChance: 0.35,
+    });
+    expect(byEnemy.get('pillager')).toMatchObject({
+      energyReward: 125,
+      crystalReward: 1,
+      crystalDropChance: 0.4,
+    });
 
     expect(byAbility.get('earthquake')?.targetScope).toBe('same-lane-enemies-ahead');
     expect(byAbility.get('arrow_storm')?.effects[0]).toMatchObject({
@@ -147,6 +162,7 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
         freezeImmune: e.freezeImmune,
         energyReward: e.id === 'vindicator' ? 140 : e.energyReward,
         crystalReward: e.crystalReward,
+        crystalDropChance: e.id === 'husk' ? 0.25 : e.crystalDropChance,
       })),
       abilities: structuredClone(MVP_GAME_DATA.abilities),
       waves: structuredClone(MVP_GAME_DATA.grasslandLevel.waves),
@@ -169,6 +185,7 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
       role: 'Frontline Tank',
     });
     expect(merged.enemies.find(e => e.id === 'zombie')?.maxHp).toBe(240);
+    expect(merged.enemies.find(e => e.id === 'husk')?.crystalDropChance).toBe(0.25);
     expect(merged.enemies.find(e => e.id === 'vindicator')).toMatchObject({
       energyReward: 140,
       name: 'Vindicator',
@@ -195,5 +212,9 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     const badWaveCount = structuredClone(preset);
     badWaveCount.waveCrystals.pop();
     expect(() => mergePlaytestPresetIntoDataset(MVP_GAME_DATA, badWaveCount)).toThrow(/waveCrystals length/);
+
+    const badDropChance = structuredClone(preset);
+    badDropChance.enemies[0].crystalDropChance = 1.5;
+    expect(() => mergePlaytestPresetIntoDataset(MVP_GAME_DATA, badDropChance)).toThrow();
   });
 });

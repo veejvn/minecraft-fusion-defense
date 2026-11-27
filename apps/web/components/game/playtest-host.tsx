@@ -103,7 +103,16 @@ function loadSavedPlaytestPreset(fallback: PlaytestPresetConfig): {
       }),
       enemies: fallback.enemies.map(enemy => {
         const saved = savedEnemyMap.get(enemy.id);
-        return saved ? { ...enemy, ...saved } : { ...enemy };
+        return saved
+          ? {
+              ...enemy,
+              ...saved,
+              crystalDropChance:
+                typeof saved.crystalDropChance === 'number'
+                  ? saved.crystalDropChance
+                  : enemy.crystalDropChance,
+            }
+          : { ...enemy };
       }),
       // Always sync skill mechanics (counts, scopes, requiresTarget) from code defaults while keeping saved stat tweaks.
       abilities: fallback.abilities,
@@ -595,6 +604,17 @@ export function PlaytestHost() {
     const target = cloned.enemies.find(e => e.id === tuneEnemyId);
     if (!target) return;
     target.freezeImmune = checked;
+    commitDraftPreset(cloned);
+  };
+
+  const updateEnemyCrystalDropPct = (rawValue: string) => {
+    if (!draftPreset || !modMeta) return;
+    const pct = cloneNumberInput(rawValue, 0, 100);
+    if (pct === null) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    const target = cloned.enemies.find(e => e.id === tuneEnemyId);
+    if (!target) return;
+    target.crystalDropChance = Number((pct / 100).toFixed(4));
     commitDraftPreset(cloned);
   };
 
@@ -1740,7 +1760,8 @@ export function PlaytestHost() {
                     </select>
                     <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 4 }}>
                       DPS: {(editedEnemy.damage * editedEnemy.attackSpeed).toFixed(1)} · Speed: {editedEnemy.moveSpeed} cells/s · Reward:{' '}
-                      {editedEnemy.energyReward} EN / {editedEnemy.crystalReward} CR
+                      {editedEnemy.energyReward} EN / {editedEnemy.crystalReward} CR (
+                      {Math.round((editedEnemy.crystalDropChance ?? 0) * 100)}%)
                     </div>
                   </div>
                 </div>
@@ -1855,6 +1876,18 @@ export function PlaytestHost() {
                       step={1}
                       value={editedEnemy.crystalReward}
                       onChange={e => updateEnemyField('crystalReward', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#38BDF8' }}>
+                    Crystal Drop (%)
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={Math.round((editedEnemy.crystalDropChance ?? 0) * 100)}
+                      onChange={e => updateEnemyCrystalDropPct(e.target.value)}
                       style={{ ...inputStyle, marginTop: 3 }}
                     />
                   </label>
