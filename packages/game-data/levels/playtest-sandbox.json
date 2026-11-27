@@ -3,6 +3,13 @@
   "seed": 101,
   "rows": 5,
   "columns": 9,
+  "initialEmeralds": 100,
+  "enablePassiveEnergy": false,
+  "villageChest": {
+    "enabled": true,
+    "amount": 25,
+    "intervalSeconds": 10
+  },
   "waveCrystals": [1, 1, 1, 2, 2],
   "waves": [
     {

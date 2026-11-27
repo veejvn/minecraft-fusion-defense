@@ -177,6 +177,12 @@ export type AbilityEffectDefinition =
       readonly armorPiercing?: boolean;
       readonly shieldPiercing?: boolean;
       readonly applyStatus?: AttachedStatusSpec;
+    }
+  | {
+      readonly kind: 'resource-burst';
+      readonly amount: number;
+      readonly itemCount: number;
+      readonly spawnAsItems: boolean;
     };
 
 export interface AbilityDefinition {
@@ -389,6 +395,11 @@ function validateEffect(effect: unknown, rate: number): void {
       safeIntAtLeast(def.radius, 0, 'multihit-falling-area radius');
       optionalBoolean(def.sameLaneOnly, 'multihit-falling-area sameLaneOnly');
       validateDamageOptions(def, rate);
+      return;
+    case 'resource-burst':
+      safeIntAtLeast(def.amount, 1, 'resource-burst amount');
+      safeIntAtLeast(def.itemCount, 1, 'resource-burst itemCount');
+      requiredBoolean(def.spawnAsItems, 'resource-burst spawnAsItems');
       return;
     default:
       throw new TypeError(`Unsupported ability effect kind: ${String((def as { kind?: unknown }).kind)}`);

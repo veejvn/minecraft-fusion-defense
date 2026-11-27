@@ -2265,4 +2265,63 @@ describe('Abilities v2.2 scopes, bonuses, vulnerable marks, and same-lane lobbed
     expect(s2.combat?.entities.get(6n)?.hp).toBe(925); // enemy ahead took 75 dmg (3 * 25) and got Stunned
     expect(s2.abilities?.statuses.some(st => st.targetEntityId === 6n && st.kind === 'stun')).toBe(true);
   });
+
+  it('spawns collectible Emerald bursts for Villager emerald_harvest and Master Trader grand_caravan resource-burst abilities', () => {
+    const resource = resourceFixture({
+      initialEnergy: 100,
+      enablePassiveEnergy: false,
+      defenders: [
+        { id: 'villager', classification: 'base', summonEnergyCost: 50, unlocked: true },
+        { id: 'master_trader', classification: 'fusion', summonEnergyCost: 0, unlocked: true },
+      ],
+    });
+    const combat = combatFixture({
+      defenders: [
+        { id: 'villager', maxHp: 150, damage: 0, attackSpeed: 1, attackRange: 0, targeting: 'CLOSEST_TO_DEFENDER', armor: 0 },
+        { id: 'master_trader', maxHp: 300, damage: 0, attackSpeed: 1, attackRange: 0, targeting: 'CLOSEST_TO_DEFENDER', armor: 0 },
+      ],
+    });
+    const abilities: AbilityDefinition[] = [
+      {
+        id: 'emerald_harvest',
+        ownerDefenderId: 'villager',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: false,
+        targetScope: 'self',
+        effects: [{ kind: 'resource-burst', amount: 150, itemCount: 6, spawnAsItems: true }],
+      },
+      {
+        id: 'grand_caravan',
+        ownerDefenderId: 'master_trader',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: false,
+        targetScope: 'self',
+        effects: [{ kind: 'resource-burst', amount: 250, itemCount: 10, spawnAsItems: true }],
+      },
+    ];
+
+    const game = new BattleRuntime(
+      { ticksPerSecond: 10, maxCatchUpTicks: 250 },
+      resource,
+      combat,
+      undefined,
+      undefined,
+      { abilities },
+    );
+
+    game.enqueue({ type: 'wave-reward', sourceId: 'wave_1' }, 1);
+    game.enqueue({ type: 'wave-reward', sourceId: 'wave_2' }, 1);
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'villager', cell: { row: 0, column: 1 } } }, 1);
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'master_trader', cell: { row: 1, column: 1 } } }, 1);
+    game.enqueue({ type: 'activate-ability', defenderId: 0n }, 1);
+    game.enqueue({ type: 'activate-ability', defenderId: 1n }, 2);
+    step(game, 2);
+
+    const items = [...(game.snapshot().resources?.items.values() ?? [])].filter(i => i.kind === 'energy');
+    expect(items).toHaveLength(16); // 6 + 10 collectible Emeralds
+    const totalSpawned = items.reduce((sum, item) => sum + item.amount, 0);
+    expect(totalSpawned).toBe(400); // 150 + 250
+  });
 });

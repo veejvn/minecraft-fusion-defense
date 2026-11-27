@@ -12,11 +12,12 @@ export const PROGRESSION_STORAGE_KEY = 'mfd.progression.v1';
 export const PROGRESSION_SCHEMA_VERSION = 1;
 const MAX_RECORDED_BATTLE_IDS = 200;
 
-export const STARTER_DEFENDER_IDS = ['iron_golem', 'skeleton'] as const;
+export const STARTER_DEFENDER_IDS = ['villager', 'iron_golem', 'skeleton'] as const;
 export const STARTER_RECIPE_IDS = [
   'fusion_skeleton_sniper',
   'fusion_steel_guardian',
   'fusion_iron_ranger',
+  'fusion_master_trader',
 ] as const;
 
 export interface ProgressionProfile {
@@ -115,6 +116,13 @@ interface FusionRecipeCatalogRule {
 
 const BASE_DEFENDER_RULES: readonly BaseDefenderCatalogRule[] = [
   {
+    id: 'villager',
+    name: 'Villager',
+    starter: true,
+    requirement: 'Unlocked at start',
+    isUnlocked: () => true,
+  },
+  {
     id: 'iron_golem',
     name: 'Iron Golem',
     starter: true,
@@ -152,6 +160,15 @@ const BASE_DEFENDER_RULES: readonly BaseDefenderCatalogRule[] = [
 ];
 
 const FUSION_RECIPE_RULES: readonly FusionRecipeCatalogRule[] = [
+  {
+    recipeId: 'fusion_master_trader',
+    outputDefenderId: 'master_trader',
+    outputName: 'Master Trader',
+    inputDefenderIds: ['villager', 'villager'],
+    requiredBaseDefenders: ['villager'],
+    starter: true,
+    requirement: 'Unlocked at start',
+  },
   {
     recipeId: 'fusion_skeleton_sniper',
     outputDefenderId: 'skeleton_sniper',
@@ -678,7 +695,7 @@ export function getAchievementsView(profile: ProgressionProfile): readonly Achie
   ];
 }
 
-/** Build the read-only Defender Collection view covering all 5 Base and 15 Fusion Defenders. */
+/** Build the read-only Defender Collection view covering all 6 Base and 16 Fusion Defenders. */
 export function getDefenderCollectionView(
   profile: ProgressionProfile,
 ): readonly DefenderCollectionEntry[] {

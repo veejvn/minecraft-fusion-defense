@@ -3,6 +3,19 @@ export interface Point {
   readonly y: number;
 }
 
+export interface EconomyProductionConfig {
+  readonly itemCount: number;
+  readonly amountPerItem: number;
+  readonly initialDelaySeconds: number;
+  readonly intervalSeconds: number;
+}
+
+export interface VillageChestConfig {
+  readonly enabled: boolean;
+  readonly amount: number;
+  readonly intervalSeconds: number;
+}
+
 export interface ResourceSessionInput {
   readonly seed: number;
   readonly defenders: readonly {
@@ -11,6 +24,7 @@ export interface ResourceSessionInput {
     readonly summonEnergyCost: number;
     readonly unlocked: boolean;
     readonly summonCooldownSeconds?: number;
+    readonly economyProduction?: EconomyProductionConfig;
   }[];
   readonly enemies: readonly {
     readonly id: string;
@@ -26,6 +40,9 @@ export interface ResourceSessionInput {
     // The supplied list defines the distribution. Repeated positions have greater weight.
     readonly positions: readonly Point[];
   };
+  readonly initialEnergy?: number;
+  readonly enablePassiveEnergy?: boolean;
+  readonly villageChest?: VillageChestConfig;
   readonly enableRandomEnergyItems?: boolean;
   readonly enableRandomCrystalItems?: boolean;
   readonly fusionGloveCooldownSeconds?: number;
@@ -80,6 +97,25 @@ export function validateResourceSession(input: ResourceSessionInput, rate: numbe
       }
       if (defender.summonCooldownSeconds > 0) deadline(defender.summonCooldownSeconds, rate);
     }
+    if (defender.economyProduction !== undefined) {
+      const prod = defender.economyProduction;
+      if (!prod || typeof prod !== 'object') throw new TypeError('Invalid economyProduction');
+      if (count(prod.itemCount) === 0 || count(prod.amountPerItem) === 0) {
+        throw new RangeError('Economy production itemCount and amountPerItem must be positive integers');
+      }
+      if (
+        typeof prod.initialDelaySeconds !== 'number' ||
+        !Number.isFinite(prod.initialDelaySeconds) ||
+        prod.initialDelaySeconds <= 0 ||
+        typeof prod.intervalSeconds !== 'number' ||
+        !Number.isFinite(prod.intervalSeconds) ||
+        prod.intervalSeconds <= 0
+      ) {
+        throw new RangeError('Invalid economyProduction timing seconds');
+      }
+      deadline(prod.initialDelaySeconds, rate);
+      deadline(prod.intervalSeconds, rate);
+    }
   }
   for (const enemy of config.enemies) {
     count(enemy.energy);
@@ -123,6 +159,27 @@ export function validateResourceSession(input: ResourceSessionInput, rate: numbe
     }
     if (config.fusionGloveCooldownSeconds > 0) deadline(config.fusionGloveCooldownSeconds, rate);
   }
+  if (config.initialEnergy !== undefined) {
+    count(config.initialEnergy);
+  }
+  if (config.enablePassiveEnergy !== undefined && typeof config.enablePassiveEnergy !== 'boolean') {
+    throw new TypeError('Invalid enablePassiveEnergy flag');
+  }
+  if (config.villageChest !== undefined) {
+    const chest = config.villageChest;
+    if (!chest || typeof chest !== 'object' || typeof chest.enabled !== 'boolean') {
+      throw new TypeError('Invalid villageChest configuration');
+    }
+    if (
+      count(chest.amount) === 0 ||
+      typeof chest.intervalSeconds !== 'number' ||
+      !Number.isFinite(chest.intervalSeconds) ||
+      chest.intervalSeconds <= 0
+    ) {
+      throw new RangeError('Invalid villageChest amount or intervalSeconds');
+    }
+    deadline(chest.intervalSeconds, rate);
+  }
   const minInterval = count(Math.ceil(30 * rate));
   const maxInterval = count(Math.floor(60 * rate));
   if (minInterval < 1 || minInterval > maxInterval) throw new RangeError('No eligible Crystal interval');
@@ -132,6 +189,8 @@ export function validateResourceSession(input: ResourceSessionInput, rate: numbe
       ...enemy,
       crystalDropChance: enemy.crystalDropChance ?? 1,
     })),
+    initialEnergy: config.initialEnergy ?? 50,
+    enablePassiveEnergy: config.enablePassiveEnergy ?? true,
     enableRandomEnergyItems: config.enableRandomEnergyItems ?? true,
     enableRandomCrystalItems: config.enableRandomCrystalItems ?? true,
     fusionGloveCooldownSeconds: config.fusionGloveCooldownSeconds ?? 0,

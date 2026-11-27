@@ -60,6 +60,12 @@ export interface PlaytestDefenderConfig {
   armor: number;
   attackDamageType?: AbilityDamageType;
   basicAttackStatus?: AttachedStatusSpec;
+  economyProduction?: {
+    itemCount: number;
+    amountPerItem: number;
+    initialDelaySeconds: number;
+    intervalSeconds: number;
+  };
 }
 
 /** Mutable test-only Enemy combat and reward configuration for live tuning. */
@@ -83,7 +89,14 @@ export interface PlaytestEnemyConfig {
 /** Complete test-only dataset driving a PlaytestController session. */
 export interface PlaytestPresetConfig {
   seed: number;
+  initialEmeralds?: number;
+  enablePassiveEnergy?: boolean;
   fusionGloveCooldownSeconds?: number;
+  villageChest?: {
+    enabled: boolean;
+    amount: number;
+    intervalSeconds: number;
+  };
   defenders: PlaytestDefenderConfig[];
   enemies: PlaytestEnemyConfig[];
   abilities: AbilityDefinition[];
@@ -91,7 +104,7 @@ export interface PlaytestPresetConfig {
   waveCrystals: number[];
 }
 
-/** All 20 MVP Defenders (5 Base + 15 Fusion) loaded from @mfd/game-data JSON definitions. */
+/** All 22 MVP Defenders (6 Base + 16 Fusion) loaded from @mfd/game-data JSON definitions. */
 export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = MVP_GAME_DATA.defenders.map(d => ({
   id: d.id,
   name: d.name,
@@ -114,7 +127,7 @@ export const PLAYTEST_ENEMY_META: readonly PlaytestEnemyMeta[] = MVP_GAME_DATA.e
   role: e.role,
 }));
 
-/** All 15 confirmed MVP Fusion Recipes loaded from @mfd/game-data JSON definitions. */
+/** All 16 confirmed MVP Fusion Recipes loaded from @mfd/game-data JSON definitions. */
 export const PLAYTEST_FUSION_RECIPES_META: readonly PlaytestFusionRecipeMeta[] =
   MVP_GAME_DATA.fusionRecipes.map(recipe => ({
     id: recipe.id,
@@ -134,10 +147,14 @@ export function clonePlaytestPreset(preset: PlaytestPresetConfig): PlaytestPrese
 export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
   return {
     seed: MVP_GAME_DATA.sandboxLevel.seed,
+    initialEmeralds: MVP_GAME_DATA.sandboxLevel.initialEmeralds,
+    enablePassiveEnergy: MVP_GAME_DATA.sandboxLevel.enablePassiveEnergy,
+    villageChest: structuredClone(MVP_GAME_DATA.sandboxLevel.villageChest),
     defenders: MVP_GAME_DATA.defenders.map(d => ({
       id: d.id,
       tier: d.tier,
       summonEnergyCost: d.summonEnergyCost,
+      summonCooldownSeconds: d.summonCooldownSeconds,
       maxHp: d.maxHp,
       damage: d.damage,
       attackSpeed: d.attackSpeed,
@@ -146,6 +163,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
       armor: d.armor,
       ...(d.attackDamageType ? { attackDamageType: d.attackDamageType } : {}),
       ...(d.basicAttackStatus ? { basicAttackStatus: structuredClone(d.basicAttackStatus) } : {}),
+      ...(d.economyProduction ? { economyProduction: structuredClone(d.economyProduction) } : {}),
     })),
     enemies: MVP_GAME_DATA.enemies.map(e => ({
       id: e.id,
@@ -191,12 +209,21 @@ export function buildRuntimeInputsFromPreset(
 
   const resourceInput: ResourceSessionInput = {
     seed: preset.seed,
+    initialEnergy: preset.initialEmeralds ?? MVP_GAME_DATA.sandboxLevel.initialEmeralds,
+    enablePassiveEnergy:
+      preset.enablePassiveEnergy ?? MVP_GAME_DATA.sandboxLevel.enablePassiveEnergy,
+    villageChest: structuredClone(
+      preset.villageChest ?? MVP_GAME_DATA.sandboxLevel.villageChest,
+    ),
     defenders: preset.defenders.map(defender => ({
       id: defender.id,
       classification: defender.tier === 1 ? 'base' : 'fusion',
       summonEnergyCost: defender.summonEnergyCost,
       summonCooldownSeconds: defender.summonCooldownSeconds ?? 0,
       unlocked: true,
+      ...(defender.economyProduction
+        ? { economyProduction: structuredClone(defender.economyProduction) }
+        : {}),
     })),
     enemies: [
       ...preset.enemies.map(enemy => ({

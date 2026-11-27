@@ -16,7 +16,15 @@ import {
   type CombatCommand,
 } from '../combat/combat-state';
 import { applyBattleCommand, createBattleState, type BattleCommand, type BattleState } from '../core/battle-state';
-import { applyResourceEvent, createResourceState, type ResourceCommand, type ResourceEvent } from '../core/battle-resources';
+import {
+  applyResourceEvent,
+  createResourceState,
+  registerDefenderProducer,
+  spawnEmeraldBurst,
+  unregisterDefenderProducer,
+  type ResourceCommand,
+  type ResourceEvent,
+} from '../core/battle-resources';
 import type { ResourceRng } from '../core/resource-rng';
 import { validateResourceSession, type ResourceSessionInput } from '../core/resource-session';
 import { SimulationClock, type ClockConfig } from '../core/simulation-clock';
@@ -272,12 +280,27 @@ export class BattleRuntime {
         const id = state.nextEntityId;
         applyBattleCommand(state, command);
         if (state.combat && combatSession) registerCombatEntity(state, combatSession, id);
+        if (command.entity.kind === 'defender' && state.resources && session && rng) {
+          registerDefenderProducer(
+            {
+              battle: state,
+              state: state.resources,
+              config: session,
+              rng,
+              tick: this.clock.tick,
+              schedule: (timer, scheduledTick) => enqueue({ payload: timer, scheduledTick, causalDepth: 0 }),
+            },
+            id,
+            command.entity.definitionId,
+          );
+        }
         return;
       }
       if (command.type === 'remove') {
         applyBattleCommand(state, command);
         if (state.combat) unregisterCombatEntity(state.combat, command.id);
         if (state.abilities) cleanupEntityAbilityState(state, command.id, 'death');
+        if (state.resources) unregisterDefenderProducer(state.resources, command.id);
         if (state.waves && waveSession) checkWaveCompletion(this.waveContext(state, rng, this.clock.tick, enqueue));
         return;
       }
@@ -298,6 +321,28 @@ export class BattleRuntime {
           this.clock.tick,
         );
         if (state.fusion.outcome?.eventId === event.id && state.fusion.outcome.status === 'APPLIED') {
+          if (state.resources && session && rng) {
+            if (command.type === 'fuse') {
+              unregisterDefenderProducer(state.resources, command.sourceId);
+            }
+            unregisterDefenderProducer(state.resources, command.targetId);
+            const outputId = state.fusion.outcome.outputEntityId;
+            const outputEntity = state.entities.get(outputId);
+            if (outputEntity && outputEntity.kind === 'defender') {
+              registerDefenderProducer(
+                {
+                  battle: state,
+                  state: state.resources,
+                  config: session,
+                  rng,
+                  tick: this.clock.tick,
+                  schedule: (timer, scheduledTick) => enqueue({ payload: timer, scheduledTick, causalDepth: 0 }),
+                },
+                outputId,
+                outputEntity.definitionId,
+              );
+            }
+          }
           this.pendingCheckpointReason = 'fuse';
         }
         return;
@@ -307,7 +352,30 @@ export class BattleRuntime {
           throw new Error('Ability session unavailable');
         }
         applyAbilityCommand(
-          { battle: state, combat: state.combat, session: combatSession, abilitySession },
+          {
+            battle: state,
+            combat: state.combat,
+            session: combatSession,
+            abilitySession,
+            spawnResourceBurst: (cell, ownerId, amount, itemCount, spawnAsItems) => {
+              if (!state.resources || !session || !rng) return;
+              spawnEmeraldBurst(
+                {
+                  battle: state,
+                  state: state.resources,
+                  config: session,
+                  rng,
+                  tick: this.clock.tick,
+                  schedule: (timer, scheduledTick) => enqueue({ payload: timer, scheduledTick, causalDepth: 0 }),
+                },
+                cell,
+                ownerId,
+                amount,
+                itemCount,
+                spawnAsItems,
+              );
+            },
+          },
           command,
           event.id,
           enemy => enqueueEnemyReward(state, enqueue, this.clock.tick, enemy),
@@ -542,6 +610,7 @@ export class BattleRuntime {
       (this.paused &&
         (command.type === 'collect' ||
           command.type === 'claim' ||
+          command.type === 'claim-village-chest' ||
           command.type === 'fuse' ||
           command.type === 'summon-fuse' ||
           command.type === 'move-defender' ||

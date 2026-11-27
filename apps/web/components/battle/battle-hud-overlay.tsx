@@ -223,19 +223,19 @@ export function BattleHudOverlay({
               borderRadius: 8,
               padding: '4px 8px',
             }}
-            title="Energy used to summon Base Defenders"
+            title="Emeralds used to summon Base Defenders"
           >
-            <img src="/assets/sprites/items/energy_orb.png" alt="Energy" width={24} height={24} className="mfd-pixel" />
+            <img src="/assets/sprites/items/emerald.png" alt="Emeralds" width={22} height={22} className="mfd-pixel" />
             <div>
-              <div style={{ fontSize: 9, color: '#FDE047', fontWeight: 700, lineHeight: 1.1 }}>ENERGY</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#FEF08A', lineHeight: 1.1 }}>{snapshot.energy}</div>
+              <div style={{ fontSize: 9, color: '#6EE7B7', fontWeight: 700, lineHeight: 1.1 }}>EMERALDS</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#A7F3D0', lineHeight: 1.1 }}>{snapshot.energy}</div>
             </div>
           </div>
 
           <button
             type="button"
             className={`mfd-btn ${activeTool.kind === 'crystal' ? 'mfd-btn-crystal' : ''}`}
-            style={{ padding: '4px 8px', touchAction: 'none', userSelect: 'none' }}
+            style={{ padding: '3px 7px', touchAction: 'none', userSelect: 'none' }}
             disabled={snapshot.crystals < 1 || snapshot.status !== 'playing'}
             onPointerDown={e => {
               if (snapshot.crystals >= 1) {
@@ -299,7 +299,7 @@ export function BattleHudOverlay({
                   onSelectTool(selected ? { kind: 'select' } : { kind: 'place', definitionId: card.id });
                 }}
                 style={{
-                  padding: '4px 7px',
+                  padding: '3px 6px',
                   borderColor: selected
                     ? '#facc15'
                     : card.unlocked && card.canAfford && !card.onCooldown
@@ -310,7 +310,7 @@ export function BattleHudOverlay({
                 }}
                 title={
                   card.unlocked
-                    ? `${card.name} (${card.cost} EN, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto empty cell or compatible Defender to Fuse.`
+                    ? `${card.name} (${card.cost} EM, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto empty cell or compatible Defender to Fuse.`
                     : `Locked: ${card.requirement}`
                 }
               >
@@ -344,14 +344,14 @@ export function BattleHudOverlay({
                             : '#F87171',
                     }}
                   >
-                    {!card.unlocked ? 'LOCKED' : card.onCooldown ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s` : `${card.cost} EN`}
+                    {!card.unlocked ? 'LOCKED' : card.onCooldown ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s` : `${card.cost} EM`}
                   </div>
                 </div>
               </button>
             );
           })}
 
-          {/* Fusion Glove (Move or Fuse placed Defenders, 0 EN, cooldown) */}
+          {/* Fusion Glove (Move or Fuse placed Defenders, 0 EM, cooldown) */}
           <button
             type="button"
             className="mfd-btn mfd-defender-card"
@@ -370,12 +370,12 @@ export function BattleHudOverlay({
               onSelectTool(activeTool.kind === 'glove' ? { kind: 'select' } : { kind: 'glove' });
             }}
             style={{
-              padding: '4px 7px',
+              padding: '3px 6px',
               borderColor: activeTool.kind === 'glove' ? '#facc15' : snapshot.gloveCooldown.onCooldown ? '#475569' : '#38bdf8',
               background: activeTool.kind === 'glove' ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
               opacity: snapshot.gloveCooldown.onCooldown && activeTool.kind !== 'glove' ? 0.78 : 1,
             }}
-            title={`Fusion Glove (0 EN, ${snapshot.gloveCooldown.totalSeconds}s CD): Move a Defender or Fuse two Tier-1 Defenders`}
+            title={`Fusion Glove (0 EM, ${snapshot.gloveCooldown.totalSeconds}s CD): Move a Defender or Fuse two Tier-1 Defenders`}
           >
             {snapshot.gloveCooldown.onCooldown && (
               <>
@@ -383,12 +383,12 @@ export function BattleHudOverlay({
                 <div className="mfd-cd-badge">{snapshot.gloveCooldown.remainingSeconds.toFixed(1)}s</div>
               </>
             )}
-            <PixelToolIcon kind="glove" size={26} />
+            <PixelToolIcon kind="glove" size={24} />
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Glove</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Glove</div>
               <div
                 style={{
-                  fontSize: 10,
+                  fontSize: 9,
                   lineHeight: 1.15,
                   color: snapshot.gloveCooldown.onCooldown ? '#FACC15' : '#38BDF8',
                 }}
@@ -400,7 +400,7 @@ export function BattleHudOverlay({
             </div>
           </button>
 
-          {/* Shovel (Remove Defender, 0 EN, 0% refund, 0s cooldown) */}
+          {/* Shovel (Remove Defender, 0 EM, 0% refund, 0s cooldown) */}
           <button
             type="button"
             className="mfd-btn mfd-defender-card"
@@ -414,16 +414,16 @@ export function BattleHudOverlay({
               onSelectTool(activeTool.kind === 'shovel' ? { kind: 'select' } : { kind: 'shovel' });
             }}
             style={{
-              padding: '4px 7px',
+              padding: '3px 6px',
               borderColor: activeTool.kind === 'shovel' ? '#f87171' : '#64748b',
               background: activeTool.kind === 'shovel' ? 'rgba(185, 28, 28, 0.35)' : '#0f172a',
             }}
             title="Shovel: Click or drag onto any Defender to remove it (0% refund)"
           >
-            <PixelToolIcon kind="shovel" size={26} />
+            <PixelToolIcon kind="shovel" size={24} />
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Shovel</div>
-              <div style={{ fontSize: 10, lineHeight: 1.15, color: '#FCA5A5' }}>REMOVE</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Shovel</div>
+              <div style={{ fontSize: 9, lineHeight: 1.15, color: '#FCA5A5' }}>REMOVE</div>
             </div>
           </button>
         </div>
@@ -535,7 +535,7 @@ export function BattleHudOverlay({
           <div className="mfd-modal" style={{ maxWidth: 440, textAlign: 'center' }}>
             <h2 style={{ margin: '0 0 8px', fontSize: 26, color: '#FACC15' }}>Game Paused</h2>
             <p style={{ margin: '0 0 18px', fontSize: 13, color: '#CBD5E1' }}>
-              Wave {snapshot.waveNumber}/{snapshot.totalWaves} · Energy: {snapshot.energy} · Crystals: {snapshot.crystals}/{snapshot.maxCrystals}
+              Wave {snapshot.waveNumber}/{snapshot.totalWaves} · Emeralds: {snapshot.energy} · Crystals: {snapshot.crystals}/{snapshot.maxCrystals}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <button type="button" className="mfd-btn mfd-btn-primary" onClick={onTogglePause}>

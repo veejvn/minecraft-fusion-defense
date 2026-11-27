@@ -6,6 +6,7 @@ import type {
   BaseDefenderCardView,
   CampaignToast,
   GloveCooldownView,
+  VillageChestView,
 } from '../campaign/campaign-controller';
 import type { EntityId } from '../entities/runtime-entity';
 import { BattleRuntime } from '../systems/battle-runtime';
@@ -198,6 +199,7 @@ export interface PlaytestHudSnapshot {
   readonly flashes: readonly PlaytestFlashEffect[];
   readonly baseDefenderCards: readonly BaseDefenderCardView[];
   readonly gloveCooldown: GloveCooldownView;
+  readonly villageChest: VillageChestView;
   readonly lastToast: CampaignToast | null;
   readonly eventLog: readonly PlaytestLogEntry[];
 }
@@ -241,7 +243,7 @@ function formatPlaytestRejection(
     case 'terminal':
       return 'Battle has already ended';
     case 'insufficient-energy':
-      return 'Insufficient Energy';
+      return 'Insufficient Emeralds';
     case 'summon-on-cooldown':
       return 'Defender is recharging (on cooldown)';
     case 'glove-on-cooldown':
@@ -272,6 +274,10 @@ function formatPlaytestRejection(
       return 'Power Crystal storage is full (5/5)';
     case 'nothing-to-claim':
       return 'No pending Power Crystals to claim';
+    case 'chest-not-ready':
+      return 'Village Supply Chest is still restocking';
+    case 'chest-disabled':
+      return 'Village Supply Chest is disabled';
     default:
       return `${category.toUpperCase()} rejected${reason ? ` (${reason})` : ''}`;
   }
@@ -312,6 +318,8 @@ export class PlaytestController {
   private nextFlashId = 1;
   private nextToastId = 1;
   private lastToast: CampaignToast | null = null;
+  private pendingCollectItemTicks = new Map<string, number>();
+  private pendingVillageChestClaimTick: number | null = null;
   private pendingResourceVisual:
     | { readonly kind: 'summon'; readonly label: string; readonly cell: Cell; readonly color: number }
     | { readonly kind: 'move'; readonly label: string; readonly cell: Cell; readonly color: number }
@@ -563,7 +571,7 @@ export class PlaytestController {
     this.pushLog(
       'summon',
       'info',
-      `Queued Summon ${label} (${def.summonEnergyCost} Energy) at (${cell.row}, ${cell.column})`,
+      `Queued Summon ${label} (${def.summonEnergyCost} EM) at (${cell.row}, ${cell.column})`,
     );
     this.refreshAndEmit();
     return true;
@@ -824,7 +832,15 @@ export class PlaytestController {
     const id = parseEntityId(itemId);
     if (id === null) return false;
     const raw = this.runtime.snapshot();
-    const res = this.runtime.enqueue({ type: 'collect', id }, raw.tick + 1);
+    const pendingTick = this.pendingCollectItemTicks.get(itemId);
+    if (pendingTick !== undefined && raw.tick < pendingTick) {
+      return false;
+    }
+    if (!raw.resources?.items.has(id)) {
+      return false;
+    }
+    const targetTick = raw.tick + 1;
+    const res = this.runtime.enqueue({ type: 'collect', id }, targetTick);
     if (res.status === 'REJECTED') {
       const msg =
         res.reason === 'paused'
@@ -835,7 +851,11 @@ export class PlaytestController {
       this.refreshAndEmit();
       return false;
     }
-    return res.status === 'APPLIED';
+    if (res.status === 'APPLIED') {
+      this.pendingCollectItemTicks.set(itemId, targetTick);
+      return true;
+    }
+    return false;
   }
 
   /** Claim any overflow Pending Power Crystals into active storage. */
@@ -858,6 +878,45 @@ export class PlaytestController {
     return res.status === 'APPLIED';
   }
 
+  /** Open the Village Supply Chest at the Base margin to collect bonus Emeralds. */
+  claimVillageChest(): boolean {
+    if (!this.snapshotCache.villageChest.enabled) {
+      const msg = formatPlaytestRejection('claim', 'chest-disabled');
+      this.pushLog('resource', 'rejected', msg);
+      this.pushToast('error', msg);
+      this.refreshAndEmit();
+      return false;
+    }
+    if (!this.snapshotCache.villageChest.ready) {
+      const msg = formatPlaytestRejection('claim', 'chest-not-ready');
+      this.pushLog('resource', 'rejected', msg);
+      this.pushToast('error', msg);
+      this.refreshAndEmit();
+      return false;
+    }
+    const raw = this.runtime.snapshot();
+    if (this.pendingVillageChestClaimTick !== null && raw.tick < this.pendingVillageChestClaimTick) {
+      return false;
+    }
+    const targetTick = raw.tick + 1;
+    const res = this.runtime.enqueue({ type: 'claim-village-chest' }, targetTick);
+    if (res.status === 'REJECTED') {
+      const msg = formatPlaytestRejection('claim', res.reason);
+      this.pushLog('resource', 'rejected', msg);
+      this.pushToast('error', msg);
+      this.refreshAndEmit();
+      return false;
+    }
+    if (res.status === 'APPLIED') {
+      this.pendingVillageChestClaimTick = targetTick;
+      const chestAmount = this.preset.villageChest?.amount ?? 25;
+      this.pushLog('resource', 'applied', `Claimed +${chestAmount} EM from Village Supply Chest`);
+      this.pushToast('success', `+${chestAmount} EM from Village Supply Chest!`);
+      return true;
+    }
+    return false;
+  }
+
   /** Grant +500 Energy using the pre-registered sandbox_energy_grant reward hook. */
   grantEnergy(): boolean {
     const raw = this.runtime.snapshot();
@@ -872,11 +931,11 @@ export class PlaytestController {
       raw.tick + 1,
     );
     if (res.status === 'REJECTED' || res.status === 'FAILED') {
-      this.pushLog('resource', 'rejected', 'Cannot grant Energy after battle ended');
+      this.pushLog('resource', 'rejected', 'Cannot grant Emeralds after battle ended');
       this.refreshAndEmit();
       return false;
     }
-    this.pushLog('resource', 'info', 'Queued +500 Energy sandbox grant');
+    this.pushLog('resource', 'info', 'Queued +500 EM sandbox grant');
     this.refreshAndEmit();
     return true;
   }
@@ -920,6 +979,8 @@ export class PlaytestController {
     this.energyGrantCounter = 0;
     this.crystalGrantCounter = 0;
     this.claimCounter = 0;
+    this.pendingCollectItemTicks.clear();
+    this.pendingVillageChestClaimTick = null;
     this.pendingResourceVisual = null;
     this.lastToast = null;
     this.lastResourceOutcomeEventId = null;
@@ -955,6 +1016,15 @@ export class PlaytestController {
   private syncOutcomes(): void {
     const raw = this.runtime.snapshot();
     let fusionOutputId: string | null = null;
+
+    for (const [itemId, targetTick] of this.pendingCollectItemTicks) {
+      if (raw.tick >= targetTick) {
+        this.pendingCollectItemTicks.delete(itemId);
+      }
+    }
+    if (this.pendingVillageChestClaimTick !== null && raw.tick >= this.pendingVillageChestClaimTick) {
+      this.pendingVillageChestClaimTick = null;
+    }
 
     if (raw.resources?.outcome && raw.resources.outcome.eventId !== this.lastResourceOutcomeEventId) {
       this.lastResourceOutcomeEventId = raw.resources.outcome.eventId;
@@ -1440,6 +1510,18 @@ export class PlaytestController {
         ? Math.min(100, Math.max(0, Math.round((gloveRemainingTicks / gloveTotalTicks) * 100)))
         : 0;
 
+    const chestCfg = this.preset.villageChest;
+    const chestEnabled = Boolean(chestCfg?.enabled);
+    const chestReady = chestEnabled && Boolean(resources?.villageChestReady);
+    const chestTotalSeconds = chestCfg?.intervalSeconds ?? 10;
+    const chestAmount = chestCfg?.amount ?? 25;
+    const chestRemainingTicks =
+      chestEnabled && !chestReady && resources?.villageChestNextTick !== undefined && resources.villageChestNextTick !== null
+        ? Math.max(0, resources.villageChestNextTick - raw.tick)
+        : 0;
+    const chestRemainingSeconds =
+      chestEnabled && !chestReady ? Number((chestRemainingTicks / TICKS_PER_SECOND).toFixed(1)) : 0;
+
     return {
       tick: raw.tick,
       elapsedSeconds: raw.tick / TICKS_PER_SECOND,
@@ -1471,6 +1553,13 @@ export class PlaytestController {
         remainingSeconds: gloveRemainingSeconds,
         progressPct: gloveProgressPct,
         onCooldown: gloveOnCooldown,
+      },
+      villageChest: {
+        enabled: chestEnabled,
+        ready: chestReady,
+        remainingSeconds: chestRemainingSeconds,
+        totalSeconds: chestTotalSeconds,
+        amount: chestAmount,
       },
       lastToast: this.lastToast,
       eventLog: [...this.eventLog],

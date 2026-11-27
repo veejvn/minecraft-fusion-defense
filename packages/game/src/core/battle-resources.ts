@@ -35,6 +35,9 @@ export interface ResourceState {
   outcome: { eventId: string; status: 'APPLIED' | 'REJECTED'; reason?: string } | null;
   summonCooldownUntilTick?: Map<string, number>;
   gloveCooldownUntilTick?: number;
+  villageChestReady?: boolean;
+  villageChestNextTick?: number | null;
+  producerNextTickByEntityId?: Map<EntityId, number>;
 }
 
 export function createResourceState(): ResourceState {
@@ -49,6 +52,7 @@ export type ResourceCommand =
   | { readonly type: 'summon'; readonly definitionId: string; readonly cell: Cell }
   | { readonly type: 'move-defender'; readonly defenderId: EntityId; readonly targetCell: Cell }
   | { readonly type: 'collect'; readonly id: ItemId }
+  | { readonly type: 'claim-village-chest' }
   | { readonly type: 'enemy-reward'; readonly sourceId: EntityId; readonly definitionId: string;
       readonly lane: number; readonly position: number }
   | { readonly type: 'wave-reward'; readonly sourceId: string }
@@ -58,6 +62,8 @@ export type ResourceCommand =
 type Timer =
   | { readonly type: 'initialize' }
   | { readonly type: 'periodic-energy' | 'energy-spawn'; readonly period: number }
+  | { readonly type: 'village-chest-ready' }
+  | { readonly type: 'defender-produce'; readonly entityId: EntityId; readonly expectedTick: number }
   | { readonly type: 'crystal-attempt' }
   | { readonly type: 'expire'; readonly id: ItemId };
 
@@ -116,19 +122,75 @@ function nextCrystalAttempt(ctx: Context): void {
   ctx.schedule({ type: 'crystal-attempt' }, count(ctx.tick + interval));
 }
 
+function clampLaneX(x: number): number {
+  return Math.max(0.15, Math.min(BATTLEFIELD_COLUMNS - 0.15, x));
+}
+
+export function spawnEmeraldBurst(
+  ctx: Context,
+  cell: Cell,
+  sourceId: EntityId,
+  totalAmount: number,
+  itemCount: number,
+  spawnAsItems: boolean,
+): void {
+  if (!spawnAsItems) {
+    ctx.state.energy = count(ctx.state.energy + totalAmount);
+    return;
+  }
+  const countItems = Math.max(1, itemCount);
+  const perItem = Math.floor(totalAmount / countItems);
+  const remainder = totalAmount - perItem * countItems;
+  const spreadSpan = countItems <= 1 ? 0 : Math.min(0.85, 0.25 + countItems * 0.06);
+  for (let i = 0; i < countItems; i++) {
+    const amount = perItem + (i === 0 ? remainder : 0);
+    if (amount <= 0) continue;
+    const baseOffset = countItems <= 1 ? 0 : -spreadSpan / 2 + (spreadSpan * i) / (countItems - 1);
+    const jitter = (uniformFraction(ctx.rng) - 0.5) * (countItems <= 1 ? 0.34 : 0.14);
+    const position = clampLaneX(cell.column + 0.5 + baseOffset + jitter);
+    spawn(ctx, 'energy', amount, { kind: 'lane', lane: cell.row, position }, sourceId);
+  }
+}
+
+export function registerDefenderProducer(
+  ctx: Context,
+  entityId: EntityId,
+  definitionId: string,
+): void {
+  const definition = ctx.config.defenders.find(d => d.id === definitionId);
+  const prod = definition?.economyProduction;
+  if (!prod) return;
+  const nextTick = count(ctx.tick + deadline(prod.initialDelaySeconds, ctx.config.rate));
+  ctx.state.producerNextTickByEntityId ??= new Map();
+  ctx.state.producerNextTickByEntityId.set(entityId, nextTick);
+  ctx.schedule({ type: 'defender-produce', entityId, expectedTick: nextTick }, nextTick);
+}
+
+export function unregisterDefenderProducer(state: ResourceState, entityId: EntityId): void {
+  state.producerNextTickByEntityId?.delete(entityId);
+}
+
 function runTimer(ctx: Context, timer: Timer): void {
   const { state, config } = ctx;
   switch (timer.type) {
     case 'initialize':
       if (state.initialized) return;
       state.initialized = true;
-      state.energy = count(state.energy + ENERGY_GRANT);
-      ctx.schedule({ type: 'periodic-energy', period: 1 }, deadline(3, config.rate));
+      state.energy = count(state.energy + config.initialEnergy);
+      if (config.enablePassiveEnergy) {
+        ctx.schedule({ type: 'periodic-energy', period: 1 }, deadline(3, config.rate));
+      }
       if (config.enableRandomCrystalItems) {
         nextCrystalAttempt(ctx);
       }
       if (config.enableRandomEnergyItems) {
         ctx.schedule({ type: 'energy-spawn', period: 1 }, deadline(config.energyItems.intervalSeconds, config.rate));
+      }
+      if (config.villageChest?.enabled) {
+        const firstReadyTick = deadline(config.villageChest.intervalSeconds, config.rate);
+        state.villageChestReady = false;
+        state.villageChestNextTick = firstReadyTick;
+        ctx.schedule({ type: 'village-chest-ready' }, firstReadyTick);
       }
       return;
     case 'periodic-energy': {
@@ -143,6 +205,47 @@ function runTimer(ctx: Context, timer: Timer): void {
       spawn(ctx, 'energy', amount, { kind: 'normalized', point }, 'energy-timer');
       const period = count(timer.period + 1);
       ctx.schedule({ type: 'energy-spawn', period }, deadline(period * intervalSeconds, config.rate));
+      return;
+    }
+    case 'village-chest-ready': {
+      if (config.villageChest?.enabled && !state.villageChestReady) {
+        state.villageChestReady = true;
+        state.villageChestNextTick = null;
+      }
+      return;
+    }
+    case 'defender-produce': {
+      const expected = state.producerNextTickByEntityId?.get(timer.entityId);
+      if (expected !== timer.expectedTick) return;
+      const entity = ctx.battle.entities.get(timer.entityId);
+      if (!entity || entity.kind !== 'defender') {
+        state.producerNextTickByEntityId?.delete(timer.entityId);
+        return;
+      }
+      if (ctx.battle.combat) {
+        const cState = ctx.battle.combat.entities.get(timer.entityId);
+        if (!cState || cState.hp <= 0) {
+          state.producerNextTickByEntityId?.delete(timer.entityId);
+          return;
+        }
+      }
+      const def = config.defenders.find(d => d.id === entity.definitionId);
+      const prod = def?.economyProduction;
+      if (!prod) {
+        state.producerNextTickByEntityId?.delete(timer.entityId);
+        return;
+      }
+      spawnEmeraldBurst(
+        ctx,
+        entity.cell,
+        timer.entityId,
+        prod.amountPerItem * prod.itemCount,
+        prod.itemCount,
+        true,
+      );
+      const nextTick = count(ctx.tick + deadline(prod.intervalSeconds, config.rate));
+      state.producerNextTickByEntityId!.set(timer.entityId, nextTick);
+      ctx.schedule({ type: 'defender-produce', entityId: timer.entityId, expectedTick: nextTick }, nextTick);
       return;
     }
     case 'crystal-attempt': {
@@ -180,9 +283,11 @@ function applyResourceCommand(ctx: Context, command: ResourceCommand): string | 
       }
       if (state.energy < definition.summonEnergyCost) return 'insufficient-energy';
       state.energy -= definition.summonEnergyCost;
+      const spawnedId = battle.nextEntityId;
       applyBattleCommand(battle, { type: 'add', entity: {
         kind: 'defender', definitionId: definition.id, cell: command.cell,
       } });
+      registerDefenderProducer(ctx, spawnedId, definition.id);
       if ((definition.summonCooldownSeconds ?? 0) > 0) {
         state.summonCooldownUntilTick ??= new Map();
         state.summonCooldownUntilTick.set(
@@ -247,6 +352,16 @@ function applyResourceCommand(ctx: Context, command: ResourceCommand): string | 
     }
     case 'collect':
       return collect(state, command.id);
+    case 'claim-village-chest': {
+      if (!config.villageChest?.enabled) return 'village-chest-disabled';
+      if (!state.villageChestReady) return 'chest-not-ready';
+      state.energy = count(state.energy + config.villageChest.amount);
+      state.villageChestReady = false;
+      const nextTick = count(ctx.tick + deadline(config.villageChest.intervalSeconds, config.rate));
+      state.villageChestNextTick = nextTick;
+      ctx.schedule({ type: 'village-chest-ready' }, nextTick);
+      return;
+    }
     case 'claim':
       return claimPending(state, command.requestId);
     case 'wave-reward': {
@@ -302,6 +417,8 @@ export function applyResourceEvent(ctx: Context, event: ResourceEvent, eventId: 
     case 'initialize':
     case 'periodic-energy':
     case 'energy-spawn':
+    case 'village-chest-ready':
+    case 'defender-produce':
     case 'crystal-attempt':
     case 'expire':
       runTimer(ctx, event);

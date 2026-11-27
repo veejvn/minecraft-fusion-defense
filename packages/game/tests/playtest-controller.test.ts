@@ -13,23 +13,24 @@ import {
   createDefaultPlaytestPreset,
 } from '../src/playtest/playtest-presets';
 
-describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
-  it('initializes with 20 Defenders, 4 Enemies, 15 Recipes, and 20 Confirmed v2.2 Abilities in both modes', () => {
+describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5 / T-14)', () => {
+  it('initializes with 22 Defenders, 4 Enemies, 16 Recipes, and 22 Abilities in both modes', () => {
     const preset = createDefaultPlaytestPreset();
-    expect(PLAYTEST_DEFENDER_META).toHaveLength(20);
+    expect(PLAYTEST_DEFENDER_META).toHaveLength(22);
     expect(PLAYTEST_ENEMY_META).toHaveLength(4);
-    expect(PLAYTEST_FUSION_RECIPES_META).toHaveLength(15);
-    expect(preset.defenders).toHaveLength(20);
+    expect(PLAYTEST_FUSION_RECIPES_META).toHaveLength(16);
+    expect(preset.defenders).toHaveLength(22);
     expect(preset.enemies).toHaveLength(4);
-    expect(preset.abilities).toHaveLength(20);
+    expect(preset.abilities).toHaveLength(22);
     expect(preset.waves).toHaveLength(5);
 
     const sandbox = new PlaytestController({ mode: 'sandbox' });
     const sandboxSnap = sandbox.getSnapshot();
     expect(sandboxSnap.mode).toBe('sandbox');
     expect(sandboxSnap.waveStatus).toBe('sandbox');
-    expect(sandboxSnap.energy).toBe(50);
+    expect(sandboxSnap.energy).toBe(100);
     expect(sandboxSnap.crystals).toBe(0);
+    expect(sandboxSnap.villageChest.enabled).toBe(true);
     expect(sandboxSnap.terminal).toBeNull();
 
     const fiveWaves = new PlaytestController({ mode: 'five-waves' });
@@ -56,23 +57,25 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
     controller.stepMs(50);
     expect(controller.getSnapshot().defenders).toHaveLength(1);
     expect(controller.getSnapshot().defenders[0].definitionId).toBe('steel_guardian');
-    expect(controller.getSnapshot().energy).toBe(50);
+    expect(controller.getSnapshot().energy).toBe(100);
 
-    // Grant +500 Energy so we can summon two Tier-1 Skeletons and fuse into Skeleton Sniper.
+    // Grant +500 Emeralds so we can summon two Tier-1 Skeletons and fuse into Skeleton Sniper.
     expect(controller.grantEnergy()).toBe(true);
     controller.stepMs(50);
-    expect(controller.getSnapshot().energy).toBe(550);
+    expect(controller.getSnapshot().energy).toBe(600);
 
     // Tier-2 direct standard summon is rejected.
     expect(controller.placeDefender('skeleton_sniper', { row: 0, column: 0 }, false)).toBe(false);
 
     expect(controller.placeDefender('skeleton', { row: 0, column: 0 }, false)).toBe(true);
     controller.stepMs(50);
+    // Wait 5s for Skeleton summon cooldown to clear before summoning second Skeleton.
+    for (let i = 0; i < 100; i++) controller.stepMs(50);
     expect(controller.placeDefender('skeleton', { row: 0, column: 1 }, false)).toBe(true);
     controller.stepMs(50);
 
     const afterSummons = controller.getSnapshot();
-    expect(afterSummons.energy).toBe(350);
+    expect(afterSummons.energy).toBe(400);
     const skelA = afterSummons.defenders.find(d => d.column === 0)!;
     const skelB = afterSummons.defenders.find(d => d.column === 1)!;
     expect(controller.canFuse(skelA.id, skelB.id)).toBe(true);
@@ -320,5 +323,60 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
     expect(afterMove.defenders[0].column).toBe(3);
     expect(afterMove.gloveCooldown.totalSeconds).toBe(CAMPAIGN_GLOVE_COOLDOWN_SECONDS);
     expect(afterMove.gloveCooldown.onCooldown).toBe(true);
+  });
+
+  it('supports Villager -> Master Trader fusion and interactive Village Supply Chest in PlaytestController', () => {
+    const controller = new PlaytestController({ mode: 'sandbox' });
+    expect(controller.claimVillageChest()).toBe(false);
+    expect(controller.getSnapshot().lastToast?.message).toBe('Village Supply Chest is still restocking');
+
+    // Step 10s so Village Supply Chest restocks (+25 EM), then claim it cleanly.
+    for (let i = 0; i < 200; i++) controller.stepMs(50);
+    expect(controller.getSnapshot().villageChest.ready).toBe(true);
+    expect(controller.claimVillageChest()).toBe(true);
+    controller.stepMs(50);
+    expect(controller.getSnapshot().energy).toBe(125);
+    expect(controller.getSnapshot().villageChest.ready).toBe(false);
+
+    // Summon two Villagers (50 EM each, 5s CD) and fuse into Master Trader (0 EM)
+    expect(controller.placeDefender('villager', { row: 0, column: 0 }, false)).toBe(true);
+    controller.stepMs(50);
+    for (let i = 0; i < 100; i++) controller.stepMs(50);
+    expect(controller.placeDefender('villager', { row: 0, column: 1 }, false)).toBe(true);
+    controller.stepMs(50);
+
+    const defs = controller.getSnapshot().defenders;
+    expect(controller.getFusionOutputId(defs[0]!.id, defs[1]!.id)).toBe('master_trader');
+    expect(controller.fuseDefenders(defs[0]!.id, defs[1]!.id)).toBe(true);
+    controller.stepMs(50);
+    expect(controller.getSnapshot().defenders[0]?.definitionId).toBe('master_trader');
+  });
+
+  it('deduplicates same-tick collectItem calls (hover-collect) without item-unavailable errors', () => {
+    const controller = new PlaytestController({ mode: 'sandbox' });
+    expect(controller.placeDefender('villager', { row: 0, column: 0 }, false)).toBe(true);
+    controller.stepMs(50);
+    expect(controller.getSnapshot().energy).toBe(50);
+
+    // Wait 4s (80 ticks) until Villager spawns its collectible Emerald item.
+    for (let i = 0; i < 82; i++) controller.stepMs(50);
+    const beforeCollect = controller.getSnapshot().energy;
+    const items = controller.getSnapshot().items.filter(i => i.kind === 'energy');
+    expect(items).toHaveLength(1);
+    const itemId = items[0]!.id;
+    const itemAmount = items[0]!.amount;
+    expect(itemAmount).toBeGreaterThan(0);
+
+    // Simulate multiple hover pointermove events hitting the same Emerald before the next tick runs.
+    expect(controller.collectItem(itemId)).toBe(true);
+    expect(controller.collectItem(itemId)).toBe(false);
+    expect(controller.collectItem(itemId)).toBe(false);
+
+    controller.stepMs(50);
+    const snap = controller.getSnapshot();
+    expect(snap.energy).toBe(beforeCollect + itemAmount);
+    expect(snap.items.some(i => i.id === itemId)).toBe(false);
+    expect(snap.eventLog.some(e => e.message.includes('item-unavailable'))).toBe(false);
+    expect(snap.lastToast?.kind === 'error').toBe(false);
   });
 });

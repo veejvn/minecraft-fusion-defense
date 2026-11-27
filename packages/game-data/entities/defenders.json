@@ -1,5 +1,32 @@
 [
   {
+    "id": "villager",
+    "name": "Villager",
+    "shortLabel": "VL",
+    "tier": 1,
+    "role": "Economy Producer",
+    "color": "#a16207",
+    "accentColor": "#10b981",
+    "summonEnergyCost": 50,
+    "summonCooldownSeconds": 5,
+    "maxHp": 150,
+    "damage": 0,
+    "attackSpeed": 1,
+    "attackRange": 0,
+    "targeting": "CLOSEST_TO_DEFENDER",
+    "armor": 0,
+    "economyProduction": {
+      "itemCount": 1,
+      "amountPerItem": 50,
+      "initialDelaySeconds": 4,
+      "intervalSeconds": 8
+    },
+    "abilityId": "emerald_harvest",
+    "abilityName": "Emerald Harvest",
+    "abilitySummary": "Burst +150 Emerald (6 x 25 EM drops around Villager)",
+    "requiresTarget": false
+  },
+  {
     "id": "iron_golem",
     "name": "Iron Golem",
     "shortLabel": "IG",
@@ -431,6 +458,33 @@
     "abilityId": "alpha_howl",
     "abilityName": "Alpha Howl",
     "abilitySummary": "3x3 Allies +100% AS / +50% AD for 8s",
+    "requiresTarget": false
+  },
+  {
+    "id": "master_trader",
+    "name": "Master Trader",
+    "shortLabel": "MT",
+    "tier": 2,
+    "role": "Twin Economy Producer",
+    "color": "#1d4ed8",
+    "accentColor": "#facc15",
+    "summonEnergyCost": 0,
+    "summonCooldownSeconds": 0,
+    "maxHp": 300,
+    "damage": 0,
+    "attackSpeed": 1,
+    "attackRange": 0,
+    "targeting": "CLOSEST_TO_DEFENDER",
+    "armor": 0,
+    "economyProduction": {
+      "itemCount": 2,
+      "amountPerItem": 25,
+      "initialDelaySeconds": 4,
+      "intervalSeconds": 8
+    },
+    "abilityId": "grand_caravan",
+    "abilityName": "Grand Caravan",
+    "abilitySummary": "Burst +250 Emerald (10 x 25 EM drops around Master Trader)",
     "requiresTarget": false
   }
 ]

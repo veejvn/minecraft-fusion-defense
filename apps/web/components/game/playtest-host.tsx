@@ -86,10 +86,32 @@ function loadSavedPlaytestPreset(fallback: PlaytestPresetConfig): {
     const savedEnemyMap = new Map(parsed.enemies.map(e => [e.id, e]));
     const merged: PlaytestPresetConfig = {
       seed: parsed.seed,
+      initialEmeralds:
+        typeof parsed.initialEmeralds === 'number'
+          ? parsed.initialEmeralds
+          : fallback.initialEmeralds,
+      enablePassiveEnergy:
+        typeof parsed.enablePassiveEnergy === 'boolean'
+          ? parsed.enablePassiveEnergy
+          : fallback.enablePassiveEnergy,
       fusionGloveCooldownSeconds:
         typeof parsed.fusionGloveCooldownSeconds === 'number'
           ? parsed.fusionGloveCooldownSeconds
           : fallback.fusionGloveCooldownSeconds,
+      villageChest:
+        parsed.villageChest && typeof parsed.villageChest === 'object'
+          ? {
+              enabled: Boolean(parsed.villageChest.enabled),
+              amount:
+                typeof parsed.villageChest.amount === 'number'
+                  ? parsed.villageChest.amount
+                  : (fallback.villageChest?.amount ?? 25),
+              intervalSeconds:
+                typeof parsed.villageChest.intervalSeconds === 'number'
+                  ? parsed.villageChest.intervalSeconds
+                  : (fallback.villageChest?.intervalSeconds ?? 10),
+            }
+          : fallback.villageChest,
       defenders: fallback.defenders.map(def => {
         const saved = savedDefMap.get(def.id);
         return saved
@@ -98,6 +120,7 @@ function loadSavedPlaytestPreset(fallback: PlaytestPresetConfig): {
               ...saved,
               attackDamageType: def.attackDamageType,
               basicAttackStatus: def.basicAttackStatus,
+              economyProduction: saved.economyProduction ?? def.economyProduction,
             }
           : { ...def };
       }),
@@ -627,6 +650,58 @@ export function PlaytestHost() {
     commitDraftPreset(cloned);
   };
 
+  const updateInitialEmeralds = (rawValue: string) => {
+    if (!draftPreset || !modMeta) return;
+    const value = cloneNumberInput(rawValue, 0);
+    if (value === null) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    cloned.initialEmeralds = Math.round(value);
+    commitDraftPreset(cloned);
+  };
+
+  const updateVillageChestField = (
+    field: 'enabled' | 'amount' | 'intervalSeconds',
+    rawValue: boolean | string,
+  ) => {
+    if (!draftPreset || !modMeta) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    const current = cloned.villageChest ?? { enabled: true, amount: 25, intervalSeconds: 10 };
+    if (field === 'enabled') {
+      cloned.villageChest = { ...current, enabled: Boolean(rawValue) };
+      commitDraftPreset(cloned);
+      return;
+    }
+    const minVal = field === 'intervalSeconds' ? 0.5 : 1;
+    const value = cloneNumberInput(String(rawValue), minVal);
+    if (value === null) return;
+    cloned.villageChest = {
+      ...current,
+      [field]: field === 'amount' ? Math.round(value) : value,
+    };
+    commitDraftPreset(cloned);
+  };
+
+  const updateDefenderEconomyField = (
+    field: 'amountPerItem' | 'itemCount' | 'initialDelaySeconds' | 'intervalSeconds',
+    rawValue: string,
+  ) => {
+    if (!draftPreset || !modMeta) return;
+    const minVal = field === 'initialDelaySeconds' ? 0 : field === 'intervalSeconds' ? 0.5 : 1;
+    const value = cloneNumberInput(rawValue, minVal);
+    if (value === null) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    const target = cloned.defenders.find(d => d.id === tuneDefenderId);
+    if (!target || !target.economyProduction) return;
+    target.economyProduction = {
+      ...target.economyProduction,
+      [field]:
+        field === 'amountPerItem' || field === 'itemCount'
+          ? Math.round(value)
+          : value,
+    };
+    commitDraftPreset(cloned);
+  };
+
   const updateWaveCrystal = (waveIndex: number, rawValue: string) => {
     if (!draftPreset || !modMeta) return;
     const value = cloneNumberInput(rawValue, 0, 5);
@@ -955,25 +1030,25 @@ export function PlaytestHost() {
               flexShrink: 0,
             }}
           >
-            {/* Resources: Energy & Power Crystal */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {/* Resources: Emeralds & Power Crystal */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
+                  gap: 5,
                   background: '#0f172a',
-                  border: '2px solid #ca8a04',
+                  border: '2px solid #10b981',
                   borderRadius: 8,
-                  padding: '3px 8px',
+                  padding: '3px 7px',
                 }}
-                title="Energy used to summon Base Defenders"
+                title="Emeralds used to summon Base Defenders"
               >
-                <img src="/assets/sprites/items/energy_orb.png" alt="Energy" width={22} height={22} className="mfd-pixel" />
+                <img src="/assets/sprites/items/emerald.png" alt="Emeralds" width={20} height={20} className="mfd-pixel" />
                 <div>
-                  <div style={{ fontSize: 9, color: '#FDE047', fontWeight: 700, lineHeight: 1.1 }}>ENERGY</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#FEF08A', lineHeight: 1.1 }}>
-                    {snapshot?.energy ?? 50}
+                  <div style={{ fontSize: 9, color: '#6EE7B7', fontWeight: 700, lineHeight: 1.1 }}>EMERALDS</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#A7F3D0', lineHeight: 1.1 }}>
+                    {snapshot?.energy ?? 100}
                   </div>
                 </div>
               </div>
@@ -981,7 +1056,7 @@ export function PlaytestHost() {
               <button
                 type="button"
                 className={`mfd-btn ${tool.kind === 'crystal' ? 'mfd-btn-crystal' : ''}`}
-                style={{ padding: '3px 8px', touchAction: 'none', userSelect: 'none' }}
+                style={{ padding: '3px 7px', touchAction: 'none', userSelect: 'none' }}
                 disabled={!snapshot || snapshot.crystals < 1 || snapshot.terminal !== null}
                 onPointerDown={e => {
                   if (snapshot && snapshot.crystals >= 1) {
@@ -997,10 +1072,10 @@ export function PlaytestHost() {
                 }}
                 title="Click or drag onto a Defender to cast its Special Ability (1 Crystal, 0s cooldown)"
               >
-                <img src="/assets/sprites/items/power_crystal.png" alt="Crystal" width={22} height={22} className="mfd-pixel" />
+                <img src="/assets/sprites/items/power_crystal.png" alt="Crystal" width={20} height={20} className="mfd-pixel" />
                 <div style={{ textAlign: 'left' }}>
                   <div style={{ fontSize: 9, color: '#BAE6FD', lineHeight: 1.1 }}>CRYSTALS</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.1 }}>
                     {snapshot?.crystals ?? 0} / {snapshot?.maxCrystals ?? 5}
                   </div>
                 </div>
@@ -1010,7 +1085,7 @@ export function PlaytestHost() {
                 <button
                   type="button"
                   className="mfd-btn mfd-btn-gold"
-                  style={{ padding: '4px 8px', fontSize: 11 }}
+                  style={{ padding: '4px 7px', fontSize: 10 }}
                   disabled={snapshot.crystals >= snapshot.maxCrystals || snapshot.terminal !== null}
                   onClick={() => controller?.claimPendingCrystals()}
                   title="Claim pending Power Crystals once storage has room"
@@ -1020,8 +1095,8 @@ export function PlaytestHost() {
               )}
             </div>
 
-            {/* 5 Base Defender Cards + Fusion Glove + Shovel */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+            {/* 6 Base Defender Cards + Fusion Glove + Shovel */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
               {baseCards.map(card => {
                 const selected = tool.kind === 'place' && tool.definitionId === card.id;
                 const isFree = placementMode === 'free';
@@ -1055,7 +1130,7 @@ export function PlaytestHost() {
                       );
                     }}
                     style={{
-                      padding: '4px 7px',
+                      padding: '3px 6px',
                       borderColor: selected
                         ? '#facc15'
                         : isFree || (card.canAfford && !card.onCooldown)
@@ -1067,7 +1142,7 @@ export function PlaytestHost() {
                     title={
                       isFree
                         ? `${card.name} (FREE Sandbox) — ${card.abilityName}`
-                        : `${card.name} (${card.cost} EN, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto empty cell or compatible Defender to Fuse.`
+                        : `${card.name} (${card.cost} EM, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto empty cell or compatible Defender to Fuse.`
                     }
                   >
                     {!isFree && card.onCooldown && (
@@ -1079,18 +1154,18 @@ export function PlaytestHost() {
                     <img
                       src={card.spriteUrl}
                       alt={card.name}
-                      width={26}
-                      height={26}
+                      width={22}
+                      height={22}
                       draggable={false}
                       className="mfd-pixel"
                     />
                     <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
                         {card.name}
                       </div>
                       <div
                         style={{
-                          fontSize: 10,
+                          fontSize: 9,
                           lineHeight: 1.15,
                           color: isFree
                             ? '#38BDF8'
@@ -1105,7 +1180,7 @@ export function PlaytestHost() {
                           ? 'FREE'
                           : card.onCooldown
                             ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s`
-                            : `${card.cost} EN`}
+                            : `${card.cost} EM`}
                       </div>
                     </div>
                   </button>
@@ -1131,12 +1206,12 @@ export function PlaytestHost() {
                   setTool(tool.kind === 'glove' ? { kind: 'select' } : { kind: 'glove' });
                 }}
                 style={{
-                  padding: '4px 7px',
+                  padding: '3px 6px',
                   borderColor: tool.kind === 'glove' ? '#facc15' : gloveCooldown.onCooldown ? '#475569' : '#38bdf8',
                   background: tool.kind === 'glove' ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
                   opacity: gloveCooldown.onCooldown && tool.kind !== 'glove' ? 0.78 : 1,
                 }}
-                title={`Fusion Glove (0 EN, ${gloveCooldown.totalSeconds}s CD): Move a Defender or Fuse two Tier-1 Defenders`}
+                title={`Fusion Glove (0 EM, ${gloveCooldown.totalSeconds}s CD): Move a Defender or Fuse two Tier-1 Defenders`}
               >
                 {gloveCooldown.onCooldown && (
                   <>
@@ -1147,14 +1222,14 @@ export function PlaytestHost() {
                 <img
                   src="/assets/sprites/items/fusion_glove.png"
                   alt="Fusion Glove"
-                  width={26}
-                  height={26}
+                  width={22}
+                  height={22}
                   draggable={false}
                   className="mfd-pixel"
                 />
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Glove</div>
-                  <div style={{ fontSize: 10, lineHeight: 1.15, color: gloveCooldown.onCooldown ? '#FACC15' : '#38BDF8' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Glove</div>
+                  <div style={{ fontSize: 9, lineHeight: 1.15, color: gloveCooldown.onCooldown ? '#FACC15' : '#38BDF8' }}>
                     {gloveCooldown.onCooldown ? `CD ${gloveCooldown.remainingSeconds.toFixed(1)}s` : 'MOVE/FUSE'}
                   </div>
                 </div>
@@ -1176,7 +1251,7 @@ export function PlaytestHost() {
                   setTool(tool.kind === 'shovel' ? { kind: 'select' } : { kind: 'shovel' });
                 }}
                 style={{
-                  padding: '4px 7px',
+                  padding: '3px 6px',
                   borderColor: tool.kind === 'shovel' ? '#f87171' : '#64748b',
                   background: tool.kind === 'shovel' ? 'rgba(185, 28, 28, 0.35)' : '#0f172a',
                 }}
@@ -1185,14 +1260,14 @@ export function PlaytestHost() {
                 <img
                   src="/assets/sprites/items/shovel.png"
                   alt="Shovel"
-                  width={26}
-                  height={26}
+                  width={22}
+                  height={22}
                   draggable={false}
                   className="mfd-pixel"
                 />
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Shovel</div>
-                  <div style={{ fontSize: 10, lineHeight: 1.15, color: '#FCA5A5' }}>REMOVE</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Shovel</div>
+                  <div style={{ fontSize: 9, lineHeight: 1.15, color: '#FCA5A5' }}>REMOVE</div>
                 </div>
               </button>
             </div>
@@ -1341,9 +1416,9 @@ export function PlaytestHost() {
               <button
                 type="button"
                 onClick={() => controller?.grantEnergy()}
-                style={{ ...smallBtnStyle(false), color: '#FDE047', borderColor: '#ca8a04' }}
+                style={{ ...smallBtnStyle(false), color: '#6EE7B7', borderColor: '#10b981' }}
               >
-                +500 EN
+                +500 EM
               </button>
               <button
                 type="button"
@@ -1585,7 +1660,7 @@ export function PlaytestHost() {
                 style={{ padding: '7px 10px', fontSize: 12 }}
                 onClick={() => setBalanceTab('defenders')}
               >
-                Defenders (20)
+                Defenders ({draftPreset?.defenders.length ?? 22})
               </button>
               <button
                 type="button"
@@ -1710,8 +1785,8 @@ export function PlaytestHost() {
                       style={{ ...inputStyle, marginTop: 3 }}
                     />
                   </label>
-                  <label style={{ fontSize: 11, color: '#FDE047' }}>
-                    Summon Cost (EN)
+                  <label style={{ fontSize: 11, color: '#6EE7B7' }}>
+                    Summon Cost (EM)
                     <input
                       type="number"
                       min={0}
@@ -1733,6 +1808,65 @@ export function PlaytestHost() {
                     />
                   </label>
                 </div>
+
+                {editedDefender.economyProduction && (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: 10,
+                      background: '#0f172a',
+                      padding: 10,
+                      borderRadius: 8,
+                      border: '1px solid #10b981',
+                    }}
+                  >
+                    <label style={{ fontSize: 11, color: '#6EE7B7' }}>
+                      Emerald / Item
+                      <input
+                        type="number"
+                        min={1}
+                        step={5}
+                        value={editedDefender.economyProduction.amountPerItem}
+                        onChange={e => updateDefenderEconomyField('amountPerItem', e.target.value)}
+                        style={{ ...inputStyle, marginTop: 3 }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 11, color: '#6EE7B7' }}>
+                      Items / Spawn
+                      <input
+                        type="number"
+                        min={1}
+                        step={1}
+                        value={editedDefender.economyProduction.itemCount}
+                        onChange={e => updateDefenderEconomyField('itemCount', e.target.value)}
+                        style={{ ...inputStyle, marginTop: 3 }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 11, color: '#6EE7B7' }}>
+                      First Spawn Delay (s)
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.5}
+                        value={editedDefender.economyProduction.initialDelaySeconds}
+                        onChange={e => updateDefenderEconomyField('initialDelaySeconds', e.target.value)}
+                        style={{ ...inputStyle, marginTop: 3 }}
+                      />
+                    </label>
+                    <label style={{ fontSize: 11, color: '#6EE7B7' }}>
+                      Spawn Interval (s)
+                      <input
+                        type="number"
+                        min={0.5}
+                        step={0.5}
+                        value={editedDefender.economyProduction.intervalSeconds}
+                        onChange={e => updateDefenderEconomyField('intervalSeconds', e.target.value)}
+                        style={{ ...inputStyle, marginTop: 3 }}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1857,8 +1991,8 @@ export function PlaytestHost() {
                       style={{ ...inputStyle, marginTop: 3 }}
                     />
                   </label>
-                  <label style={{ fontSize: 11, color: '#FDE047' }}>
-                    Energy Drop
+                  <label style={{ fontSize: 11, color: '#6EE7B7' }}>
+                    Emerald Drop
                     <input
                       type="number"
                       min={0}
@@ -1905,7 +2039,7 @@ export function PlaytestHost() {
 
             {balanceTab === 'waves' && draftPreset && editedWave && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, background: '#1e293b', padding: 10, borderRadius: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 10, background: '#1e293b', padding: 10, borderRadius: 8 }}>
                   <label style={{ fontSize: 11, color: '#38BDF8' }}>
                     Fusion Glove Cooldown (s)
                     <input
@@ -1914,6 +2048,17 @@ export function PlaytestHost() {
                       step={1}
                       value={draftPreset.fusionGloveCooldownSeconds ?? 0}
                       onChange={e => updateGloveCooldown(e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#6EE7B7' }}>
+                    Initial Emeralds
+                    <input
+                      type="number"
+                      min={0}
+                      step={25}
+                      value={draftPreset.initialEmeralds ?? 100}
+                      onChange={e => updateInitialEmeralds(e.target.value)}
                       style={{ ...inputStyle, marginTop: 3 }}
                     />
                   </label>
@@ -1936,6 +2081,51 @@ export function PlaytestHost() {
                       ))}
                     </div>
                   </div>
+                </div>
+
+                {/* Village Supply Chest & Economy Controls */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: 10,
+                    background: '#1e293b',
+                    padding: 10,
+                    borderRadius: 8,
+                    border: '1px solid #334155',
+                    alignItems: 'center',
+                  }}
+                >
+                  <label style={{ fontSize: 11, color: '#6EE7B7', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input
+                      type="checkbox"
+                      checked={draftPreset.villageChest?.enabled ?? true}
+                      onChange={e => updateVillageChestField('enabled', e.target.checked)}
+                    />
+                    Village Supply Chest
+                  </label>
+                  <label style={{ fontSize: 11, color: '#6EE7B7' }}>
+                    Chest Amount (EM)
+                    <input
+                      type="number"
+                      min={1}
+                      step={5}
+                      value={draftPreset.villageChest?.amount ?? 25}
+                      onChange={e => updateVillageChestField('amount', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
+                  <label style={{ fontSize: 11, color: '#6EE7B7' }}>
+                    Chest Restock (s)
+                    <input
+                      type="number"
+                      min={0.5}
+                      step={0.5}
+                      value={draftPreset.villageChest?.intervalSeconds ?? 10}
+                      onChange={e => updateVillageChestField('intervalSeconds', e.target.value)}
+                      style={{ ...inputStyle, marginTop: 3 }}
+                    />
+                  </label>
                 </div>
 
                 {/* Wave selector tabs */}
@@ -2320,10 +2510,10 @@ export function PlaytestHost() {
               </div>
             )}
 
-            {/* Quick Place All 15 Tier-2 Fusion Defenders (Free Sandbox) */}
+            {/* Quick Place All 16 Tier-2 Fusion Defenders (Free Sandbox) */}
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#FACC15', marginBottom: 6 }}>
-                FREE PLACE 15 FUSION DEFENDERS (TIER-2) — Click one to place directly on grid:
+                FREE PLACE {fusionDefenders.length} FUSION DEFENDERS (TIER-2) — Click one to place directly on grid:
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 6 }}>
                 {fusionDefenders.map(def => (
@@ -2445,7 +2635,9 @@ export function PlaytestHost() {
             {/* Fusion Recipes Reference */}
             {modMeta && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#FACC15', marginRight: 4 }}>15 FUSION RECIPES:</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#FACC15', marginRight: 4 }}>
+                  {modMeta.fusionMeta.length} FUSION RECIPES:
+                </span>
                 {modMeta.fusionMeta.map(r => (
                   <span key={r.id} className="mfd-badge" style={{ fontSize: 10 }}>
                     {r.label}

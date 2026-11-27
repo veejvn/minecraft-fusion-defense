@@ -202,6 +202,8 @@ Normalize the input pair (for example, lexicographically sorted IDs) and reject 
 
 **Product Design Confirmed:** initial unlocks/mapping và Fusion optional đã chốt; Steel Guardian IDs, names and design identity follow PGD-01. Detailed combat and Ability mechanics remain TBD.
 
+**Confirmed (`2026-11-27`, triển khai ở T-14):** Bổ sung Base Economy Defender **`villager`** (mở khóa từ đầu) và công thức tự dung hợp **`Villager + Villager → Master Trader`** (`fusion_master_trader`, Tier 2, mở khóa từ đầu, `0` Emerald) theo [PGD-03](../decisions/PGD-03-EMERALD-VILLAGER-ECONOMY.md).
+
 **Coding Planning TBD:** Fusion interaction cooldown (if any), animation duration, discovery UI, detailed concurrency/event generation edge cases. Output HP initialization/status inheritance/attack readiness are Confirmed, not pending.
 
 **Confirmed — Product Design 03/11/2026:** Iron Golem và Skeleton mở từ đầu; Snow Golem mở sau First Grassland Victory; Wolf sau 50 Enemy kills tích lũy qua các trận Victory; Blaze sau 5 Grassland Victories tích lũy. Replay Victory được cộng tiến độ, Defeat không cộng; unlock vĩnh viễn, không cấp reward trùng. Recipe mở từ đầu: Skeleton Sniper và Steel Guardian. Ice Golem mở khi Snow Golem unlock; Frost Guardian khi Iron Golem và Snow Golem unlock; Alpha Wolf khi Wolf unlock; Inferno Archer khi Blaze và Skeleton unlock; Flame Fang khi Blaze và Wolf unlock. Fusion optional cho Grassland Victory: có thể thắng bằng Base Defenders, không thêm Fusion count vào điều kiện thắng. UI/tracking implementation vẫn TBD.

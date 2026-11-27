@@ -322,6 +322,8 @@ Ví dụ JSON chuẩn hóa cho `glacial_fortress` theo đúng thông số G09 đ
 
 ## 14. Tài liệu liên quan
 
+- [PGD-03 — Emerald Economy, Villager (`emerald_harvest`) & Master Trader (`grand_caravan`) — Confirmed 2026-11-27](../decisions/PGD-03-EMERALD-VILLAGER-ECONOMY.md)
+- [T-14 Implementation Plan (Confirmed 2026-11-27)](../development/T-14-EMERALD-VILLAGER-ECONOMY-PLAN.md)
 - [GDD.md](../product/GDD.md)
 - [GAMEPLAY_MECHANICS.md](../product/GAMEPLAY_MECHANICS.md)
 - [ENTITY_CATALOG.md](ENTITY_CATALOG.md)

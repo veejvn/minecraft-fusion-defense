@@ -31,6 +31,12 @@ MVP: **5 Base Defenders, 15 Tier-2 Fusion Defenders, 4 Enemy types**, one Grassl
 
 Each Defender Definition must include: stable ID, display name, tier, role, HP, damage, attack speed, attack range, attack type, targeting strategy, summon Energy cost, specialAbilityId, animation/asset references, and optional status effects. **All numerical stats and precise targeting choices remain TBD until balancing.**
 
+### 2.1. Economy Defender đã xác nhận cho đợt T-14 (`Confirmed — 2026-11-27`, chờ triển khai)
+
+- Theo [PGD-03](../decisions/PGD-03-EMERALD-VILLAGER-ECONOMY.md) và [T-14 Plan](../development/T-14-EMERALD-VILLAGER-ECONOMY-PLAN.md), tài nguyên triệu hồi chuyển sang **Emerald (`EM`)** và bổ sung Economy Defender:
+  - **`villager` (Base — Tier 1, mở từ đầu):** `50 EM`, `5s CD`, `150 HP`, `4s` đẻ lứa đầu rồi `25 EM / 8s` (Collectible Item, click/hover nhặt); Special Ability: `emerald_harvest` (`+150 EM`).
+  - **`master_trader` (Fusion — Tier 2, `Villager + Villager`):** `300 HP`, `4s` đẻ lứa đầu rồi `2 × 25 = 50 EM / 8s`; Special Ability: `grand_caravan` (`+250 EM`).
+
 ## 3. Fusion Defender catalog (15 Confirmed Tier-2 Defenders — 2026-11-23)
 
 **Confirmed:** all 15 pairwise output names/input pairs, Tier 2, combat identities, and Special Ability IDs (updated 2026-11-23 per Owner approval of the 8 remaining pairwise recipes). Exact numerical combat balance stats remain TBD until final balancing.

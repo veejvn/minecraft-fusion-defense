@@ -21,6 +21,7 @@ export {
   abilityEffectSchema,
   abilityTargetScopeSchema,
   attachedStatusSpecSchema,
+  economyProductionSchema,
   enemyBehaviorSchema,
   mergePlaytestPresetIntoDataset,
   mvpAbilitySchema,
@@ -38,15 +39,18 @@ export {
   playtestPresetSyncSchema,
   targetingStrategySchema,
   validateMvpDataset,
+  villageChestSchema,
 } from './mvp-dataset';
 export type {
   MvpAbilityData,
   MvpDataset,
   MvpDefenderData,
+  MvpEconomyProductionData,
   MvpEnemyData,
   MvpFusionRecipeData,
   MvpGrasslandLevelData,
   MvpSandboxLevelData,
+  MvpVillageChestData,
   MvpWaveData,
   PlaytestPresetSyncInput,
 } from './mvp-dataset';

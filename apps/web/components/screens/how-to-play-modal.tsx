@@ -7,19 +7,19 @@ interface HowToPlayModalProps {
 
 const GUIDE_STEPS = [
   {
-    step: '1. Passive Energy & Summon',
-    icon: '/assets/sprites/items/energy_orb.png',
-    text: 'Gain +50 Energy automatically every 3 seconds and earn Energy rewards by defeating Enemies. Select or drag an unlocked Base Defender card onto an empty cell on the 5x9 battlefield to summon.',
+    step: '1. Villagers, Supply Chest & Emeralds',
+    icon: '/assets/sprites/items/emerald.png',
+    text: 'Start with 100 Emeralds. Deploy Villagers (50 EM) to harvest Emerald drops on the field, and click the Village Supply Chest on the left Base margin whenever it restocks (+25 EM every 10s). Click or hover over dropped Emeralds to collect them.',
   },
   {
     step: '2. Fusion, Glove & Shovel',
     icon: '/assets/sprites/defenders/steel_guardian.png',
-    text: 'Fuse by dragging a Base Defender card onto a compatible Tier-1 Defender on the grid (pays card Energy & cooldown), or use the Fusion Glove (0 EN, 15s CD) to Move or Fuse placed Defenders. Use Shovel to remove unwanted Defenders.',
+    text: 'Fuse by dragging a Base Defender card onto a compatible Tier-1 Defender on the grid (pays card Emeralds & cooldown), or use the Fusion Glove (0 EM, 10s CD) to Move or Fuse placed Defenders (including Villager + Villager = Master Trader). Use Shovel to remove unwanted Defenders.',
   },
   {
     step: '3. Power Crystal Special Abilities',
     icon: '/assets/sprites/items/power_crystal.png',
-    text: 'Collect Power Crystals dropped by defeated Vindicators/Pillagers or Claim Pending Wave Rewards (cap 5/5). Click or drag the Power Crystal button onto any Defender to cast its Special Ability (1 Crystal, 0s cooldown).',
+    text: 'Collect Power Crystals dropped by defeated Enemies (chance-based) or Claim Pending Wave Rewards (cap 5/5). Click or drag the Power Crystal button onto any Defender to cast its Special Ability (1 Crystal, 0s cooldown).',
   },
   {
     step: '4. Defend 5 Waves & Unlock Units',

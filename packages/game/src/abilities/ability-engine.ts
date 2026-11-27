@@ -70,6 +70,13 @@ export interface MovedEnemyStep {
 
 export interface AbilityEngineContext extends AbilityDamageContext {
   readonly abilitySession: AbilitySession;
+  readonly spawnResourceBurst?: (
+    cell: Cell,
+    ownerId: EntityId,
+    amount: number,
+    itemCount: number,
+    spawnAsItems: boolean,
+  ) => void;
 }
 
 export interface DamagePipelineOptions {
@@ -320,6 +327,7 @@ export function resolveCombatDeaths(
       applyBattleCommand(battle, { type: 'remove', id });
       unregisterCombatEntity(combat, id);
       cleanupEntityAbilityState(battle, id, 'death');
+      battle.resources?.producerNextTickByEntityId?.delete(id);
     }
   }
 }
@@ -1238,6 +1246,19 @@ function executeImmediateEffect(
       }
       return;
     }
+    case 'resource-burst':
+      if (ctx.spawnResourceBurst) {
+        ctx.spawnResourceBurst(
+          ownerCell,
+          ownerId,
+          effect.amount,
+          effect.itemCount,
+          effect.spawnAsItems,
+        );
+      } else if (ctx.battle.resources) {
+        ctx.battle.resources.energy = count(ctx.battle.resources.energy + effect.amount);
+      }
+      return;
   }
 }
 

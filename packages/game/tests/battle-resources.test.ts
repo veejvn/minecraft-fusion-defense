@@ -382,4 +382,70 @@ describe('T-06.5 random and reward hooks', () => {
     expect(runA.length).toBeGreaterThan(0);
     expect(runA.length).toBeLessThan(20);
   });
+
+  it('supports Villager/Master Trader Emerald production, disabled passive income, and interactive Village Supply Chest', () => {
+    const econInput: ResourceSessionInput = {
+      seed: 123,
+      initialEnergy: 100,
+      enablePassiveEnergy: false,
+      villageChest: { enabled: true, amount: 25, intervalSeconds: 10 },
+      defenders: [
+        {
+          id: 'villager',
+          classification: 'base',
+          summonEnergyCost: 50,
+          unlocked: true,
+          economyProduction: { itemCount: 1, amountPerItem: 25, initialDelaySeconds: 4, intervalSeconds: 8 },
+        },
+        {
+          id: 'master_trader',
+          classification: 'fusion',
+          summonEnergyCost: 0,
+          unlocked: true,
+          economyProduction: { itemCount: 2, amountPerItem: 25, initialDelaySeconds: 4, intervalSeconds: 8 },
+        },
+      ],
+      enemies: [{ id: 'zombie', energy: 0, crystals: 0 }],
+      waves: [],
+      energyItems: {
+        amount: 25,
+        intervalSeconds: 6,
+        region: { min: { x: 0.1, y: 0.15 }, max: { x: 0.9, y: 0.85 } },
+        positions: [{ x: 0.5, y: 0.5 }],
+      },
+      enableRandomEnergyItems: false,
+      enableRandomCrystalItems: false,
+    };
+
+    const g = battle(econInput);
+    expect(resources(g).energy).toBe(100);
+    expect(resources(g).villageChestReady).toBe(false);
+
+    // No passive +50/3s, and chest rejects before 10s
+    g.enqueue({ type: 'claim-village-chest' }, 1);
+    step(g, 30); // 3s
+    expect(resources(g).energy).toBe(100);
+    expect(resources(g).outcome).toMatchObject({ status: 'REJECTED', reason: 'chest-not-ready' });
+
+    // Summon Villager at tick 31 -> 1st drop at 31 + 40 = tick 71
+    g.enqueue({ type: 'summon', definitionId: 'villager', cell: { row: 0, column: 0 } }, 31);
+    step(g, 41); // advance to tick 71 (total 71 ticks = 7.1s)
+    expect(resources(g).energy).toBe(50);
+    const villagerItems = [...resources(g).items.values()].filter(i => i.kind === 'energy');
+    expect(villagerItems).toHaveLength(1);
+    expect(villagerItems[0]).toMatchObject({ amount: 25 });
+
+    // Advance past t=10s (tick 100): Village Supply Chest becomes ready and does not stack past 1
+    step(g, 50); // tick 121
+    expect(resources(g).villageChestReady).toBe(true);
+    g.enqueue({ type: 'claim-village-chest' }, 122);
+    step(g, 1);
+    expect(resources(g).outcome).toMatchObject({ status: 'APPLIED' });
+    expect(resources(g).energy).toBe(75);
+    expect(resources(g).villageChestReady).toBe(false);
+
+    // Restocks again 10s later (tick 122 + 100 = 222)
+    step(g, 100);
+    expect(resources(g).villageChestReady).toBe(true);
+  });
 });

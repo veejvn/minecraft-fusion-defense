@@ -458,5 +458,37 @@
         }
       }
     ]
+  },
+  {
+    "id": "emerald_harvest",
+    "ownerDefenderId": "villager",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "self",
+    "effects": [
+      {
+        "kind": "resource-burst",
+        "amount": 150,
+        "itemCount": 6,
+        "spawnAsItems": true
+      }
+    ]
+  },
+  {
+    "id": "grand_caravan",
+    "ownerDefenderId": "master_trader",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "self",
+    "effects": [
+      {
+        "kind": "resource-burst",
+        "amount": 250,
+        "itemCount": 10,
+        "spawnAsItems": true
+      }
+    ]
   }
 ]

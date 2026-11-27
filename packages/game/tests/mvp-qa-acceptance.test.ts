@@ -39,6 +39,9 @@ describe('T-13 MVP QA & Local Acceptance Suite', () => {
         break;
       }
 
+      if (snap.villageChest.ready) {
+        controller.claimVillageChest();
+      }
       if (snap.pendingWaveCrystals > 0 && snap.crystals < snap.maxCrystals) {
         controller.claimPendingWaveReward();
       }
@@ -50,14 +53,29 @@ describe('T-13 MVP QA & Local Acceptance Suite', () => {
         return aNearest - bNearest;
       });
 
+      const villagerCard = snap.baseDefenderCards.find(c => c.id === 'villager')!;
       const skelCard = snap.baseDefenderCards.find(c => c.id === 'skeleton')!;
       const golemCard = snap.baseDefenderCards.find(c => c.id === 'iron_golem')!;
+      const villagerCount = snap.defenders.filter(d => d.definitionId === 'villager').length;
 
-      // Prioritize backline Skeletons on threatened lanes, then add frontline Iron Golems at column 5.
-      if (skelCard.unlocked && skelCard.canAfford && !skelCard.onCooldown) {
+      // Build an Emerald economy first (up to 4 Villagers at column 0), unless an enemy is already close in any lane.
+      const urgentEnemy = snap.enemies.some(e => e.x < 6.5);
+      if (
+        villagerCount < 4 &&
+        (!urgentEnemy || villagerCount < 2) &&
+        villagerCard.unlocked &&
+        villagerCard.canAfford &&
+        !villagerCard.onCooldown
+      ) {
+        for (const row of [2, 1, 3, 0, 4]) {
+          if (!occupied.has(`${row}:0`)) {
+            if (controller.summonDefender('villager', { row, column: 0 })) break;
+          }
+        }
+      } else if (skelCard.unlocked && skelCard.canAfford && !skelCard.onCooldown) {
         let placed = false;
         for (const row of lanesByThreat) {
-          for (const col of backColumns) {
+          for (const col of [1, 2, 3]) {
             if (!occupied.has(`${row}:${col}`)) {
               placed = controller.summonDefender('skeleton', { row, column: col });
               if (placed) break;
@@ -105,9 +123,9 @@ describe('T-13 MVP QA & Local Acceptance Suite', () => {
     );
   }, 15000);
 
-  it('verifies all 15 Fusion Recipes (order-independent, 0 Energy, cross-lane) via CampaignController', () => {
-    expect(CAMPAIGN_RECIPE_CATALOG).toHaveLength(15);
-    expect(CAMPAIGN_DEFENDER_CATALOG).toHaveLength(20);
+  it('verifies all 16 Fusion Recipes (order-independent, 0 Emeralds, cross-lane) via CampaignController', () => {
+    expect(CAMPAIGN_RECIPE_CATALOG).toHaveLength(16);
+    expect(CAMPAIGN_DEFENDER_CATALOG).toHaveLength(22);
 
     // Pair recipes sequentially using fresh CampaignControllers with enough collected Energy.
     for (const recipe of CAMPAIGN_RECIPE_CATALOG) {
@@ -131,6 +149,10 @@ describe('T-13 MVP QA & Local Acceptance Suite', () => {
       for (let t = 0; t < 1100 && !(placedA && placedB); t++) {
         controller.stepMs(TICK_MS);
         collectAllVisibleItems(controller);
+        const chestSnap = controller.getSnapshot();
+        if (chestSnap.villageChest.ready) {
+          controller.claimVillageChest();
+        }
         const snap = controller.getSnapshot();
 
         if (!placedA) {
@@ -139,9 +161,6 @@ describe('T-13 MVP QA & Local Acceptance Suite', () => {
             placedA = controller.summonDefender(inputA, { row: 0, column: 0 });
           }
         } else if (!placedB) {
-          // If wave 1 enemy in another lane gets dangerously close to base (x < 1.5), stall is irrelevant if we reach 25s first,
-          // wait: Wave 1 Zombie 2 spawns at 6.5s on lane 1 -> reaches base at 6.5 + 18 = 24.5s! At t = 20.5s we already had 4 orbs (150 EN) + 1 kill if lane 0 killed!
-          // For 225 EN (4 orbs isn't enough; 7 orbs = 35s), protect lane 1 with inputA/inputB ONLY if placed on lane 0, or if energy >= costB place B at (4, 8)!
           const cardB = snap.baseDefenderCards.find(c => c.id === inputB)!;
           if (cardB.canAfford && !cardB.onCooldown && snap.energy >= costB) {
             placedB = controller.summonDefender(inputB, { row: 4, column: 8 });
@@ -149,8 +168,6 @@ describe('T-13 MVP QA & Local Acceptance Suite', () => {
         }
       }
 
-      // Notice: blaze(125) + wolf(100) takes 7 orbs (~35s), during which lane 1 Zombie spawned at 6.5s might breach at 24.5s if unopposed.
-      // Only summon an extra sacrificial defender? No, keep cost <= 200 by testing max 225 EN via quick Wave 1 clear on lane 0/1/2/3/4 OR check with BattleRuntime directly for 15 recipes & 20 abilities below!
       if (placedA && placedB) {
         const snapBefore = controller.getSnapshot();
         const src = snapBefore.defenders.find(d => d.row === 0 && d.column === 0)!;
@@ -169,13 +186,13 @@ describe('T-13 MVP QA & Local Acceptance Suite', () => {
         const output = snapAfter.defenders.find(d => d.row === 4 && d.column === 8);
         expect(output?.definitionId).toBe(recipe.outputId);
       } else {
-        // Fallback sanity for expensive >150 EN recipes (costA + costB) using BattleRuntime direct summon at 0-cost energy fixture
-        expect(costA + costB).toBeGreaterThan(150);
+        // Fallback sanity for >125 EM recipes verified in BattleRuntime below
+        expect(costA + costB).toBeGreaterThan(125);
       }
     }
-  });
+  }, 15000);
 
-  it('verifies all 15 Fusion Recipes and all 20 Special Abilities resolve cleanly inside BattleRuntime', () => {
+  it('verifies all 16 Fusion Recipes and all 22 Special Abilities resolve cleanly inside BattleRuntime', () => {
     const profile = new ProgressionStore({ storage: new InMemoryStorageAdapter() }).getProfile();
     const baseInputs = createGrasslandCampaignInputs(profile, { unlockAll: true, seed: 20261123 });
 
@@ -346,7 +363,7 @@ describe('T-13 MVP QA & Local Acceptance Suite', () => {
       ).toBe('APPLIED');
       expect(afterAbility.abilities?.outcome?.abilityId).toBe(def.abilityId);
     }
-  });
+  }, 15000);
 
   it('verifies ProgressionStore Victory-only unlock accumulation across 5 Grassland Victories & Defeat isolation', () => {
     const storage = new InMemoryStorageAdapter();
@@ -356,7 +373,7 @@ describe('T-13 MVP QA & Local Acceptance Suite', () => {
     store.recordBattleOutcome({ battleId: 'qa_defeat', result: 'defeat', enemiesKilled: 30 });
     expect(store.getProfile().totalVictories).toBe(0);
     expect(store.getProfile().totalVictoryKills).toBe(0);
-    expect(store.getProfile().unlockedDefenderIds).toEqual(['iron_golem', 'skeleton']);
+    expect(store.getProfile().unlockedDefenderIds).toEqual(['villager', 'iron_golem', 'skeleton']);
 
     // Victory 1 (< 50 kills) unlocks Snow Golem
     store.recordBattleOutcome({ battleId: 'qa_win_1', result: 'victory', enemiesKilled: 20 });
@@ -375,11 +392,18 @@ describe('T-13 MVP QA & Local Acceptance Suite', () => {
     expect(store.getProfile().unlockedDefenderIds).toContain('wolf');
 
     store.recordBattleOutcome({ battleId: 'qa_win_4', result: 'victory', enemiesKilled: 10 });
-    // Victory 5 -> unlocks Blaze + all 15 Fusion Recipes!
+    // Victory 5 -> unlocks Blaze + all 16 Fusion Recipes!
     store.recordBattleOutcome({ battleId: 'qa_win_5', result: 'victory', enemiesKilled: 10 });
     const finalProfile = store.getProfile();
     expect(finalProfile.totalVictories).toBe(5);
-    expect(finalProfile.unlockedDefenderIds).toEqual(['iron_golem', 'skeleton', 'snow_golem', 'wolf', 'blaze']);
-    expect(finalProfile.unlockedRecipeIds).toHaveLength(15);
+    expect(finalProfile.unlockedDefenderIds).toEqual([
+      'villager',
+      'iron_golem',
+      'skeleton',
+      'snow_golem',
+      'wolf',
+      'blaze',
+    ]);
+    expect(finalProfile.unlockedRecipeIds).toHaveLength(16);
   });
 });

@@ -11,6 +11,7 @@ export interface SpriteAssetEntry {
 }
 
 export const DEFENDER_SPRITE_ASSETS: Readonly<Record<string, SpriteAssetEntry>> = {
+  villager: { id: 'villager', key: 'mfd-def-villager', url: '/assets/sprites/defenders/villager.png', width: 64, height: 64, category: 'defender' },
   iron_golem: { id: 'iron_golem', key: 'mfd-def-iron_golem', url: '/assets/sprites/defenders/iron_golem.png', width: 64, height: 64, category: 'defender' },
   snow_golem: { id: 'snow_golem', key: 'mfd-def-snow_golem', url: '/assets/sprites/defenders/snow_golem.png', width: 64, height: 64, category: 'defender' },
   skeleton: { id: 'skeleton', key: 'mfd-def-skeleton', url: '/assets/sprites/defenders/skeleton.png', width: 64, height: 64, category: 'defender' },
@@ -31,6 +32,7 @@ export const DEFENDER_SPRITE_ASSETS: Readonly<Record<string, SpriteAssetEntry>> 
   steam_warden: { id: 'steam_warden', key: 'mfd-def-steam_warden', url: '/assets/sprites/defenders/steam_warden.png', width: 64, height: 64, category: 'defender' },
   inferno_archer: { id: 'inferno_archer', key: 'mfd-def-inferno_archer', url: '/assets/sprites/defenders/inferno_archer.png', width: 64, height: 64, category: 'defender' },
   flame_fang: { id: 'flame_fang', key: 'mfd-def-flame_fang', url: '/assets/sprites/defenders/flame_fang.png', width: 64, height: 64, category: 'defender' },
+  master_trader: { id: 'master_trader', key: 'mfd-def-master_trader', url: '/assets/sprites/defenders/master_trader.png', width: 64, height: 64, category: 'defender' },
 };
 
 export const ENEMY_SPRITE_ASSETS: Readonly<Record<string, SpriteAssetEntry>> = {
@@ -41,9 +43,21 @@ export const ENEMY_SPRITE_ASSETS: Readonly<Record<string, SpriteAssetEntry>> = {
 };
 
 export const ITEM_SPRITE_ASSETS: Readonly<
-  Record<'energy_orb' | 'power_crystal' | 'fusion_glove' | 'shovel', SpriteAssetEntry>
+  Record<
+    | 'energy_orb'
+    | 'emerald'
+    | 'village_chest_closed'
+    | 'village_chest_open'
+    | 'power_crystal'
+    | 'fusion_glove'
+    | 'shovel',
+    SpriteAssetEntry
+  >
 > = {
   energy_orb: { id: 'energy_orb', key: 'mfd-item-energy_orb', url: '/assets/sprites/items/energy_orb.png', width: 64, height: 64, category: 'item' },
+  emerald: { id: 'emerald', key: 'mfd-item-emerald', url: '/assets/sprites/items/emerald.png', width: 64, height: 64, category: 'item' },
+  village_chest_closed: { id: 'village_chest_closed', key: 'mfd-item-village_chest_closed', url: '/assets/sprites/items/village_chest_closed.png', width: 64, height: 64, category: 'item' },
+  village_chest_open: { id: 'village_chest_open', key: 'mfd-item-village_chest_open', url: '/assets/sprites/items/village_chest_open.png', width: 64, height: 64, category: 'item' },
   power_crystal: { id: 'power_crystal', key: 'mfd-item-power_crystal', url: '/assets/sprites/items/power_crystal.png', width: 64, height: 64, category: 'item' },
   fusion_glove: { id: 'fusion_glove', key: 'mfd-item-fusion_glove', url: '/assets/sprites/items/fusion_glove.png', width: 64, height: 64, category: 'item' },
   shovel: { id: 'shovel', key: 'mfd-item-shovel', url: '/assets/sprites/items/shovel.png', width: 64, height: 64, category: 'item' },

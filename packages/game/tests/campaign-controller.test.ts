@@ -9,10 +9,10 @@ import {
 import { ProgressionStore } from '../src/persistence/progression-store';
 import { InMemoryStorageAdapter } from '../src/persistence/storage-adapter';
 
-describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
-  it('exposes complete 20-Defender, 15-Recipe, 4-Enemy catalogs and enforces starter unlocks on new battle', () => {
-    expect(CAMPAIGN_DEFENDER_CATALOG).toHaveLength(20);
-    expect(CAMPAIGN_RECIPE_CATALOG).toHaveLength(15);
+describe('T-14 CampaignController & Grassland Campaign Integration', () => {
+  it('exposes complete 22-Defender, 16-Recipe, 4-Enemy catalogs and enforces starter unlocks on new battle', () => {
+    expect(CAMPAIGN_DEFENDER_CATALOG).toHaveLength(22);
+    expect(CAMPAIGN_RECIPE_CATALOG).toHaveLength(16);
     expect(CAMPAIGN_ENEMY_CATALOG).toHaveLength(4);
 
     const storage = new InMemoryStorageAdapter();
@@ -22,41 +22,52 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     controller.startNewBattle();
     const snap = controller.getSnapshot();
     expect(snap.status).toBe('playing');
-    expect(snap.energy).toBe(50);
+    expect(snap.energy).toBe(100);
     expect(snap.totalWaves).toBe(5);
     expect(snap.waveNumber).toBe(1);
 
     const unlockedCards = snap.baseDefenderCards.filter(c => c.unlocked).map(c => c.id);
-    expect(unlockedCards).toEqual(['iron_golem', 'skeleton']);
+    expect(unlockedCards).toEqual(['villager', 'iron_golem', 'skeleton']);
 
     // Summoning a locked Defender (snow_golem) is rejected with English message.
     expect(controller.summonDefender('snow_golem', { row: 0, column: 0 })).toBe(false);
     expect(controller.getSnapshot().lastToast?.message).toBe('Defender is still locked');
 
-    // Summoning Iron Golem costs 50 Energy and succeeds (Skeleton costs 100 EN).
+    // Summoning Villager costs 50 EM and succeeds, leaving 50 EM -> Iron Golem (50 EM) succeeds -> 0 EM left for Skeleton.
+    expect(controller.summonDefender('villager', { row: 1, column: 0 })).toBe(true);
+    expect(controller.getSnapshot().energy).toBe(50);
     expect(controller.summonDefender('skeleton', { row: 2, column: 0 })).toBe(false);
     expect(controller.summonDefender('iron_golem', { row: 2, column: 0 })).toBe(true);
-    expect(controller.getSnapshot().defenders).toHaveLength(1);
+    expect(controller.getSnapshot().defenders).toHaveLength(2);
     expect(controller.getSnapshot().energy).toBe(0);
     expect(controller.hasSavedBattle()).toBe(true);
   });
 
-  it('supports Energy item collection, free unlimited-distance Fusion, Pause guard, and Save & Resume across controller instances', () => {
+  it('supports Villager Emerald production, free unlimited-distance Fusion, Pause guard, and Save & Resume across controller instances', () => {
     const storage = new InMemoryStorageAdapter();
     const controllerA = new CampaignController({ storage });
     controllerA.startNewBattle({ battleId: 'camp_resume_1' });
 
-    // Advance 3s for +50 EN passive tick (50 -> 100 EN), then place Skeleton at (0, 0).
-    for (let i = 0; i < 60; i++) {
+    // Start at 100 EM -> summon Villager at (1, 0) (50 EM left), then collect Villager drops + chest to fund 2 Skeletons.
+    expect(controllerA.summonDefender('villager', { row: 1, column: 0 })).toBe(true);
+    expect(controllerA.summonDefender('skeleton', { row: 0, column: 0 })).toBe(false);
+
+    for (let i = 0; i < 560; i++) {
       controllerA.stepMs(50);
+      for (const item of controllerA.getSnapshot().items) {
+        if (item.kind === 'energy') controllerA.collectItem(item.id);
+      }
+      if (controllerA.getSnapshot().villageChest.ready) {
+        controllerA.claimVillageChest();
+      }
     }
+    expect(controllerA.getSnapshot().energy).toBeGreaterThanOrEqual(200);
     expect(controllerA.summonDefender('skeleton', { row: 0, column: 0 })).toBe(true);
 
-    // Advance 6s so two passive Energy ticks (+100 EN) and Skeleton 5s cooldown expire -> place 2nd Skeleton at opposite corner (4, 8)!
-    for (let i = 0; i < 120; i++) {
+    // Wait 5.5s for Skeleton summon cooldown, then place 2nd Skeleton at opposite corner (4, 8).
+    for (let i = 0; i < 110; i++) {
       controllerA.stepMs(50);
     }
-    expect(controllerA.getSnapshot().energy).toBeGreaterThanOrEqual(100);
     expect(controllerA.summonDefender('skeleton', { row: 4, column: 8 })).toBe(true);
 
     const src = controllerA.getSnapshot().defenders.find(d => d.row === 0 && d.column === 0)!;
@@ -64,13 +75,13 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     expect(controllerA.canFuse(src.id, tgt.id)).toBe(true);
     expect(controllerA.getFusionOutputId(src.id, tgt.id)).toBe('skeleton_sniper');
 
-    // Free cross-lane maximum-corner Fusion at 0 Energy!
+    // Free cross-lane maximum-corner Fusion at 0 Emeralds!
     const energyBeforeFuse = controllerA.getSnapshot().energy;
     expect(controllerA.fuseDefenders(src.id, tgt.id)).toBe(true);
     const afterFuse = controllerA.getSnapshot();
     expect(afterFuse.energy).toBe(energyBeforeFuse);
-    expect(afterFuse.defenders).toHaveLength(1);
-    expect(afterFuse.defenders[0]).toMatchObject({
+    expect(afterFuse.defenders).toHaveLength(2);
+    expect(afterFuse.defenders.find(d => d.row === 4 && d.column === 8)).toMatchObject({
       definitionId: 'skeleton_sniper',
       row: 4,
       column: 8,
@@ -91,8 +102,7 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     expect(controllerB.resumeSavedBattle()).toBe(true);
     const resumed = controllerB.getSnapshot();
     expect(resumed.status).toBe('playing');
-    expect(resumed.defenders).toHaveLength(1);
-    expect(resumed.defenders[0]).toMatchObject({
+    expect(resumed.defenders.find(d => d.row === 4 && d.column === 8)).toMatchObject({
       definitionId: 'skeleton_sniper',
       row: 4,
       column: 8,
@@ -134,16 +144,23 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     const controller = new CampaignController({ storage });
     controller.startNewBattle({ battleId: 'camp_cooldown_1', unlockAll: true });
 
-    // Advance 20.5s and collect periodic Energy orbs to ensure >= 150 Energy before testing cooldowns.
-    for (let i = 0; i < 410; i++) {
+    // Advance 25s with two Villagers & Village Supply Chest to ensure >= 250 EM before testing cooldowns.
+    expect(controller.summonDefender('villager', { row: 4, column: 0 })).toBe(true);
+    for (let i = 0; i < 105; i++) controller.stepMs(50);
+    expect(controller.summonDefender('villager', { row: 3, column: 0 })).toBe(true);
+    for (let i = 0; i < 600; i++) {
       controller.stepMs(50);
       for (const item of controller.getSnapshot().items) {
         if (item.kind === 'energy') {
           controller.collectItem(item.id);
         }
       }
+      if (controller.getSnapshot().villageChest.ready) {
+        controller.claimVillageChest();
+      }
+      if (controller.getSnapshot().energy >= 250) break;
     }
-    expect(controller.getSnapshot().energy).toBeGreaterThanOrEqual(150);
+    expect(controller.getSnapshot().energy).toBeGreaterThanOrEqual(250);
 
     expect(controller.summonDefender('skeleton', { row: 0, column: 0 })).toBe(true);
     const afterFirst = controller.getSnapshot();
@@ -185,58 +202,62 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     expect(reloaded.summonDefender('skeleton', { row: 1, column: 0 })).toBe(true);
   });
 
-  it('disables random Energy and Crystal item spawns while keeping +50 EN / 3s periodic Energy active', () => {
+  it('disables passive +50/3s and random items while powering Villager Emerald drops and 10s Village Supply Chest', () => {
     const storage = new InMemoryStorageAdapter();
     const controller = new CampaignController({ storage });
-    controller.startNewBattle({ battleId: 'camp_no_random_spawns', unlockAll: true });
+    controller.startNewBattle({ battleId: 'camp_no_passive_economy', unlockAll: true });
 
-    // Place a Skeleton Sniper on lane 0 and step 70s in intervals while avoiding defeat?
-    // Actually verify over 18s (360 ticks @ 50ms) before any Wave 1 Zombie reaches col 0 or dies:
-    // +50 EN initial + 6 periodic ticks (3,6,9,12,15,18s) = 350 EN, and 0 random orbs or crystal spawns!
-    expect(controller.getSnapshot().energy).toBe(50);
-    for (let i = 0; i < 360; i++) {
+    // Start at 100 EM; after 9.5s with NO Villagers and NO chest claim, still 100 EM and 0 items!
+    expect(controller.getSnapshot().energy).toBe(100);
+    for (let i = 0; i < 190; i++) {
       controller.stepMs(50);
       expect(controller.getSnapshot().items).toHaveLength(0);
     }
-    expect(controller.getSnapshot().energy).toBe(350);
+    expect(controller.getSnapshot().energy).toBe(100);
+    expect(controller.claimVillageChest()).toBe(false);
 
-    // Also verify longer 70s horizon using a runtime check via no enemies / 0 kills:
-    // Wave 1 spawns at 3s and Zombies walk in 18s, so summon Skeleton Sniper at (0,0),(0,1),(1,0),(1,1)...
-    // wait: killing enemies grants Energy directly, and Wave 1 Zombies drop 0 Crystals.
-    // Even across 70s, no 'energy' orb item should EVER spawn!
-    for (let lane = 0; lane < 5; lane++) {
-      controller.summonDefender('skeleton', { row: lane, column: 0 });
-    }
-    for (let i = 0; i < 1040; i++) {
-      controller.stepMs(50);
-      const energyItems = controller.getSnapshot().items.filter(item => item.kind === 'energy');
-      expect(energyItems).toHaveLength(0);
-    }
+    // At 10s (10 more ticks), Village Supply Chest becomes ready and grants its configured EM on click!
+    const chestAmount = controller.getSnapshot().villageChest.amount;
+    for (let i = 0; i < 10; i++) controller.stepMs(50);
+    expect(controller.getSnapshot().villageChest.ready).toBe(true);
+    expect(controller.claimVillageChest()).toBe(true);
+    expect(controller.getSnapshot().energy).toBe(100 + chestAmount);
+    expect(controller.getSnapshot().villageChest.ready).toBe(false);
+
+    // Summon Villager, verify 1st collectible Emerald spawns at +4s and adds its configured EM when collected.
+    const villagerCost = controller.getSnapshot().baseDefenderCards.find(c => c.id === 'villager')!.cost;
+    expect(controller.summonDefender('villager', { row: 0, column: 0 })).toBe(true);
+    expect(controller.getSnapshot().energy).toBe(100 + chestAmount - villagerCost);
+    for (let i = 0; i < 82; i++) controller.stepMs(50);
+    const villagerDrops = controller.getSnapshot().items.filter(item => item.kind === 'energy');
+    expect(villagerDrops).toHaveLength(1);
+    const dropAmount = villagerDrops[0]!.amount;
+    expect(dropAmount).toBeGreaterThan(0);
+    expect(controller.collectItem(villagerDrops[0]!.id)).toBe(true);
+    expect(controller.getSnapshot().energy).toBe(100 + chestAmount - villagerCost + dropAmount);
   });
 
-  it('supports direct shop-card fusion (summon-fuse), Fusion Glove 15s cooldown (Move/Fuse) with Pause/Save persistence, and instant 0%-refund Shovel removal', () => {
+  it('supports direct shop-card fusion (summon-fuse), Fusion Glove 10s cooldown (Move/Fuse) with Pause/Save persistence, and instant 0%-refund Shovel removal', () => {
     const storage = new InMemoryStorageAdapter();
     const controller = new CampaignController({ storage });
     controller.startNewBattle({ battleId: 'camp_glove_shovel_1' });
 
-    // Start at 50 EN -> summon Iron Golem (50 EN, 10s CD) at (0, 0).
+    // Start at 100 EM -> summon Iron Golem (50 EM, 10s CD) at (0, 0), leaving 50 EM immediately.
     expect(controller.summonDefender('iron_golem', { row: 0, column: 0 })).toBe(true);
     const golem = controller.getSnapshot().defenders.find(d => d.row === 0 && d.column === 0)!;
     expect(controller.getCardFusionOutputId('iron_golem', golem.id)).toBe('steel_guardian');
 
     // Attempt immediate direct shop-card fusion while Iron Golem card is still on 10s cooldown -> rejected!
-    // Advance 3s so +50 EN passive triggers (Energy = 50), while Iron Golem 10s cooldown still has 7s left.
-    for (let i = 0; i < 60; i++) controller.stepMs(50);
     expect(controller.getSnapshot().energy).toBe(50);
     expect(controller.summonAndFuseDefender('iron_golem', golem.id)).toBe(false);
     expect(controller.getSnapshot().lastToast?.message).toBe('Defender is recharging (on cooldown)');
     expect(controller.getSnapshot().energy).toBe(50);
 
-    // Advance 7.5s more (total 10.5s > 10s cooldown), then direct shop-card fuse Iron Golem onto placed Iron Golem!
-    for (let i = 0; i < 150; i++) controller.stepMs(50);
+    // Advance 10.5s so Iron Golem cooldown clears (still 50 EM available), then direct shop-card fuse onto placed Iron Golem!
+    for (let i = 0; i < 210; i++) controller.stepMs(50);
     expect(controller.summonAndFuseDefender('iron_golem', golem.id)).toBe(true);
     const afterShopFuse = controller.getSnapshot();
-    expect(afterShopFuse.energy).toBe(100);
+    expect(afterShopFuse.energy).toBe(0);
     expect(afterShopFuse.defenders).toHaveLength(1);
     expect(afterShopFuse.defenders[0]).toMatchObject({
       definitionId: 'steel_guardian',
@@ -245,11 +266,11 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     });
     expect(afterShopFuse.baseDefenderCards.find(c => c.id === 'iron_golem')?.onCooldown).toBe(true);
 
-    // Move fused Steel Guardian from (0, 0) to empty cell (2, 1) using Fusion Glove (0 EN, triggers 15s cooldown).
+    // Move fused Steel Guardian from (0, 0) to empty cell (2, 1) using Fusion Glove (0 EM, triggers 10s cooldown).
     const guardian = afterShopFuse.defenders[0]!;
     expect(controller.moveDefender(guardian.id, { row: 2, column: 1 })).toBe(true);
     const afterMove = controller.getSnapshot();
-    expect(afterMove.energy).toBe(100);
+    expect(afterMove.energy).toBe(0);
     expect(afterMove.defenders[0]).toMatchObject({
       id: guardian.id,
       definitionId: 'steel_guardian',

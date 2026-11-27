@@ -9,25 +9,58 @@ import {
 describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
   it('validates the checked-in JSON dataset cleanly with expected entity, recipe, ability, and wave counts', () => {
     const validated = validateMvpDataset(MVP_GAME_DATA);
-    expect(validated.defenders).toHaveLength(20);
-    expect(validated.defenders.filter(d => d.tier === 1)).toHaveLength(5);
-    expect(validated.defenders.filter(d => d.tier === 2)).toHaveLength(15);
+    expect(validated.defenders).toHaveLength(22);
+    expect(validated.defenders.filter(d => d.tier === 1)).toHaveLength(6);
+    expect(validated.defenders.filter(d => d.tier === 2)).toHaveLength(16);
     expect(validated.enemies).toHaveLength(4);
-    expect(validated.fusionRecipes).toHaveLength(15);
-    expect(validated.abilities).toHaveLength(20);
+    expect(validated.fusionRecipes).toHaveLength(16);
+    expect(validated.abilities).toHaveLength(22);
     expect(validated.grasslandLevel.waves).toHaveLength(5);
-    expect(validated.grasslandLevel.waveCrystals).toEqual([1, 1, 1, 1, 2]);
+    expect(validated.grasslandLevel.waveCrystals).toHaveLength(5);
+    expect(validated.grasslandLevel.waveCrystals.every(c => Number.isInteger(c) && c >= 0)).toBe(true);
+    expect(validated.grasslandLevel.initialEmeralds).toBeGreaterThanOrEqual(50);
+    expect(validated.grasslandLevel.enablePassiveEnergy).toBe(false);
+    expect(validated.grasslandLevel.villageChest.enabled).toBe(true);
+    expect(validated.grasslandLevel.villageChest.amount).toBeGreaterThan(0);
+    expect(validated.grasslandLevel.villageChest.intervalSeconds).toBeGreaterThan(0);
     expect(validated.sandboxLevel.waves).toHaveLength(5);
     expect(validated.sandboxLevel.waveCrystals).toEqual([1, 1, 1, 2, 2]);
   });
 
-  it('matches Owner 2026-11-27 balance values and 2026-11-26 skill mechanics', () => {
+  it('matches Owner Emerald/Villager economy invariants, Defender roles, and skill mechanics', () => {
     const byDef = new Map(MVP_GAME_DATA.defenders.map(d => [d.id, d]));
     const byEnemy = new Map(MVP_GAME_DATA.enemies.map(e => [e.id, e]));
     const byAbility = new Map(MVP_GAME_DATA.abilities.map(a => [a.id, a]));
 
     expect(MVP_GAME_DATA.grasslandLevel.seed).toBe(20261123);
     expect(MVP_GAME_DATA.grasslandLevel.fusionGloveCooldownSeconds).toBeGreaterThanOrEqual(0);
+    expect(MVP_GAME_DATA.grasslandLevel.waves[0].initialDelaySeconds).toBeGreaterThanOrEqual(5);
+
+    expect(byDef.get('villager')).toMatchObject({
+      summonEnergyCost: 50,
+      summonCooldownSeconds: 5,
+      maxHp: 150,
+      damage: 0,
+      economyProduction: {
+        itemCount: 1,
+        amountPerItem: expect.any(Number),
+        initialDelaySeconds: expect.any(Number),
+        intervalSeconds: expect.any(Number),
+      },
+    });
+    expect(byDef.get('villager')?.economyProduction?.amountPerItem).toBeGreaterThan(0);
+    expect(byDef.get('master_trader')).toMatchObject({
+      tier: 2,
+      maxHp: 300,
+      damage: 0,
+      economyProduction: {
+        itemCount: 2,
+        amountPerItem: expect.any(Number),
+        initialDelaySeconds: expect.any(Number),
+        intervalSeconds: expect.any(Number),
+      },
+    });
+    expect(byDef.get('master_trader')?.economyProduction?.amountPerItem).toBeGreaterThan(0);
 
     expect(byDef.get('iron_golem')).toMatchObject({
       summonEnergyCost: 50,
@@ -71,20 +104,37 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     expect(byEnemy.get('zombie')).toMatchObject({
       maxHp: 200,
       attackSpeed: 1,
-      energyReward: 50,
+      energyReward: 0,
       crystalReward: 1,
       crystalDropChance: 0,
     });
-    expect(byEnemy.get('husk')).toMatchObject({ crystalReward: 1, crystalDropChance: 0.1 });
+    expect(byEnemy.get('husk')).toMatchObject({
+      energyReward: 0,
+      crystalReward: 1,
+      crystalDropChance: 0.1,
+    });
     expect(byEnemy.get('vindicator')).toMatchObject({
-      energyReward: 125,
+      energyReward: 0,
       crystalReward: 1,
       crystalDropChance: 0.35,
     });
     expect(byEnemy.get('pillager')).toMatchObject({
-      energyReward: 125,
+      energyReward: 0,
       crystalReward: 1,
       crystalDropChance: 0.4,
+    });
+
+    expect(byAbility.get('emerald_harvest')?.effects[0]).toMatchObject({
+      kind: 'resource-burst',
+      amount: 150,
+      itemCount: 6,
+      spawnAsItems: true,
+    });
+    expect(byAbility.get('grand_caravan')?.effects[0]).toMatchObject({
+      kind: 'resource-burst',
+      amount: 250,
+      itemCount: 10,
+      spawnAsItems: true,
     });
 
     expect(byAbility.get('earthquake')?.targetScope).toBe('same-lane-enemies-ahead');
@@ -133,7 +183,10 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     const before = structuredClone(MVP_GAME_DATA);
     const preset = {
       seed: 99999,
+      initialEmeralds: 150,
+      enablePassiveEnergy: false,
       fusionGloveCooldownSeconds: 12,
+      villageChest: { enabled: true, amount: 30, intervalSeconds: 8 },
       defenders: MVP_GAME_DATA.defenders.map(d => ({
         id: d.id,
         tier: d.tier,
@@ -147,6 +200,16 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
         armor: d.armor,
         ...(d.attackDamageType ? { attackDamageType: d.attackDamageType } : {}),
         ...(d.basicAttackStatus ? { basicAttackStatus: structuredClone(d.basicAttackStatus) } : {}),
+        ...(d.id === 'villager' && d.economyProduction
+          ? {
+              economyProduction: {
+                ...d.economyProduction,
+                amountPerItem: 30,
+              },
+            }
+          : d.economyProduction
+            ? { economyProduction: structuredClone(d.economyProduction) }
+            : {}),
       })),
       enemies: MVP_GAME_DATA.enemies.map(e => ({
         id: e.id,
@@ -192,6 +255,13 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
       color: '#2563eb',
     });
     expect(merged.grasslandLevel.seed).toBe(99999);
+    expect(merged.grasslandLevel.initialEmeralds).toBe(150);
+    expect(merged.grasslandLevel.villageChest).toEqual({
+      enabled: true,
+      amount: 30,
+      intervalSeconds: 8,
+    });
+    expect(merged.defenders.find(d => d.id === 'villager')?.economyProduction?.amountPerItem).toBe(30);
     expect(merged.grasslandLevel.fusionGloveCooldownSeconds).toBe(12);
     expect(merged.grasslandLevel.waveCrystals).toEqual([1, 2, 1, 2, 2]);
 

@@ -185,7 +185,26 @@ export const abilityEffectSchema = z.discriminatedUnion('kind', [
     shieldPiercing: z.boolean().optional(),
     applyStatus: attachedStatusSpecSchema.optional(),
   }),
+  z.strictObject({
+    kind: z.literal('resource-burst'),
+    amount: positiveIntegerSchema,
+    itemCount: positiveIntegerSchema,
+    spawnAsItems: z.boolean(),
+  }),
 ]);
+
+export const economyProductionSchema = z.strictObject({
+  itemCount: positiveIntegerSchema,
+  amountPerItem: positiveIntegerSchema,
+  initialDelaySeconds: positiveNumberSchema,
+  intervalSeconds: positiveNumberSchema,
+});
+
+export const villageChestSchema = z.strictObject({
+  enabled: z.boolean(),
+  amount: positiveIntegerSchema,
+  intervalSeconds: positiveNumberSchema,
+});
 
 export const mvpAbilitySchema = z.strictObject({
   id: stableIdSchema,
@@ -216,6 +235,7 @@ export const mvpDefenderSchema = z.strictObject({
   armor: nonNegativeNumberSchema,
   attackDamageType: abilityDamageTypeSchema.optional(),
   basicAttackStatus: attachedStatusSpecSchema.optional(),
+  economyProduction: economyProductionSchema.optional(),
   abilityId: stableIdSchema,
   abilityName: z.string().min(1),
   abilitySummary: z.string().min(1),
@@ -282,6 +302,9 @@ export const mvpGrasslandLevelSchema = z.strictObject({
   rows: positiveIntegerSchema,
   columns: positiveIntegerSchema,
   fusionGloveCooldownSeconds: nonNegativeNumberSchema,
+  initialEmeralds: nonNegativeIntegerSchema,
+  enablePassiveEnergy: z.boolean(),
+  villageChest: villageChestSchema,
   waveCrystals: z.array(nonNegativeIntegerSchema).min(1),
   energyItems: energyItemsSchema,
   waves: z.array(mvpWaveSchema).min(1),
@@ -292,6 +315,9 @@ export const mvpSandboxLevelSchema = z.strictObject({
   seed: z.number().int(),
   rows: positiveIntegerSchema,
   columns: positiveIntegerSchema,
+  initialEmeralds: nonNegativeIntegerSchema,
+  enablePassiveEnergy: z.boolean(),
+  villageChest: villageChestSchema,
   waveCrystals: z.array(nonNegativeIntegerSchema).min(1),
   waves: z.array(mvpWaveSchema).min(1),
 });
@@ -359,21 +385,21 @@ export const mvpDatasetSchema = z.strictObject({
 
   const baseCount = dataset.defenders.filter(d => d.tier === 1).length;
   const fusionCount = dataset.defenders.filter(d => d.tier === 2).length;
-  if (baseCount !== 5 || fusionCount !== 15) {
+  if (baseCount !== 6 || fusionCount !== 16) {
     ctx.addIssue({
       code: 'custom',
       path: ['defenders'],
-      message: `Expected 5 Tier-1 and 15 Tier-2 Defenders; found ${baseCount} Tier-1 and ${fusionCount} Tier-2`,
+      message: `Expected 6 Tier-1 and 16 Tier-2 Defenders; found ${baseCount} Tier-1 and ${fusionCount} Tier-2`,
     });
   }
   if (dataset.enemies.length !== 4) {
     ctx.addIssue({ code: 'custom', path: ['enemies'], message: `Expected 4 Enemies; found ${dataset.enemies.length}` });
   }
-  if (dataset.fusionRecipes.length !== 15) {
-    ctx.addIssue({ code: 'custom', path: ['fusionRecipes'], message: `Expected 15 Fusion Recipes; found ${dataset.fusionRecipes.length}` });
+  if (dataset.fusionRecipes.length !== 16) {
+    ctx.addIssue({ code: 'custom', path: ['fusionRecipes'], message: `Expected 16 Fusion Recipes; found ${dataset.fusionRecipes.length}` });
   }
-  if (dataset.abilities.length !== 20) {
-    ctx.addIssue({ code: 'custom', path: ['abilities'], message: `Expected 20 Abilities; found ${dataset.abilities.length}` });
+  if (dataset.abilities.length !== 22) {
+    ctx.addIssue({ code: 'custom', path: ['abilities'], message: `Expected 22 Abilities; found ${dataset.abilities.length}` });
   }
 
   const defendersById = new Map(dataset.defenders.map(d => [d.id, d]));
@@ -481,6 +507,8 @@ export type MvpEnemyData = z.infer<typeof mvpEnemySchema>;
 export type MvpFusionRecipeData = z.infer<typeof mvpFusionRecipeSchema>;
 export type MvpAbilityData = z.infer<typeof mvpAbilitySchema>;
 export type MvpWaveData = z.infer<typeof mvpWaveSchema>;
+export type MvpEconomyProductionData = z.infer<typeof economyProductionSchema>;
+export type MvpVillageChestData = z.infer<typeof villageChestSchema>;
 export type MvpGrasslandLevelData = z.infer<typeof mvpGrasslandLevelSchema>;
 export type MvpSandboxLevelData = z.infer<typeof mvpSandboxLevelSchema>;
 export type MvpDataset = z.infer<typeof mvpDatasetSchema>;
@@ -498,6 +526,7 @@ export const playtestDefenderSyncSchema = z.strictObject({
   armor: nonNegativeNumberSchema,
   attackDamageType: abilityDamageTypeSchema.optional(),
   basicAttackStatus: attachedStatusSpecSchema.optional(),
+  economyProduction: economyProductionSchema.optional(),
 });
 
 export const playtestEnemySyncSchema = z.strictObject({
@@ -520,6 +549,9 @@ export const playtestEnemySyncSchema = z.strictObject({
 export const playtestPresetSyncSchema = z.strictObject({
   seed: z.number().int(),
   fusionGloveCooldownSeconds: nonNegativeNumberSchema.optional(),
+  initialEmeralds: nonNegativeIntegerSchema.optional(),
+  enablePassiveEnergy: z.boolean().optional(),
+  villageChest: villageChestSchema.optional(),
   defenders: z.array(playtestDefenderSyncSchema),
   enemies: z.array(playtestEnemySyncSchema),
   abilities: z.array(mvpAbilitySchema),
@@ -607,6 +639,11 @@ export function mergePlaytestPresetIntoDataset(
       armor: tuned.armor,
       ...(tuned.attackDamageType ? { attackDamageType: tuned.attackDamageType } : {}),
       ...(tuned.basicAttackStatus ? { basicAttackStatus: structuredClone(tuned.basicAttackStatus) } : {}),
+      ...(tuned.economyProduction
+        ? { economyProduction: structuredClone(tuned.economyProduction) }
+        : baseDef.economyProduction
+          ? { economyProduction: structuredClone(baseDef.economyProduction) }
+          : {}),
       abilityId: baseDef.abilityId,
       abilityName: baseDef.abilityName,
       abilitySummary: baseDef.abilitySummary,
@@ -649,6 +686,12 @@ export function mergePlaytestPresetIntoDataset(
       seed: preset.seed,
       fusionGloveCooldownSeconds:
         preset.fusionGloveCooldownSeconds ?? baseDataset.grasslandLevel.fusionGloveCooldownSeconds,
+      initialEmeralds: preset.initialEmeralds ?? baseDataset.grasslandLevel.initialEmeralds,
+      enablePassiveEnergy:
+        preset.enablePassiveEnergy ?? baseDataset.grasslandLevel.enablePassiveEnergy,
+      villageChest: preset.villageChest
+        ? structuredClone(preset.villageChest)
+        : structuredClone(baseDataset.grasslandLevel.villageChest),
       waveCrystals: [...preset.waveCrystals],
       waves: structuredClone(preset.waves),
     },

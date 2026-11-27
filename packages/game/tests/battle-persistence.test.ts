@@ -977,6 +977,52 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
         expect(resumed.getPersistenceMeta().matchKills).toBe(original.getPersistenceMeta().matchKills);
       }
     });
+
+    it('preserves villageChestReady, villageChestNextTick, and producerNextTickByEntityId across save/resume checkpoints', () => {
+      const econResources: ResourceSessionInput = {
+        ...resourceFixture(),
+        initialEnergy: 100,
+        enablePassiveEnergy: false,
+        villageChest: { enabled: true, amount: 25, intervalSeconds: 10 },
+        defenders: [
+          {
+            id: 'villager',
+            classification: 'base',
+            summonEnergyCost: 50,
+            unlocked: true,
+            economyProduction: { itemCount: 1, amountPerItem: 25, initialDelaySeconds: 4, intervalSeconds: 8 },
+          },
+        ],
+      };
+      const econCombat: CombatSessionInput = {
+        ...combatFixture(),
+        defenders: [
+          { id: 'villager', maxHp: 150, damage: 0, attackSpeed: 1, attackRange: 0, targeting: 'CLOSEST_TO_DEFENDER', armor: 0 },
+        ],
+      };
+      const original = new BattleRuntime(
+        { ticksPerSecond: 10, maxCatchUpTicks: 250 },
+        econResources,
+        econCombat,
+      );
+      original.enqueue({ type: 'summon', definitionId: 'villager', cell: { row: 0, column: 0 } }, 1);
+      step(original, 20, 10); // tick 20 (t=2s): villager scheduled for tick 41, chest ready at tick 100
+
+      const saved = original.createCheckpoint('manual');
+      const resumed = BattleRuntime.fromCheckpoint(
+        saved.json,
+        { ticksPerSecond: 10, maxCatchUpTicks: 250 },
+        econResources,
+        econCombat,
+      );
+      expect(resumed.snapshot().resources?.villageChestReady).toBe(false);
+      expect(resumed.snapshot().resources?.villageChestNextTick).toBe(100);
+      expect(resumed.snapshot().resources?.producerNextTickByEntityId?.get(0n)).toBe(41);
+
+      // Step to tick 41 -> resumed villager produces 1 Emerald item deterministically
+      step(resumed, 21, 10);
+      expect([...(resumed.snapshot().resources?.items.values() ?? [])].filter(i => i.kind === 'energy')).toHaveLength(1);
+    });
   });
 
   describe('AC-07 G05 newest-first recovery & fallback', () => {
@@ -1192,7 +1238,7 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
   });
 
   describe('AC-10 Starter persistent progression profile', () => {
-    it('initializes fresh ProgressionStore with 0 victories, 0 victory kills, iron_golem & skeleton, and starter recipes (skeleton_sniper, steel_guardian, iron_ranger)', () => {
+    it('initializes fresh ProgressionStore with 0 victories, 0 victory kills, villager/iron_golem/skeleton, and starter recipes', () => {
       const store = new ProgressionStore({ storage: new InMemoryStorageAdapter() });
       const profile = store.getProfile();
 
@@ -1203,11 +1249,12 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
         unlockedRecipeIds: [...STARTER_RECIPE_IDS],
         recordedBattleIds: [],
       });
-      expect(profile.unlockedDefenderIds).toEqual(['iron_golem', 'skeleton']);
+      expect(profile.unlockedDefenderIds).toEqual(['villager', 'iron_golem', 'skeleton']);
       expect(profile.unlockedRecipeIds).toEqual([
         'fusion_skeleton_sniper',
         'fusion_steel_guardian',
         'fusion_iron_ranger',
+        'fusion_master_trader',
       ]);
     });
   });
@@ -1439,7 +1486,7 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
   });
 
   describe('AC-16 getAchievementsView() & getDefenderCollectionView()', () => {
-    it('tracks victory/kill milestones accurately and exposes locked/unlocked metadata for all 20 Defenders and 15 Recipes', () => {
+    it('tracks victory/kill milestones accurately and exposes locked/unlocked metadata for all 22 Defenders and 16 Recipes', () => {
       const store = new ProgressionStore({ storage: new InMemoryStorageAdapter() });
 
       // Starter state checks.
@@ -1451,15 +1498,17 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
       ]);
 
       const starterCollection = getDefenderCollectionView(store.getProfile());
-      expect(starterCollection).toHaveLength(20);
-      expect(starterCollection.filter(e => e.classification === 'base')).toHaveLength(5);
-      expect(starterCollection.filter(e => e.classification === 'fusion')).toHaveLength(15);
+      expect(starterCollection).toHaveLength(22);
+      expect(starterCollection.filter(e => e.classification === 'base')).toHaveLength(6);
+      expect(starterCollection.filter(e => e.classification === 'fusion')).toHaveLength(16);
       expect(starterCollection.filter(e => e.unlocked).map(e => e.id).sort()).toEqual([
         'iron_golem',
         'iron_ranger',
+        'master_trader',
         'skeleton',
         'skeleton_sniper',
         'steel_guardian',
+        'villager',
       ]);
 
       // After 1 victory with 30 kills.
@@ -1471,7 +1520,7 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
         expect.objectContaining({ id: 'grassland_veteran_5_victories', current: 1, target: 5, completed: false }),
       ]);
 
-      // After 5 total victories and >= 50 kills -> all 20 defenders and 15 recipes unlocked.
+      // After 5 total victories and >= 50 kills -> all 22 defenders and 16 recipes unlocked.
       for (let i = 2; i <= 5; i++) {
         store.recordBattleOutcome({ battleId: `ach_${i}`, result: 'victory', enemiesKilled: 10 });
       }
@@ -1486,7 +1535,7 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
       // reset() clears storage and returns starter profile.
       const resetProfile = store.reset();
       expect(resetProfile.totalVictories).toBe(0);
-      expect(resetProfile.unlockedDefenderIds).toEqual(['iron_golem', 'skeleton']);
+      expect(resetProfile.unlockedDefenderIds).toEqual(['villager', 'iron_golem', 'skeleton']);
     });
   });
 

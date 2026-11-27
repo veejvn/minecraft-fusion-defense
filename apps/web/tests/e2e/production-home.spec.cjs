@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('built homepage serves full MVP Menu, Collection (20 Defenders), Achievements, 5x9 Grassland Battle, and Save/Resume flow', async ({ page }) => {
+test('built homepage serves full MVP Menu, Collection (22 Defenders), Achievements, 5x9 Grassland Battle, and Save/Resume flow', async ({ page }) => {
   const browserErrors = [];
   const consoleErrors = [];
   page.on('pageerror', error => browserErrors.push(error.message));
@@ -15,13 +15,14 @@ test('built homepage serves full MVP Menu, Collection (20 Defenders), Achievemen
   await expect(page.getByRole('heading', { name: 'Minecraft Fusion Defense' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Play Grassland Campaign' })).toBeVisible();
 
-  // 2. Defender Collection (5 Base + 15 Fusion + 15 Recipes)
+  // 2. Defender Collection (6 Base + 16 Fusion + 16 Recipes)
   await page.getByRole('button', { name: /Collection \(/i }).click();
   await expect(page.getByRole('heading', { name: /Defender Collection/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Base Defenders (5)' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Fusion Defenders (15)' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Fusion Recipes (15)' })).toBeVisible();
-  await page.getByRole('button', { name: 'Fusion Defenders (15)' }).click();
+  await expect(page.getByRole('button', { name: 'Base Defenders (6)' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Fusion Defenders (16)' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Fusion Recipes (16)' })).toBeVisible();
+  await page.getByRole('button', { name: 'Fusion Defenders (16)' }).click();
+  await expect(page.getByText('Master Trader', { exact: true })).toBeVisible();
   await expect(page.getByText('Iron Ranger')).toBeVisible();
   await expect(page.getByText('Infernal Archon')).toBeVisible();
   await page.getByRole('button', { name: 'Back to Menu' }).click();
@@ -41,6 +42,8 @@ test('built homepage serves full MVP Menu, Collection (20 Defenders), Achievemen
   await expect(page.getByText('Loading Grassland Battlefield...')).toHaveCount(0);
   await expect(page.getByText('Failed to initialize Phaser battlefield.')).toHaveCount(0);
   await expect(page.getByText('WAVE 1/5')).toBeVisible();
+  await expect(page.getByText('EMERALDS')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Villager/i })).toBeVisible();
 
   const layoutMetrics = await page.evaluate(() => {
     const canvas = document.querySelector('canvas');
@@ -79,6 +82,8 @@ test('built homepage serves full MVP Menu, Collection (20 Defenders), Achievemen
   await continueBtn.click();
   await expect(page.locator('canvas')).toHaveCount(1);
   await expect(page.getByText('WAVE 1/5')).toBeVisible();
+  await expect(page.getByText('EMERALDS')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Villager/i })).toBeVisible();
 
   expect(browserErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);
@@ -114,7 +119,7 @@ test('1366x768 laptop viewport fits with 0 scroll, verifies all Collection PNG s
 
   // 2. Verify all Defender Collection PNG images load cleanly across all 3 tabs (0 broken images)
   await page.getByRole('button', { name: /Collection \(/i }).click();
-  for (const tabName of ['Base Defenders (5)', 'Fusion Defenders (15)', 'Fusion Recipes (15)']) {
+  for (const tabName of ['Base Defenders (6)', 'Fusion Defenders (16)', 'Fusion Recipes (16)']) {
     await page.getByRole('button', { name: tabName }).click();
     await page.waitForTimeout(150);
     const brokenImgs = await page.evaluate(() =>
@@ -187,6 +192,7 @@ test('1366x768 laptop viewport fits with 0 scroll, verifies all Collection PNG s
   expect(playtestMetrics.canvasBottom).toBeLessThanOrEqual(playtestMetrics.innerHeight);
   expect(playtestMetrics.canvasHeight).toBeGreaterThan(400);
 
+  await expect(page.getByRole('button', { name: /Villager/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Skeleton/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Glove/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /Shovel/i })).toBeVisible();

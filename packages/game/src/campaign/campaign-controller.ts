@@ -42,6 +42,7 @@ import {
   CAMPAIGN_DEFENDER_CATALOG,
   CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
   GRASSLAND_CAMPAIGN_WAVES,
+  GRASSLAND_VILLAGE_CHEST,
   createGrasslandCampaignInputs,
   type GrasslandCampaignRuntimeInputs,
 } from './grassland-campaign-config';
@@ -92,6 +93,14 @@ export interface GloveCooldownView {
   readonly onCooldown: boolean;
 }
 
+export interface VillageChestView {
+  readonly enabled: boolean;
+  readonly ready: boolean;
+  readonly remainingSeconds: number;
+  readonly totalSeconds: number;
+  readonly amount: number;
+}
+
 export interface CampaignSnapshot {
   readonly status: CampaignBattleStatus;
   readonly battleId: string | null;
@@ -120,6 +129,7 @@ export interface CampaignSnapshot {
   readonly flashes: readonly PlaytestFlashEffect[];
   readonly baseDefenderCards: readonly BaseDefenderCardView[];
   readonly gloveCooldown: GloveCooldownView;
+  readonly villageChest: VillageChestView;
   readonly unlockedRecipeIds: readonly string[];
   readonly lastToast: CampaignToast | null;
   readonly newlyUnlocked: {
@@ -186,7 +196,7 @@ function formatEnglishRejection(
     case 'terminal':
       return 'Battle has already ended';
     case 'insufficient-energy':
-      return 'Insufficient Energy';
+      return 'Insufficient Emeralds';
     case 'summon-on-cooldown':
       return 'Defender is recharging (on cooldown)';
     case 'glove-on-cooldown':
@@ -222,6 +232,10 @@ function formatEnglishRejection(
       return 'Power Crystal storage is full (5/5)';
     case 'nothing-to-claim':
       return 'No pending Power Crystals to claim';
+    case 'chest-not-ready':
+      return 'Village Supply Chest is still restocking';
+    case 'chest-disabled':
+      return 'Village Supply Chest is disabled';
     default:
       return `${category.toUpperCase()} rejected${reason ? ` (${reason})` : ''}`;
   }
@@ -788,6 +802,36 @@ export class CampaignController {
     return ok;
   }
 
+  claimVillageChest(): boolean {
+    if (!this.runtime) return false;
+    if (this.paused || this.lastTerminal !== null) {
+      this.pushToast('error', this.paused ? 'Game is Paused' : 'Battle has already ended');
+      this.refreshAndEmit();
+      return false;
+    }
+    const targetTick = this.runtime.snapshot().tick + 1;
+    const prevEventId = this.runtime.snapshot().resources?.outcome?.eventId ?? null;
+    const queued = this.runtime.enqueue({ type: 'claim-village-chest' }, targetTick);
+    if (queued.status !== 'APPLIED') {
+      this.pushToast('error', formatEnglishRejection('claim', extractQueueReason(queued)));
+      this.refreshAndEmit();
+      return false;
+    }
+    this.runtime.advance(TICK_DURATION_MS);
+    this.processOutcomesAndTerminal();
+    const outcome = this.runtime.snapshot().resources?.outcome;
+    const ok = outcome && outcome.eventId !== prevEventId ? outcome.status === 'APPLIED' : true;
+    if (ok) {
+      const chestAmount = this.runtimeInputs?.resourceInput.villageChest?.amount ?? 25;
+      this.pushToast('success', `+${chestAmount} EM from Village Supply Chest!`);
+      if (this.lastTerminal === null) {
+        this.saveCheckpointNow('manual');
+      }
+    }
+    this.refreshAndEmit();
+    return ok;
+  }
+
   private tryLoadSavedRuntime(
     inputs: GrasslandCampaignRuntimeInputs,
     withPersistence = false,
@@ -971,6 +1015,13 @@ export class CampaignController {
           remainingSeconds: 0,
           progressPct: 0,
           onCooldown: false,
+        },
+        villageChest: {
+          enabled: GRASSLAND_VILLAGE_CHEST.enabled,
+          ready: false,
+          remainingSeconds: GRASSLAND_VILLAGE_CHEST.intervalSeconds,
+          totalSeconds: GRASSLAND_VILLAGE_CHEST.intervalSeconds,
+          amount: GRASSLAND_VILLAGE_CHEST.amount,
         },
         unlockedRecipeIds: unlockedRecipes,
         lastToast: this.lastToast,
@@ -1253,6 +1304,18 @@ export class CampaignController {
         ? Math.min(100, Math.max(0, Math.round((gloveRemainingTicks / gloveTotalTicks) * 100)))
         : 0;
 
+    const chestCfg = this.runtimeInputs.resourceInput.villageChest;
+    const chestEnabled = Boolean(chestCfg?.enabled);
+    const chestReady = chestEnabled && Boolean(resources?.villageChestReady);
+    const chestTotalSeconds = chestCfg?.intervalSeconds ?? GRASSLAND_VILLAGE_CHEST.intervalSeconds;
+    const chestAmount = chestCfg?.amount ?? GRASSLAND_VILLAGE_CHEST.amount;
+    const chestRemainingTicks =
+      chestEnabled && !chestReady && resources?.villageChestNextTick !== undefined && resources.villageChestNextTick !== null
+        ? Math.max(0, resources.villageChestNextTick - raw.tick)
+        : 0;
+    const chestRemainingSeconds =
+      chestEnabled && !chestReady ? Number((chestRemainingTicks / TICKS_PER_SECOND).toFixed(1)) : 0;
+
     return {
       status,
       battleId: this.battleId,
@@ -1285,6 +1348,13 @@ export class CampaignController {
         remainingSeconds: gloveRemainingSeconds,
         progressPct: gloveProgressPct,
         onCooldown: gloveOnCooldown,
+      },
+      villageChest: {
+        enabled: chestEnabled,
+        ready: chestReady,
+        remainingSeconds: chestRemainingSeconds,
+        totalSeconds: chestTotalSeconds,
+        amount: chestAmount,
       },
       unlockedRecipeIds: unlockedRecipes,
       lastToast: this.lastToast,

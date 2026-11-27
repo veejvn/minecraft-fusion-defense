@@ -79,6 +79,8 @@ export const CAMPAIGN_BASE_COOLDOWNS: Readonly<Record<string, number>> = Object.
 export const CAMPAIGN_GLOVE_COOLDOWN_SECONDS =
   MVP_GAME_DATA.grasslandLevel.fusionGloveCooldownSeconds;
 
+export const GRASSLAND_VILLAGE_CHEST = MVP_GAME_DATA.grasslandLevel.villageChest;
+
 export const GRASSLAND_WAVE_CRYSTALS: readonly number[] =
   MVP_GAME_DATA.grasslandLevel.waveCrystals;
 
@@ -149,7 +151,9 @@ export const CAMPAIGN_ENEMY_CATALOG: readonly CampaignEnemyCatalogItem[] =
   });
 
 export const CAMPAIGN_ITEM_URLS = {
-  energyOrb: ITEM_SPRITE_ASSETS.energy_orb.url,
+  emerald: ITEM_SPRITE_ASSETS.emerald.url,
+  villageChestClosed: ITEM_SPRITE_ASSETS.village_chest_closed.url,
+  villageChestOpen: ITEM_SPRITE_ASSETS.village_chest_open.url,
   powerCrystal: ITEM_SPRITE_ASSETS.power_crystal.url,
 } as const;
 
@@ -177,12 +181,19 @@ export function createGrasslandCampaignInputs(
 
   const rawResourceInput: ResourceSessionInput = {
     seed,
+    initialEnergy: preset.initialEmeralds ?? MVP_GAME_DATA.grasslandLevel.initialEmeralds,
+    enablePassiveEnergy:
+      preset.enablePassiveEnergy ?? MVP_GAME_DATA.grasslandLevel.enablePassiveEnergy,
+    villageChest: structuredClone(
+      preset.villageChest ?? MVP_GAME_DATA.grasslandLevel.villageChest,
+    ),
     defenders: baseDefenders.map(d => ({
       id: d.id,
       classification: d.tier === 1 ? 'base' : 'fusion',
       summonEnergyCost: d.summonEnergyCost,
       summonCooldownSeconds: d.tier === 1 ? (CAMPAIGN_BASE_COOLDOWNS[d.id] ?? 0) : 0,
       unlocked: true,
+      ...(d.economyProduction ? { economyProduction: structuredClone(d.economyProduction) } : {}),
     })),
     enemies: preset.enemies.map(e => ({
       id: e.id,
@@ -282,7 +293,10 @@ export function createCampaignPlaytestPreset(): PlaytestPresetConfig {
   return {
     ...base,
     seed: MVP_GAME_DATA.grasslandLevel.seed,
+    initialEmeralds: MVP_GAME_DATA.grasslandLevel.initialEmeralds,
+    enablePassiveEnergy: MVP_GAME_DATA.grasslandLevel.enablePassiveEnergy,
     fusionGloveCooldownSeconds: CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
+    villageChest: structuredClone(MVP_GAME_DATA.grasslandLevel.villageChest),
     defenders: base.defenders.map(d => ({
       ...d,
       summonEnergyCost: d.tier === 1 ? (CAMPAIGN_BASE_COSTS[d.id] ?? d.summonEnergyCost) : 0,

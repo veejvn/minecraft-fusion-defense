@@ -4,10 +4,17 @@
   "rows": 5,
   "columns": 9,
   "fusionGloveCooldownSeconds": 10,
+  "initialEmeralds": 100,
+  "enablePassiveEnergy": false,
+  "villageChest": {
+    "enabled": true,
+    "amount": 50,
+    "intervalSeconds": 10
+  },
   "waveCrystals": [
-    1,
-    1,
-    1,
+    0,
+    0,
+    0,
     1,
     1
   ],
@@ -50,12 +57,12 @@
   "waves": [
     {
       "id": "wave_1",
-      "initialDelaySeconds": 3,
+      "initialDelaySeconds": 10,
       "delayBeforeNextWaveSeconds": 5,
       "spawnGroups": [
         {
           "enemyId": "zombie",
-          "count": 4,
+          "count": 5,
           "allowedLanes": [
             0,
             1,
@@ -65,7 +72,7 @@
           ],
           "laneMode": "sequential",
           "startOffsetSeconds": 0,
-          "intervalSeconds": 3.5
+          "intervalSeconds": 5
         }
       ]
     },

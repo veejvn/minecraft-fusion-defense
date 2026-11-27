@@ -668,6 +668,25 @@ function validateResourcesState(resources: ResourceState | undefined, ctx?: Chec
       'resources.gloveCooldownUntilTick must be positive safe int',
     );
   }
+  if (resources.villageChestReady !== undefined) {
+    assertSemantic(typeof resources.villageChestReady === 'boolean', 'resources.villageChestReady must be boolean');
+  }
+  if (resources.villageChestNextTick !== undefined && resources.villageChestNextTick !== null) {
+    assertSemantic(
+      isNonNegativeSafeInt(resources.villageChestNextTick),
+      'resources.villageChestNextTick invalid',
+    );
+  }
+  if (resources.producerNextTickByEntityId !== undefined) {
+    assertSemantic(
+      resources.producerNextTickByEntityId instanceof Map,
+      'resources.producerNextTickByEntityId must be a Map',
+    );
+    for (const [entityId, nextTick] of resources.producerNextTickByEntityId.entries()) {
+      assertSemantic(isNonNegativeBigInt(entityId), 'producerNextTickByEntityId key must be nonnegative bigint');
+      assertSemantic(isPositiveSafeInt(nextTick), 'producerNextTickByEntityId value must be positive safe int');
+    }
+  }
   validateOutcome(resources.outcome, 'resources');
 }
 

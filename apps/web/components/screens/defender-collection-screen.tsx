@@ -38,7 +38,7 @@ export function DefenderCollectionScreen({
             Defender Collection ({unlockedCount} / {collection.length} Unlocked)
           </h2>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: '#94A3B8' }}>
-            5 Base Defenders, 15 Tier-2 Fusion Defenders, 15 Free Recipes, and 20 Special Abilities (1 Power Crystal, 0s Cooldown)
+            6 Base Defenders, 16 Tier-2 Fusion Defenders, 16 Free Recipes, and 22 Special Abilities (1 Power Crystal, 0s Cooldown)
           </p>
         </div>
         <button type="button" className="mfd-btn" onClick={onBack}>
@@ -115,8 +115,8 @@ export function DefenderCollectionScreen({
                     <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>{item.role}</div>
                     <div style={{ fontSize: 12, color: '#CBD5E1', marginTop: 4 }}>
                       {item.tier === 1
-                        ? `Cost: ${item.summonEnergyCost} Energy`
-                        : `Recipe: ${item.inputs?.map(id => catalogById.get(id)?.name ?? id).join(' + ')} (0 Energy)`}
+                        ? `Cost: ${item.summonEnergyCost} Emeralds`
+                        : `Recipe: ${item.inputs?.map(id => catalogById.get(id)?.name ?? id).join(' + ')} (0 Emeralds)`}
                     </div>
                   </div>
                 </div>

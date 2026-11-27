@@ -20,22 +20,27 @@ import type { PlaytestDefenderView, PlaytestEnemyView } from '../src/playtest/pl
 
 const REPO_PUBLIC_DIR = resolve(__dirname, '../../../apps/web/public');
 
-describe('T-12.1 Asset Manifest Coverage (49 Pixel-Art PNGs)', () => {
-  it('registers all 20 Defenders, 4 Enemies, 4 Items/Tools, 4 Map Tiles, and 17 Effects with unique keys and URLs', () => {
-    expect(Object.keys(DEFENDER_SPRITE_ASSETS)).toHaveLength(20);
+describe('T-14 Asset Manifest Coverage (54 Pixel-Art PNGs)', () => {
+  it('registers all 22 Defenders, 4 Enemies, 7 Items/Tools, 4 Map Tiles, and 17 Effects with unique keys and URLs', () => {
+    expect(Object.keys(DEFENDER_SPRITE_ASSETS)).toHaveLength(22);
     expect(Object.keys(ENEMY_SPRITE_ASSETS)).toHaveLength(4);
-    expect(Object.keys(ITEM_SPRITE_ASSETS)).toHaveLength(4);
+    expect(Object.keys(ITEM_SPRITE_ASSETS)).toHaveLength(7);
     expect(Object.keys(MAP_TILE_ASSETS)).toHaveLength(4);
     expect(Object.keys(EFFECT_SPRITE_ASSETS)).toHaveLength(17);
-    expect(ALL_GAME_ASSETS).toHaveLength(49);
+    expect(ALL_GAME_ASSETS).toHaveLength(54);
 
     const keys = new Set(ALL_GAME_ASSETS.map(entry => entry.key));
     const urls = new Set(ALL_GAME_ASSETS.map(entry => entry.url));
-    expect(keys.size).toBe(49);
-    expect(urls.size).toBe(49);
+    expect(keys.size).toBe(54);
+    expect(urls.size).toBe(54);
 
+    expect(getDefenderAsset('villager')?.url).toBe('/assets/sprites/defenders/villager.png');
+    expect(getDefenderAsset('master_trader')?.url).toBe('/assets/sprites/defenders/master_trader.png');
     expect(getDefenderAsset('iron_ranger')?.url).toBe('/assets/sprites/defenders/iron_ranger.png');
     expect(getEnemyAsset('vindicator')?.url).toBe('/assets/sprites/enemies/vindicator.png');
+    expect(ITEM_SPRITE_ASSETS.emerald.url).toBe('/assets/sprites/items/emerald.png');
+    expect(ITEM_SPRITE_ASSETS.village_chest_closed.url).toBe('/assets/sprites/items/village_chest_closed.png');
+    expect(ITEM_SPRITE_ASSETS.village_chest_open.url).toBe('/assets/sprites/items/village_chest_open.png');
     expect(getEffectAsset('proj_iron_wolf')?.url).toBe('/assets/effects/proj_iron_wolf.png');
     expect(getEffectAsset('proj_frost_pierce_arrow')?.url).toBe('/assets/effects/proj_frost_pierce_arrow.png');
   });
@@ -47,9 +52,9 @@ describe('T-12.1 Asset Manifest Coverage (49 Pixel-Art PNGs)', () => {
     }
   });
 
-  it('registers basic attack VFX specs for all 20 Defenders', () => {
+  it('registers basic attack VFX specs for all 22 Defenders', () => {
     const defenderIds = Object.keys(DEFENDER_SPRITE_ASSETS);
-    expect(Object.keys(BASIC_ATTACK_VFX_BY_DEFENDER)).toHaveLength(20);
+    expect(Object.keys(BASIC_ATTACK_VFX_BY_DEFENDER)).toHaveLength(22);
     for (const id of defenderIds) {
       expect(BASIC_ATTACK_VFX_BY_DEFENDER[id], `Missing basic attack VFX spec for ${id}`).toBeDefined();
     }

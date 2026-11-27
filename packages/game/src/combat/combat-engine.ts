@@ -197,7 +197,10 @@ export function runCombatPhase(ctx: CombatPhaseContext): void {
 
     if (entity.kind === 'defender') {
       const def = session.defendersById[entity.definitionId];
-      const targetId = selectDefenderTarget(battle, combat, session, id, entity.cell, def);
+      const targetId =
+        def.damage <= 0 && def.attackRange <= 0
+          ? null
+          : selectDefenderTarget(battle, combat, session, id, entity.cell, def);
       targetUpdates.set(id, targetId);
       if (targetId !== null && (cState.nextAttackTick === null || tick >= cState.nextAttackTick)) {
         const effectiveDamage = computeDamage(

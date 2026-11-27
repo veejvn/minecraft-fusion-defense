@@ -157,6 +157,8 @@ Combat numbers và behavior còn TBD. Move Speed dùng Cells/second; Attack Spee
 
 Passive Energy cộng trực tiếp, không spawn Item. Pause dừng timer và cấm collect. Không có Energy cap/overflow policy cần chốt cho Functional MVP. Tên field/rate representation và scheduler implementation vẫn Coding Planning TBD.
 
+> **Cập nhật kinh tế mới (`Confirmed — 2026-11-27`, triển khai ở T-14):** Chủ dự án đã phê duyệt chuyển đổi kinh tế triệu hồi sang **Emerald (`EM`)**: khởi đầu `100 EM`, tắt `+50/3s` và thưởng khi quái chết (`energyReward = 0`, giữ `crystalDropChance`), thay bằng **Villager (`50 EM / 5s CD`, `25 EM / 8s`, lứa đầu `4s`)**, **Master Trader (`2 × 25 EM / 8s`)** và **Village Supply Chest (`+25 EM / 10s`, bấm mở tại căn cứ)**. Chi tiết xem tại [PGD-03](../decisions/PGD-03-EMERALD-VILLAGER-ECONOMY.md) và [T-14 Plan](../development/T-14-EMERALD-VILLAGER-ECONOMY-PLAN.md).
+
 ## 8. Power Crystal Economy
 
 | Thông số | Giá trị | Trạng thái |

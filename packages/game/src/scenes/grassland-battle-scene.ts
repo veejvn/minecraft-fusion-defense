@@ -42,6 +42,8 @@ const CELL_H = 132;
 const GRID_ROWS = 5;
 const GRID_COLS = 9;
 const ITEM_HIT_RADIUS = 26;
+const EMERALD_HOVER_RADIUS = 34;
+const CHEST_HIT_RADIUS = 42;
 const DRAG_THRESHOLD_PX = 14;
 
 type DragState =
@@ -82,6 +84,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
   private dragState: DragState | null = null;
   private hoverCell: Cell | null = null;
   private externalDrag: { readonly payload: ExternalDragPayload; readonly cell: Cell | null } | null = null;
+  private chestOpenUntilMs = 0;
   private needsRender = true;
   private firstRendered = false;
   private readonly attackTracker = new BasicAttackVisualTracker();
@@ -211,6 +214,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
     this.dragState = null;
     this.hoverCell = null;
     this.externalDrag = null;
+    this.chestOpenUntilMs = 0;
     this.attackTracker.reset();
     this.needsRender = true;
     this.snapshot = this.controller.getSnapshot();
@@ -298,6 +302,8 @@ export class GrasslandBattleScene extends Phaser.Scene {
       hasBasicAttackAnims ||
       this.needsRender ||
       this.dragState !== null ||
+      this.chestOpenUntilMs > this.time.now ||
+      snap.villageChest.ready ||
       snap.items.length > 0 ||
       snap.projectiles.length > 0 ||
       snap.flashes.length > 0 ||
@@ -342,15 +348,28 @@ export class GrasslandBattleScene extends Phaser.Scene {
     };
   }
 
-  private findItemAt(px: number, py: number): PlaytestItemView | null {
+  private findItemAt(
+    px: number,
+    py: number,
+    radius = ITEM_HIT_RADIUS,
+    onlyKind?: 'energy' | 'crystal',
+  ): PlaytestItemView | null {
     for (let i = this.snapshot.items.length - 1; i >= 0; i--) {
       const item = this.snapshot.items[i];
+      if (onlyKind && item.kind !== onlyKind) continue;
       const pos = this.getItemCoords(item);
-      if (Phaser.Math.Distance.Between(px, py, pos.x, pos.y) <= ITEM_HIT_RADIUS) {
+      if (Phaser.Math.Distance.Between(px, py, pos.x, pos.y) <= radius) {
         return item;
       }
     }
     return null;
+  }
+
+  private getVillageChestCoords(): { x: number; y: number } {
+    return {
+      x: Math.round(GRID_ORIGIN_X / 2),
+      y: GRID_ORIGIN_Y + (GRID_ROWS * CELL_H) / 2,
+    };
   }
 
   private findDefenderAtCell(cell: Cell): PlaytestDefenderView | undefined {
@@ -369,7 +388,18 @@ export class GrasslandBattleScene extends Phaser.Scene {
       return;
     }
 
-    // Priority 1 (GAMEPLAY_MECHANICS.md §18): Collect Power Crystal items before unit selection!
+    if (this.snapshot.villageChest.enabled) {
+      const chestPos = this.getVillageChestCoords();
+      if (Phaser.Math.Distance.Between(px, py, chestPos.x, chestPos.y) <= CHEST_HIT_RADIUS) {
+        if (this.controller.claimVillageChest()) {
+          this.chestOpenUntilMs = this.time.now + 1200;
+        }
+        this.needsRender = true;
+        return;
+      }
+    }
+
+    // Priority 1 (GAMEPLAY_MECHANICS.md §18): Collect items before unit selection!
     const item = this.findItemAt(px, py);
     if (item) {
       this.controller.collectItem(item.id);
@@ -463,6 +493,18 @@ export class GrasslandBattleScene extends Phaser.Scene {
     ) {
       this.hoverCell = cell;
       this.needsRender = true;
+    }
+
+    if (
+      !this.dragState &&
+      !this.externalDrag &&
+      !this.snapshot.paused &&
+      this.snapshot.terminal === null
+    ) {
+      const hoverEmerald = this.findItemAt(px, py, EMERALD_HOVER_RADIUS, 'energy');
+      if (hoverEmerald && this.controller.collectItem(hoverEmerald.id)) {
+        this.needsRender = true;
+      }
     }
 
     if (!this.dragState) return;
@@ -689,6 +731,42 @@ export class GrasslandBattleScene extends Phaser.Scene {
     this.bgGraphics.strokeRect(GRID_ORIGIN_X, GRID_ORIGIN_Y, gridW, gridH);
     this.putLabel(GRID_ORIGIN_X - 38, GRID_ORIGIN_Y + 14, 'BASE', '#93C5FD', '11px');
     this.putLabel(GRID_ORIGIN_X + gridW + 38, GRID_ORIGIN_Y + 14, 'SPAWN', '#F9A8D4', '11px');
+
+    if (snap.villageChest.enabled) {
+      const chestPos = this.getVillageChestCoords();
+      const isOpenAnim = this.chestOpenUntilMs > this.time.now;
+      const isReady = snap.villageChest.ready;
+      const pulseGlow = isReady ? 0.45 + 0.25 * Math.sin(this.time.now * 0.008) : 0.12;
+      this.overlayGraphics.fillStyle(isReady ? 0x10b981 : 0x1e293b, pulseGlow);
+      this.overlayGraphics.fillCircle(chestPos.x, chestPos.y, 32);
+      this.overlayGraphics.lineStyle(2, isReady ? 0x34d399 : 0x475569, isReady ? 0.95 : 0.65);
+      this.overlayGraphics.strokeCircle(chestPos.x, chestPos.y, 32);
+
+      const chestKey = isOpenAnim
+        ? ITEM_SPRITE_ASSETS.village_chest_open.key
+        : ITEM_SPRITE_ASSETS.village_chest_closed.key;
+      if (usePng && this.hasTexture(chestKey)) {
+        this.putFx(chestPos.x, chestPos.y - 2, chestKey, 52, 52, isReady || isOpenAnim ? 1 : 0.72);
+      } else {
+        this.hudGraphics.fillStyle(isOpenAnim ? 0xfacc15 : isReady ? 0x10b981 : 0x64748b, 1);
+        this.hudGraphics.fillRoundedRect(chestPos.x - 20, chestPos.y - 16, 40, 32, 6);
+      }
+
+      if (isOpenAnim) {
+        this.putLabel(chestPos.x, chestPos.y - 36, `+${snap.villageChest.amount} EM`, '#6EE7B7', '11px');
+      } else if (isReady) {
+        this.putLabel(chestPos.x, chestPos.y + 34, `+${snap.villageChest.amount} EM`, '#6EE7B7', '10px');
+        this.putLabel(chestPos.x, chestPos.y - 34, 'CHEST', '#FEF08A', '10px');
+      } else {
+        this.putLabel(
+          chestPos.x,
+          chestPos.y + 34,
+          `${snap.villageChest.remainingSeconds.toFixed(0)}s`,
+          '#CBD5E1',
+          '10px',
+        );
+      }
+    }
 
     // Interactive placement / shop-fusion / crystal / glove / shovel highlights
     const previewTool =
@@ -1062,16 +1140,16 @@ export class GrasslandBattleScene extends Phaser.Scene {
       const pos = this.getItemCoords(item);
       const size = 40 * pulse;
       if (item.kind === 'energy') {
-        this.unitGraphics.fillStyle(0xfacc15, 0.28);
+        this.unitGraphics.fillStyle(0x10b981, 0.28);
         this.unitGraphics.fillCircle(pos.x, pos.y, 20 * pulse);
         const key =
-          usePng && this.hasTexture(ITEM_SPRITE_ASSETS.energy_orb.key)
-            ? ITEM_SPRITE_ASSETS.energy_orb.key
+          usePng && this.hasTexture(ITEM_SPRITE_ASSETS.emerald.key)
+            ? ITEM_SPRITE_ASSETS.emerald.key
             : PLAYTEST_PIXEL_TEXTURE_KEYS.energy;
         if (this.hasTexture(key)) {
           this.putFx(pos.x, pos.y, key, size, size, 1);
         }
-        this.putLabel(pos.x, pos.y + 22, `+${item.amount}`, '#FEF08A', '11px');
+        this.putLabel(pos.x, pos.y + 22, `+${item.amount} EM`, '#A7F3D0', '11px');
       } else {
         this.unitGraphics.fillStyle(0x38bdf8, 0.3);
         this.unitGraphics.fillCircle(pos.x, pos.y, 22 * pulse);
@@ -1207,7 +1285,7 @@ export class GrasslandBattleScene extends Phaser.Scene {
           '12px',
         );
       } else if (!target) {
-        this.putLabel(endX, endY - 26, 'MOVE DEFENDER (0 EN)', '#6EE7B7', '12px');
+        this.putLabel(endX, endY - 26, 'MOVE DEFENDER (0 EM)', '#6EE7B7', '12px');
       }
     }
   }

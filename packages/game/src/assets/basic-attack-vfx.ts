@@ -185,6 +185,18 @@ export const BASIC_ATTACK_VFX_BY_DEFENDER: Readonly<Record<string, BasicAttackVi
     color: 0xf97316,
     durationMs: 200,
   },
+  villager: {
+    kind: 'melee',
+    style: 'burst',
+    color: 0x10b981,
+    durationMs: 180,
+  },
+  master_trader: {
+    kind: 'melee',
+    style: 'burst',
+    color: 0x34d399,
+    durationMs: 180,
+  },
 };
 
 export function getBasicAttackVisualSpec(definitionId: string): BasicAttackVisualSpec {

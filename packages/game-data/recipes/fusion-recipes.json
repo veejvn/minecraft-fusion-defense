@@ -88,5 +88,11 @@
     "inputs": ["blaze", "wolf"],
     "output": "flame_fang",
     "label": "Blaze + Wolf -> Flame Fang"
+  },
+  {
+    "id": "fusion_master_trader",
+    "inputs": ["villager", "villager"],
+    "output": "master_trader",
+    "label": "Villager + Villager -> Master Trader"
   }
 ]

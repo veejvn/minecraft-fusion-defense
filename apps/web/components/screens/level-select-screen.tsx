@@ -104,8 +104,8 @@ export function LevelSelectScreen({
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{enemy.name}</div>
                   <div style={{ fontSize: 11, color: '#94A3B8' }}>{enemy.role}</div>
-                  <div style={{ fontSize: 10, color: '#FACC15' }}>
-                    +{enemy.energyReward} EN
+                  <div style={{ fontSize: 10, color: '#6EE7B7' }}>
+                    {enemy.energyReward > 0 ? `+${enemy.energyReward} EM` : '0 EM drop'}
                     {enemy.crystalReward > 0 && enemy.crystalDropChance > 0
                       ? ` · +${enemy.crystalReward} CRY (${Math.round(enemy.crystalDropChance * 100)}%)`
                       : ''}

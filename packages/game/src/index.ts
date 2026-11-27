@@ -42,6 +42,7 @@ export type {
   CampaignToast,
   GloveCooldownView,
   SavedBattleSummary,
+  VillageChestView,
 } from './campaign/campaign-controller';
 
 export {
