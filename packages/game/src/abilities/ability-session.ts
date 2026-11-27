@@ -8,6 +8,7 @@ const DAMAGE_TYPES = new Set<AbilityDamageType>(['physical', 'fire', 'ice']);
 const TARGET_SCOPES = new Set<AbilityTargetScope>([
   'self',
   'same-lane-enemies',
+  'same-lane-enemies-ahead',
   'same-lane-enemy-in-range',
   'all-enemies',
   'melee-enemy',
@@ -21,6 +22,7 @@ const TARGET_SCOPES = new Set<AbilityTargetScope>([
 
 const INSTANT_DAMAGE_SCOPES = new Set([
   'same-lane-enemies',
+  'same-lane-enemies-ahead',
   'all-enemies',
   'area-3x3-self',
   'front-3-cells',
@@ -30,6 +32,7 @@ const INSTANT_DAMAGE_SCOPES = new Set([
 const STATUS_EFFECT_SCOPES = new Set([
   'self',
   'same-lane-enemies',
+  'same-lane-enemies-ahead',
   'all-enemies',
   'area-3x3-self',
   'front-3-cells',
@@ -43,6 +46,7 @@ export type AbilityDamageType = 'physical' | 'fire' | 'ice';
 export type AbilityTargetScope =
   | 'self'
   | 'same-lane-enemies'
+  | 'same-lane-enemies-ahead'
   | 'same-lane-enemy-in-range'
   | 'all-enemies'
   | 'melee-enemy'
@@ -77,6 +81,7 @@ export type AbilityEffectDefinition =
       readonly kind: 'instant-damage';
       readonly scope:
         | 'same-lane-enemies'
+        | 'same-lane-enemies-ahead'
         | 'all-enemies'
         | 'area-3x3-self'
         | 'front-3-cells'
@@ -98,6 +103,7 @@ export type AbilityEffectDefinition =
       readonly scope:
         | 'self'
         | 'same-lane-enemies'
+        | 'same-lane-enemies-ahead'
         | 'all-enemies'
         | 'area-3x3-self'
         | 'front-3-cells'
@@ -239,13 +245,13 @@ function optionalBoolean(value: unknown, label: string): void {
   }
 }
 
-function validateDamageType(value: unknown): void {
+export function validateDamageType(value: unknown): void {
   if (!DAMAGE_TYPES.has(value as AbilityDamageType)) {
     throw new TypeError(`Unsupported ability damage type: ${String(value)}`);
   }
 }
 
-function validateAttachedStatus(status: unknown, rate: number): void {
+export function validateAttachedStatus(status: unknown, rate: number): void {
   if (!status || typeof status !== 'object') throw new TypeError('Invalid attached status definition');
   const spec = status as AttachedStatusSpec;
   switch (spec.kind) {

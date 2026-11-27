@@ -31,6 +31,7 @@ import {
 } from './ability-state';
 
 const SHIELD_BREAK_EPSILON = 1e-12;
+export const BASIC_ATTACK_STATUS_ABILITY_ID = 'basic_attack';
 
 export type BattleWithAbilities = BattleState & { abilities?: AbilityState };
 
@@ -351,6 +352,22 @@ function listLivingEnemyIds(
   return ids;
 }
 
+function listLivingEnemyIdsAhead(
+  battle: BattleWithAbilities,
+  combat: CombatState,
+  origin: Cell,
+): EntityId[] {
+  const ids: EntityId[] = [];
+  for (const [id, entity] of battle.entities) {
+    if (entity.kind !== 'enemy' || entity.lane !== origin.row) continue;
+    if (entity.position < origin.column) continue;
+    const cState = combat.entities.get(id);
+    if (cState && cState.hp > 0) ids.push(id);
+  }
+  ids.sort(compareEntityIds);
+  return ids;
+}
+
 function listLivingEnemyIdsInArea(
   battle: BattleWithAbilities,
   combat: CombatState,
@@ -513,7 +530,7 @@ function findClosestLivingEnemy(
   return best;
 }
 
-function applyStatusToTarget(
+export function applyStatusToTarget(
   ctx: ProjectileCrossingContext,
   targetId: EntityId,
   sourceId: EntityId,
@@ -705,6 +722,8 @@ function hasEligibleTarget(
     case 'same-lane-enemies':
     case 'highest-hp-same-lane':
       return listLivingEnemyIds(ctx.battle, ctx.combat, defenderCell.row).length > 0;
+    case 'same-lane-enemies-ahead':
+      return listLivingEnemyIdsAhead(ctx.battle, ctx.combat, defenderCell).length > 0;
     case 'same-lane-enemy-in-range':
       return (
         selectDefenderTarget(
@@ -998,6 +1017,9 @@ function executeImmediateEffect(
         case 'same-lane-enemies':
           targets = listLivingEnemyIds(ctx.battle, ctx.combat, ownerCell.row);
           break;
+        case 'same-lane-enemies-ahead':
+          targets = listLivingEnemyIdsAhead(ctx.battle, ctx.combat, ownerCell);
+          break;
         case 'all-enemies':
           targets = listLivingEnemyIds(ctx.battle, ctx.combat);
           break;
@@ -1068,6 +1090,9 @@ function executeImmediateEffect(
           break;
         case 'same-lane-enemies':
           targets = listLivingEnemyIds(ctx.battle, ctx.combat, ownerCell.row);
+          break;
+        case 'same-lane-enemies-ahead':
+          targets = listLivingEnemyIdsAhead(ctx.battle, ctx.combat, ownerCell);
           break;
         case 'all-enemies':
           targets = listLivingEnemyIds(ctx.battle, ctx.combat);

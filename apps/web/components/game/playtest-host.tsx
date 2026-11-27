@@ -83,17 +83,6 @@ function loadSavedPlaytestPreset(fallback: PlaytestPresetConfig): {
     }
     const savedDefMap = new Map(parsed.defenders.map(d => [d.id, d]));
     const savedEnemyMap = new Map(parsed.enemies.map(e => [e.id, e]));
-    const fallbackAbilityMap = new Map(fallback.abilities.map(a => [a.id, a]));
-    const syncedAbilities = (parsed.abilities.length >= fallback.abilities.length
-      ? parsed.abilities
-      : fallback.abilities
-    ).map(ability => {
-      const fb = fallbackAbilityMap.get(ability.id);
-      if (fb && !fb.requiresTarget && ability.requiresTarget) {
-        return { ...ability, requiresTarget: false };
-      }
-      return ability;
-    });
     const merged: PlaytestPresetConfig = {
       seed: parsed.seed,
       fusionGloveCooldownSeconds:
@@ -102,13 +91,21 @@ function loadSavedPlaytestPreset(fallback: PlaytestPresetConfig): {
           : fallback.fusionGloveCooldownSeconds,
       defenders: fallback.defenders.map(def => {
         const saved = savedDefMap.get(def.id);
-        return saved ? { ...def, ...saved } : { ...def };
+        return saved
+          ? {
+              ...def,
+              ...saved,
+              attackDamageType: def.attackDamageType,
+              basicAttackStatus: def.basicAttackStatus,
+            }
+          : { ...def };
       }),
       enemies: fallback.enemies.map(enemy => {
         const saved = savedEnemyMap.get(enemy.id);
         return saved ? { ...enemy, ...saved } : { ...enemy };
       }),
-      abilities: syncedAbilities,
+      // Always sync skill mechanics (counts, scopes, requiresTarget) from code defaults while keeping saved stat tweaks.
+      abilities: fallback.abilities,
       waves: parsed.waves.length > 0 ? parsed.waves : fallback.waves,
       waveCrystals: parsed.waveCrystals.length > 0 ? parsed.waveCrystals : fallback.waveCrystals,
     };

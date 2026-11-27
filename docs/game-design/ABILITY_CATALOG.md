@@ -57,17 +57,17 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
 - **Hiệu ứng xác nhận:** Gây ngay **`1× Attack Damage` hệ Ice** và áp dụng **Slow `-50%` tốc độ di chuyển trong `5` giây** lên toàn bộ Enemy đang có mặt trên **cùng Lane** tại thời điểm kích hoạt.
 - **Điều kiện & Quy tắc:** `requiresTarget: true` (từ chối `no-target` nếu không có Enemy trên Lane). Cùng nguồn làm mới thời gian (`FR1`); nhiều Slow chồng nhau chỉ lấy mức làm chậm mạnh nhất (`strongest wins`). Slow đã gắn tiếp tục tồn tại nếu mục tiêu đổi Lane hoặc Owner chết/Fusion.
 
-### 4.2. Earthquake — Iron Golem (`earthquake`)
+### 4.2. Earthquake — Iron Golem (`earthquake`, Updated `2026-11-26`)
 
-- **Mục tiêu thiết kế:** Gây sát thương vật lý tức thời và làm choáng tuyến trước trên cùng Lane.
-- **Hiệu ứng xác nhận:** Gây ngay **`3× Attack Damage` sát thương vật lý** (giảm bởi Armor) và **Stun `2` giây** lên toàn bộ Enemy đang có mặt trên **cùng Lane**. **Không có Knockback.**
-- **Điều kiện & Quy tắc:** `requiresTarget: true`. Stun chặn di chuyển, đòn đánh thường, kỹ năng và tạm dừng chuỗi multihit chưa bắn (`FR3`). Cùng nguồn làm mới; khác nguồn độc lập.
+- **Mục tiêu thiết kế:** Gây sát thương vật lý tức thời và làm choáng tuyến địch **phía trước mặt** trên cùng Lane.
+- **Hiệu ứng xác nhận:** Gây ngay **`3× Attack Damage` sát thương vật lý** (giảm bởi Armor) và **Stun `2` giây** lên toàn bộ Enemy đang đứng **từ ô của Iron Golem đến hết mép phải trên cùng Lane (`same-lane-enemies-ahead`, `position >= col`)**; hiệu ứng vết nứt đất trải dài suốt phần Lane phía trước mặt. **Không đánh kẻ địch đã vượt ra sau lưng (`position < col`) và không có Knockback.**
+- **Điều kiện & Quy tắc:** `requiresTarget: false`. Stun chặn di chuyển, đòn đánh thường, kỹ năng và tạm dừng chuỗi multihit chưa bắn (`FR3`). Cùng nguồn làm mới; khác nguồn độc lập.
 
-### 4.3. Arrow Storm — Skeleton (`arrow_storm`)
+### 4.3. Arrow Storm — Skeleton (`arrow_storm`, Updated `2026-11-26`)
 
 - **Mục tiêu thiết kế:** Xả loạt mũi tên liên tiếp cường độ cao dọc theo Lane.
-- **Hiệu ứng xác nhận:** Bắn chuỗi **`8` mũi tên** cách nhau **`0.2` giây** (mũi đầu bắn ngay tại tick kích hoạt), mỗi mũi gây **`100% Attack Damage`** (snapshot lúc bắn mỗi phát), tốc độ đạn thường, không xuyên mục tiêu (`pierce: false`).
-- **Điều kiện & Quy tắc:** `requiresTarget: true` (yêu cầu Enemy hợp lệ trong tầm trên cùng Lane). Mỗi lần bắn chọn lại mục tiêu; nếu Skeleton bị Stun/Freeze giữa chuỗi thì tạm dừng cadence giữ nguyên thời gian chờ còn lại (`FR3`, không xả dồn khi hết choáng). Chết/Fusion hoặc hết mục tiêu hủy các phát chưa bắn; mũi tên đã bắn tiếp tục bay độc lập và có thể trúng Enemy hợp lệ khác nếu mục tiêu cũ chết.
+- **Hiệu ứng xác nhận:** Bắn chuỗi **`16` mũi tên** cách nhau **`0.15` giây** (mũi đầu bắn ngay tại tick kích hoạt), mỗi mũi gây **`100% Attack Damage`** (snapshot lúc bắn mỗi phát), tốc độ đạn thường, không xuyên mục tiêu (`pierce: false`).
+- **Điều kiện & Quy tắc:** `requiresTarget: false` (bắn được cả khi Lane trống). Mỗi lần bắn chọn lại mục tiêu; nếu Skeleton bị Stun/Freeze giữa chuỗi thì tạm dừng cadence giữ nguyên thời gian chờ còn lại (`FR3`, không xả dồn khi hết choáng). Chết/Fusion hủy các phát chưa bắn; mũi tên đã bắn tiếp tục bay độc lập.
 
 ### 4.4. Pack Frenzy — Wolf (`pack_frenzy`)
 
@@ -75,11 +75,11 @@ Tài liệu định nghĩa danh mục **12 Special Abilities đã xác nhận c�
 - **Hiệu ứng xác nhận:** Tự buff **`+100% Attack Speed` và `+50% Attack Damage` trong `8` giây**.
 - **Điều kiện & Quy tắc:** `requiresTarget: false` (kích hoạt được khi không có Enemy). Cùng nguồn làm mới không cộng dồn; cộng dồn **tuyến tính trên chỉ số gốc** (`additive base`) với các Buff khác nguồn (như `alpha_howl`). Stun vẫn chặn tấn công thường nhưng không đóng băng bộ đếm thời gian Buff. Wolf chết hoặc bị tiêu thụ cho Fusion thì tự mất Buff.
 
-### 4.5. Inferno — Blaze (`inferno`, Refactored `2026-11-23`)
+### 4.5. Inferno — Blaze (`inferno`, Updated `2026-11-26`)
 
-- **Mục tiêu thiết kế:** Pháo kích lửa theo quỹ đạo **đường cong (lobbed arc)** — đồng nhất với đòn đánh thường bắn cầu lửa đường cong mới của Blaze (khác biệt hoàn toàn với bắn thẳng của Skeleton và đòn nổ cả Lane của Magma Colossus).
-- **Hiệu ứng xác nhận:** Phóng chuỗi **`4` cầu lửa theo quỹ đạo đường cong (lobbed arc)** cách nhau **`0.25` giây** nhắm vào Enemy trên **cùng Lane** (mỗi cầu lửa rơi trúng ô mục tiêu đang đứng, gây nổ trong ô rơi). Mỗi cầu lửa gây **`125% Attack Damage` hệ Fire** (`armorPiercing: true`, chịu `Fire Resistance`) và gắn **Burn `25% Attack Damage/giây` trong `5` giây** (`1 tick/giây`, `damageType: 'fire'`) cho toàn bộ Enemy nằm trong ô rơi.
-- **Điều kiện & Quy tắc:** `requiresTarget: true` (`same-lane-enemies`). Cầu lửa đã phóng tiếp tục bay theo đường cong tới ô đích nếu Blaze chết/Fusion; các phát chưa phóng bị hủy nếu Blaze chết/Fusion hoặc hết Enemy trên Lane; Stun/Freeze tạm dừng cadence (`FR3`). Sát thương Burn snapshot Attack Damage lúc phát đạn; Burn tồn tại độc lập sau khi Blaze chết/Fusion.
+- **Mục tiêu thiết kế:** Pháo kích lửa theo quỹ đạo **đường cong (lobbed arc)** từ vị trí Blaze tới mục tiêu — đồng nhất với đòn đánh thường bắn cầu lửa đường cong có Burn của Blaze.
+- **Hiệu ứng xác nhận:** Phóng chuỗi **`8` cầu lửa theo quỹ đạo đường cong (lobbed arc)** từ vị trí của Blaze cách nhau **`0.18` giây** nhắm vào Enemy trên **cùng Lane** (nếu Lane trống thì ném về phía trước `(row, col + 3)`), thời gian bay parabol `0.45` giây. Mỗi cầu lửa gây **`125% Attack Damage` hệ Fire** (`armorPiercing: true`, chịu `Fire Resistance`) và gắn **Burn `25% Attack Damage/giây` trong `5` giây** (`1 tick/giây`, `damageType: 'fire'`) cho toàn bộ Enemy nằm trong ô rơi.
+- **Điều kiện & Quy tắc:** `requiresTarget: false` (`same-lane-enemies`). Đòn đánh thường của Blaze cũng mang hệ Fire và tự gắn **Burn `20% AD/giây` trong `3` giây** (tương tự đòn đánh thường của Snow Golem gắn **Slow `-35%` trong `2.5` giây**). Cầu lửa đã phóng tiếp tục bay theo đường cong tới ô đích nếu Blaze chết/Fusion; các phát chưa phóng bị hủy nếu Blaze chết/Fusion; Stun/Freeze tạm dừng cadence (`FR3`). Sát thương Burn snapshot Attack Damage lúc phát đạn; Burn tồn tại độc lập sau khi Blaze chết/Fusion.
 
 ## 5. Special Abilities của 15 Fusion Defenders (`Confirmed`)
 

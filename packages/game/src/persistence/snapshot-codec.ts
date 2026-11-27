@@ -814,7 +814,9 @@ function validateAbilityStatus(
   assertSemantic(isPositiveSafeInt(status.version), 'status.version must be >= 1');
   assertSemantic(isNonNegativeBigInt(status.targetEntityId) && state.entities.has(status.targetEntityId), 'status.targetEntityId missing');
   assertSemantic(isNonNegativeBigInt(status.sourceEntityId) && status.sourceEntityId < state.nextEntityId, 'status.sourceEntityId out of bounds');
-  assertKnownAbilityId(status.abilityId, ctx);
+  if (status.abilityId !== 'basic_attack') {
+    assertKnownAbilityId(status.abilityId, ctx);
+  }
   assertSemantic(VALID_STATUS_KINDS.has(status.kind), `Invalid status kind "${String(status.kind)}"`);
   assertSemantic(isPositiveSafeInt(status.remainingTicks), 'status.remainingTicks must be >= 1');
   if (status.isZoneDerived) {

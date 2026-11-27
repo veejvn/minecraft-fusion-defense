@@ -119,7 +119,12 @@ Monorepo sử dụng `pnpm@10.20.0` + Turborepo:
   - **Sửa VFX đòn đánh thường, lưu `localStorage` `/playtest` & cho phép kích hoạt 20 kỹ năng khi trống mục tiêu (`2026-11-23`..`2026-11-26`):**
     1. **VFX Đòn đánh thường (`basic-attack-vfx.ts`):** Expose `attackAnchorTick` lên snapshot để bắt đúng trường hợp `attackCount` reset về `1` khi chuyển sang Enemy mới, hỗ trợ đòn ngay tick spawn, giữ tọa độ kết liễu và reset theo tick.
     2. **Lưu Balance Preset trên `/playtest` (`playtest-host.tsx`):** Auto-save vào `localStorage` (`mfd_playtest_balance_preset_v1`) qua F5/reload và hiện hộp thoại cảnh báo xác nhận trước khi `Reset Campaign Defaults`.
-    3. **Kích hoạt kỹ năng khi không có Enemy (`ability-engine.ts`, `playtest-presets.ts`, `ABILITY_CATALOG.md`):** Chuyển toàn bộ 20 Special Abilities (gồm `arrow_storm`, `inferno`, `meteor_arrow_rain`, `blizzard`, `earthquake`, `siege_volley`, v.v.) sang `requiresTarget: false` và cập nhật `fireCadenceShot` / `executeImmediateEffect` để bắn dọc Lane hoặc rơi về phía trước `(row, col + 3)` kể cả khi lane/sân đang trống (vẫn giữ cơ chế `requiresTarget: true` ở mức engine cho các test T-10). Sync luôn `requiresTarget` khi nạp preset cũ từ `localStorage`.
+    3. **Kích hoạt kỹ năng khi không có Enemy (`ability-engine.ts`, `playtest-presets.ts`, `ABILITY_CATALOG.md`):** Chuyển toàn bộ 20 Special Abilities (gồm `arrow_storm`, `inferno`, `meteor_arrow_rain`, `blizzard`, `earthquake`, `siege_volley`, v.v.) sang `requiresTarget: false` và cập nhật `fireCadenceShot` / `executeImmediateEffect` để bắn dọc Lane hoặc rơi về phía trước `(row, col + 3)` kể cả khi lane/sân đang trống (vẫn giữ cơ chế `requiresTarget: true` ở mức engine cho các test T-10).
+    4. **4 điều chỉnh kỹ năng & đòn đánh theo yêu cầu Owner (`2026-11-26`):**
+       - **Đòn đánh thường Snow Golem & Blaze:** Hỗ trợ `attackDamageType` & `basicAttackStatus` trong `CombatSession` / `CombatEngine` / `SnapshotCodec` (`'basic_attack'`); Snow Golem gây Slow (`-35%`, `2.5s`), Blaze gây Burn (`20% AD/s`, `3s`).
+       - **Inferno (`blaze`):** Nâng lên **8 cầu lửa** (`interval: 0.18s`, `travel: 0.45s`), thêm `sourceId`/`totalTravelTicks` để cả 2 scene Phaser vẽ quỹ đạo parabol thực từ vị trí Blaze kèm vệt lửa.
+       - **Earthquake (`iron_golem`):** Thêm phạm vi `same-lane-enemies-ahead` chỉ tác động Enemy phía trước mặt và vẽ vết nứt `vfx_earth_crack` trải dài hết phần Lane bên phải.
+       - **Arrow Storm (`skeleton`):** Nâng lên **16 mũi tên** (`interval: 0.15s`); `loadSavedPlaytestPreset` luôn đồng bộ `abilities` + thuộc tính đòn đánh từ fallback mới.
 
 ---
 

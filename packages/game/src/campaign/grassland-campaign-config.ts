@@ -86,18 +86,18 @@ const DEFENDER_ROLES_BY_ID: Readonly<Record<string, string>> = {
 };
 
 export const CAMPAIGN_BASE_COSTS: Readonly<Record<string, number>> = {
-  skeleton: 50,
+  iron_golem: 50,
   snow_golem: 75,
-  iron_golem: 100,
-  wolf: 100,
-  blaze: 125,
+  skeleton: 100,
+  wolf: 150,
+  blaze: 200,
 };
 
 export const CAMPAIGN_BASE_COOLDOWNS: Readonly<Record<string, number>> = {
-  skeleton: 4,
+  iron_golem: 10,
   snow_golem: 5,
-  iron_golem: 7,
-  wolf: 6,
+  skeleton: 5,
+  wolf: 5,
   blaze: 8,
 };
 
@@ -399,6 +399,8 @@ export function createGrasslandCampaignInputs(
       attackRange: d.attackRange,
       targeting: d.targeting,
       armor: d.armor,
+      ...(d.attackDamageType ? { attackDamageType: d.attackDamageType } : {}),
+      ...(d.basicAttackStatus ? { basicAttackStatus: d.basicAttackStatus } : {}),
     })),
     enemies: preset.enemies.map(e => ({
       id: e.id,

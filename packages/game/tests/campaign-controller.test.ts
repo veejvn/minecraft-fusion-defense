@@ -32,8 +32,9 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     expect(controller.summonDefender('snow_golem', { row: 0, column: 0 })).toBe(false);
     expect(controller.getSnapshot().lastToast?.message).toBe('Defender is still locked');
 
-    // Summoning Skeleton costs 50 Energy and succeeds.
-    expect(controller.summonDefender('skeleton', { row: 2, column: 0 })).toBe(true);
+    // Summoning Iron Golem costs 50 Energy and succeeds (Skeleton costs 100 EN).
+    expect(controller.summonDefender('skeleton', { row: 2, column: 0 })).toBe(false);
+    expect(controller.summonDefender('iron_golem', { row: 2, column: 0 })).toBe(true);
     expect(controller.getSnapshot().defenders).toHaveLength(1);
     expect(controller.getSnapshot().energy).toBe(0);
     expect(controller.hasSavedBattle()).toBe(true);
@@ -44,19 +45,17 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     const controllerA = new CampaignController({ storage });
     controllerA.startNewBattle({ battleId: 'camp_resume_1' });
 
-    // Place Skeleton at (0, 0) using initial 50 Energy.
+    // Advance 3s for +50 EN passive tick (50 -> 100 EN), then place Skeleton at (0, 0).
+    for (let i = 0; i < 60; i++) {
+      controllerA.stepMs(50);
+    }
     expect(controllerA.summonDefender('skeleton', { row: 0, column: 0 })).toBe(true);
 
-    // Advance 5.5s so periodic Energy Orb (25 Energy) spawns, collect twice after 10.5s -> 50 Energy -> place 2nd Skeleton at opposite corner (4, 8)!
-    for (let i = 0; i < 110; i++) {
+    // Advance 6s so two passive Energy ticks (+100 EN) and Skeleton 5s cooldown expire -> place 2nd Skeleton at opposite corner (4, 8)!
+    for (let i = 0; i < 120; i++) {
       controllerA.stepMs(50);
-      for (const item of controllerA.getSnapshot().items) {
-        if (item.kind === 'energy') {
-          controllerA.collectItem(item.id);
-        }
-      }
     }
-    expect(controllerA.getSnapshot().energy).toBeGreaterThanOrEqual(50);
+    expect(controllerA.getSnapshot().energy).toBeGreaterThanOrEqual(100);
     expect(controllerA.summonDefender('skeleton', { row: 4, column: 8 })).toBe(true);
 
     const src = controllerA.getSnapshot().defenders.find(d => d.row === 0 && d.column === 0)!;
@@ -148,17 +147,17 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     expect(controller.summonDefender('skeleton', { row: 0, column: 0 })).toBe(true);
     const afterFirst = controller.getSnapshot();
     const skeletonCard = afterFirst.baseDefenderCards.find(c => c.id === 'skeleton')!;
-    expect(skeletonCard.cooldownTotalSeconds).toBe(4);
+    expect(skeletonCard.cooldownTotalSeconds).toBe(5);
     expect(skeletonCard.onCooldown).toBe(true);
-    expect(skeletonCard.cooldownRemainingSeconds).toBeCloseTo(4, 1);
+    expect(skeletonCard.cooldownRemainingSeconds).toBeCloseTo(5, 1);
     expect(afterFirst.flashes.some(f => f.kind === 'summon' && f.cell?.row === 0 && f.cell?.column === 0)).toBe(true);
 
-    // Second immediate Skeleton summon is rejected by cooldown even though Energy >= 50.
+    // Second immediate Skeleton summon is rejected by cooldown even though Energy >= 100.
     expect(controller.getSnapshot().energy).toBeGreaterThanOrEqual(100);
     expect(controller.summonDefender('skeleton', { row: 1, column: 0 })).toBe(false);
     expect(controller.getSnapshot().lastToast?.message).toBe('Defender is recharging (on cooldown)');
 
-    // Cooldown is per-Defender type, so Iron Golem (100 EN) can still be placed immediately.
+    // Cooldown is per-Defender type, so Iron Golem (50 EN) can still be placed immediately.
     expect(controller.summonDefender('iron_golem', { row: 2, column: 0 })).toBe(true);
 
     // Pausing freezes cooldown countdown.
@@ -170,13 +169,13 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
       .cooldownRemainingSeconds;
     expect(remAfterPause).toBe(remBeforePause);
 
-    // Save/Resume preserves cooldown, then advancing >= 4s clears it and allows re-summon.
+    // Save/Resume preserves cooldown, then advancing >= 5s clears it and allows re-summon.
     const reloaded = new CampaignController({ storage });
     expect(reloaded.resumeSavedBattle()).toBe(true);
     const reloadedCard = reloaded.getSnapshot().baseDefenderCards.find(c => c.id === 'skeleton')!;
     expect(reloadedCard.onCooldown).toBe(true);
 
-    for (let i = 0; i < 85; i++) {
+    for (let i = 0; i < 105; i++) {
       reloaded.stepMs(50);
     }
     const readyCard = reloaded.getSnapshot().baseDefenderCards.find(c => c.id === 'skeleton')!;
@@ -219,40 +218,40 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     const controller = new CampaignController({ storage });
     controller.startNewBattle({ battleId: 'camp_glove_shovel_1' });
 
-    // Place Iron Golem? Start at 50 EN -> summon Skeleton at (0, 0).
-    expect(controller.summonDefender('skeleton', { row: 0, column: 0 })).toBe(true);
-    const skel = controller.getSnapshot().defenders.find(d => d.row === 0 && d.column === 0)!;
-    expect(controller.getCardFusionOutputId('skeleton', skel.id)).toBe('skeleton_sniper');
+    // Start at 50 EN -> summon Iron Golem (50 EN, 10s CD) at (0, 0).
+    expect(controller.summonDefender('iron_golem', { row: 0, column: 0 })).toBe(true);
+    const golem = controller.getSnapshot().defenders.find(d => d.row === 0 && d.column === 0)!;
+    expect(controller.getCardFusionOutputId('iron_golem', golem.id)).toBe('steel_guardian');
 
-    // Attempt immediate direct shop-card fusion while Skeleton card is still on 4s cooldown -> rejected!
-    // Advance 3s so +50 EN passive triggers (Energy = 50), while Skeleton 4s cooldown still has 1s left.
+    // Attempt immediate direct shop-card fusion while Iron Golem card is still on 10s cooldown -> rejected!
+    // Advance 3s so +50 EN passive triggers (Energy = 50), while Iron Golem 10s cooldown still has 7s left.
     for (let i = 0; i < 60; i++) controller.stepMs(50);
     expect(controller.getSnapshot().energy).toBe(50);
-    expect(controller.summonAndFuseDefender('skeleton', skel.id)).toBe(false);
+    expect(controller.summonAndFuseDefender('iron_golem', golem.id)).toBe(false);
     expect(controller.getSnapshot().lastToast?.message).toBe('Defender is recharging (on cooldown)');
     expect(controller.getSnapshot().energy).toBe(50);
 
-    // Advance 1.5s more (total 4.5s > 4s cooldown), then direct shop-card fuse Skeleton onto placed Skeleton!
-    for (let i = 0; i < 30; i++) controller.stepMs(50);
-    expect(controller.summonAndFuseDefender('skeleton', skel.id)).toBe(true);
+    // Advance 7.5s more (total 10.5s > 10s cooldown), then direct shop-card fuse Iron Golem onto placed Iron Golem!
+    for (let i = 0; i < 150; i++) controller.stepMs(50);
+    expect(controller.summonAndFuseDefender('iron_golem', golem.id)).toBe(true);
     const afterShopFuse = controller.getSnapshot();
-    expect(afterShopFuse.energy).toBe(0);
+    expect(afterShopFuse.energy).toBe(100);
     expect(afterShopFuse.defenders).toHaveLength(1);
     expect(afterShopFuse.defenders[0]).toMatchObject({
-      definitionId: 'skeleton_sniper',
+      definitionId: 'steel_guardian',
       row: 0,
       column: 0,
     });
-    expect(afterShopFuse.baseDefenderCards.find(c => c.id === 'skeleton')?.onCooldown).toBe(true);
+    expect(afterShopFuse.baseDefenderCards.find(c => c.id === 'iron_golem')?.onCooldown).toBe(true);
 
-    // Move fused Skeleton Sniper from (0, 0) to empty cell (2, 1) using Fusion Glove (0 EN, triggers 15s cooldown).
-    const sniper = afterShopFuse.defenders[0]!;
-    expect(controller.moveDefender(sniper.id, { row: 2, column: 1 })).toBe(true);
+    // Move fused Steel Guardian from (0, 0) to empty cell (2, 1) using Fusion Glove (0 EN, triggers 15s cooldown).
+    const guardian = afterShopFuse.defenders[0]!;
+    expect(controller.moveDefender(guardian.id, { row: 2, column: 1 })).toBe(true);
     const afterMove = controller.getSnapshot();
-    expect(afterMove.energy).toBe(0);
+    expect(afterMove.energy).toBe(100);
     expect(afterMove.defenders[0]).toMatchObject({
-      id: sniper.id,
-      definitionId: 'skeleton_sniper',
+      id: guardian.id,
+      definitionId: 'steel_guardian',
       row: 2,
       column: 1,
     });
@@ -267,7 +266,7 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     controller.setPaused(false);
 
     // Attempting another move while Glove is on cooldown is rejected.
-    expect(controller.moveDefender(sniper.id, { row: 2, column: 2 })).toBe(false);
+    expect(controller.moveDefender(guardian.id, { row: 2, column: 2 })).toBe(false);
     expect(controller.getSnapshot().lastToast?.message).toBe('Fusion Glove is recharging (on cooldown)');
 
     // Save & Resume preserves Glove cooldown; after 15.5s it clears and Move succeeds again.
@@ -276,14 +275,14 @@ describe('T-12.2 CampaignController & Grassland Campaign Integration', () => {
     expect(reloaded.getSnapshot().gloveCooldown.onCooldown).toBe(true);
     for (let i = 0; i < 310; i++) reloaded.stepMs(50);
     expect(reloaded.getSnapshot().gloveCooldown.onCooldown).toBe(false);
-    expect(reloaded.moveDefender(sniper.id, { row: 2, column: 2 })).toBe(true);
+    expect(reloaded.moveDefender(guardian.id, { row: 2, column: 2 })).toBe(true);
 
     // Shovel removes Defender immediately with 0 EN cost, 0% refund, and 0s cooldown.
     const energyBeforeShovel = reloaded.getSnapshot().energy;
-    expect(reloaded.removeDefender(sniper.id)).toBe(true);
+    expect(reloaded.removeDefender(guardian.id)).toBe(true);
     const afterShovel = reloaded.getSnapshot();
     expect(afterShovel.defenders).toHaveLength(0);
     expect(afterShovel.energy).toBe(energyBeforeShovel);
-    expect(afterShovel.lastToast?.message).toBe('Removed Skeleton Sniper with Shovel');
+    expect(afterShovel.lastToast?.message).toBe('Removed Steel Guardian with Shovel');
   });
 });

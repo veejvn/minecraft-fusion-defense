@@ -1,10 +1,16 @@
 import {
+  BASIC_ATTACK_STATUS_ABILITY_ID,
   applyDamagePipeline,
+  applyStatusToTarget,
   resolveCombatDeaths,
   resolvePostMoveProjectileCrossings,
   type MovedEnemyStep,
 } from '../abilities/ability-engine';
-import type { AbilitySession } from '../abilities/ability-session';
+import type {
+  AbilityDamageType,
+  AbilitySession,
+  AttachedStatusSpec,
+} from '../abilities/ability-session';
 import {
   getDefenderAttackSpeedMultiplier,
   getDefenderDamageModifiers,
@@ -162,7 +168,14 @@ export function runCombatPhase(ctx: CombatPhaseContext): void {
     })
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
-  const damageIntents: Array<{ targetId: EntityId; amount: number }> = [];
+  const damageIntents: Array<{
+    targetId: EntityId;
+    amount: number;
+    sourceId?: EntityId;
+    damageType?: AbilityDamageType;
+    onHitStatus?: AttachedStatusSpec;
+    sourceAttackDamage?: number;
+  }> = [];
   const movementIntents = new Map<
     EntityId,
     { x: number; movedTicks: number; moveAnchorX: number; speed: number }
@@ -196,7 +209,14 @@ export function runCombatPhase(ctx: CombatPhaseContext): void {
         if (!Number.isFinite(effectiveAttackSpeed) || effectiveAttackSpeed <= 0) {
           throw new RangeError('Invalid effective attack speed');
         }
-        damageIntents.push({ targetId, amount: effectiveDamage });
+        damageIntents.push({
+          targetId,
+          amount: effectiveDamage,
+          sourceId: id,
+          damageType: def.attackDamageType ?? 'physical',
+          onHitStatus: def.basicAttackStatus,
+          sourceAttackDamage: effectiveDamage,
+        });
         attackUpdates.set(id, { attackSpeed: effectiveAttackSpeed });
       }
       continue;
@@ -266,12 +286,27 @@ export function runCombatPhase(ctx: CombatPhaseContext): void {
     );
   }
   for (const intent of damageIntents) {
-    applyDamagePipeline(
+    const res = applyDamagePipeline(
       { battle, combat, session },
       intent.targetId,
       intent.amount,
-      { damageType: 'physical' },
+      { damageType: intent.damageType ?? 'physical' },
     );
+    if (
+      res.hitConfirmed &&
+      intent.onHitStatus &&
+      intent.sourceId !== undefined &&
+      battle.abilities
+    ) {
+      applyStatusToTarget(
+        { battle, combat, session, abilitySession: ctx.abilitySession },
+        intent.targetId,
+        intent.sourceId,
+        BASIC_ATTACK_STATUS_ABILITY_ID,
+        intent.onHitStatus,
+        intent.sourceAttackDamage ?? intent.amount,
+      );
+    }
   }
 
   resolveCombatDeaths(battle, combat, ctx.enqueueReward);

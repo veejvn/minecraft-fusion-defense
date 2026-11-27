@@ -1,3 +1,9 @@
+import {
+  validateAttachedStatus,
+  validateDamageType,
+  type AbilityDamageType,
+  type AttachedStatusSpec,
+} from '../abilities/ability-session';
 import { count, deadline, type ResourceSession } from '../core/resource-session';
 
 const TARGETING_STRATEGIES = new Set([
@@ -32,6 +38,8 @@ export interface DefenderCombatDefinition {
   readonly fireResistancePct?: number;
   readonly freezeImmune?: boolean;
   readonly freezeResistancePct?: number;
+  readonly attackDamageType?: AbilityDamageType;
+  readonly basicAttackStatus?: AttachedStatusSpec;
 }
 
 export interface EnemyCombatDefinition {
@@ -138,6 +146,12 @@ export function validateCombatSession(
       throw new TypeError(`Unsupported targeting strategy: ${String(defender.targeting)}`);
     }
     validateMitigationFields(defender, 'defender');
+    if (defender.attackDamageType !== undefined) {
+      validateDamageType(defender.attackDamageType);
+    }
+    if (defender.basicAttackStatus !== undefined) {
+      validateAttachedStatus(defender.basicAttackStatus, rate);
+    }
     deadline(1 / defender.attackSpeed, rate);
   }
 

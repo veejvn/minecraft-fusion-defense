@@ -207,12 +207,19 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
     expect(controller.getSnapshot().enemies[0].isStunned).toBe(true);
 
     controller.activateAbility(byId('blaze').id);
-    controller.stepMs(300); // wait 6 ticks so lobbed fireball (travelSeconds = 0.25s = 5 ticks) lands & applies Burn
-    expect(controller.getSnapshot().enemies[0].burnCount).toBe(1);
+    controller.stepMs(500); // wait 10 ticks so lobbed fireball (travelSeconds = 0.45s = 9 ticks) lands & applies Burn
+    expect(controller.getSnapshot().enemies[0].burnCount).toBeGreaterThanOrEqual(1);
 
     controller.activateAbility(byId('inferno_archer').id, { row: 0, column: 8 });
     controller.stepMs(50);
     expect(controller.getSnapshot().projectiles.some(p => p.kind === 'falling')).toBe(true);
+
+    // Verify 16-arrow Arrow Storm and 8-fireball Inferno configuration
+    const preset = controller.getPreset();
+    const arrowStorm = preset.abilities.find(a => a.id === 'arrow_storm');
+    const inferno = preset.abilities.find(a => a.id === 'inferno');
+    expect(arrowStorm?.effects[0]).toMatchObject({ kind: 'multihit-projectile', count: 16 });
+    expect(inferno?.effects[0]).toMatchObject({ kind: 'multihit-falling-area', count: 8 });
 
     // Paused rejection log check.
     controller.setPaused(true);
@@ -281,18 +288,18 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5)', () => {
     expect(controller.grantEnergy()).toBe(true);
     controller.stepMs(50);
 
-    // Summon Skeleton (50 EN, 4s CD)
+    // Summon Skeleton (100 EN, 5s CD)
     expect(controller.placeDefender('skeleton', { row: 2, column: 1 }, false)).toBe(true);
     controller.stepMs(50);
     const afterSummon = controller.getSnapshot();
     const skeletonCard = afterSummon.baseDefenderCards.find(c => c.id === 'skeleton')!;
-    expect(skeletonCard.cost).toBe(50);
-    expect(skeletonCard.cooldownTotalSeconds).toBe(4);
+    expect(skeletonCard.cost).toBe(100);
+    expect(skeletonCard.cooldownTotalSeconds).toBe(5);
     expect(skeletonCard.onCooldown).toBe(true);
     expect(afterSummon.defenders).toHaveLength(1);
 
-    // Advance 4s (80 ticks) so Skeleton summon cooldown expires, then Direct Shop-Card Fusion
-    for (let i = 0; i < 80; i++) {
+    // Advance 5s (100 ticks) so Skeleton summon cooldown expires, then Direct Shop-Card Fusion
+    for (let i = 0; i < 100; i++) {
       controller.stepMs(50);
     }
     const targetId = controller.getSnapshot().defenders[0].id;

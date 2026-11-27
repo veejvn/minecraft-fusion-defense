@@ -56,15 +56,15 @@ test('built homepage serves full MVP Menu, Collection (20 Defenders), Achievemen
   expect(layoutMetrics.canvasBottom).toBeLessThanOrEqual(layoutMetrics.innerHeight);
   expect(layoutMetrics.canvasHeight).toBeGreaterThan(400);
 
-  // Summoning Skeleton puts Skeleton card into recharge cooldown (CD Xs) and resets active tool
-  const skeletonCard = page.getByRole('button', { name: /Skeleton/i });
-  await skeletonCard.click();
+  // Summoning Iron Golem (50 EN) puts Iron Golem card into recharge cooldown (CD Xs) and resets active tool
+  const golemCard = page.getByRole('button', { name: /Iron Golem/i });
+  await golemCard.click();
   const canvasBox = await page.locator('canvas').boundingBox();
   await page.mouse.click(
     canvasBox.x + (304 / 1280) * canvasBox.width,
     canvasBox.y + (220 / 720) * canvasBox.height,
   );
-  await expect(skeletonCard).toContainText(/CD \d+\.\ds/);
+  await expect(golemCard).toContainText(/CD \d+\.\ds/);
 
   // Pause and Save & Return to Menu -> triggers localStorage active battle checkpoint
   await page.getByRole('button', { name: 'Pause' }).click();
@@ -146,9 +146,9 @@ test('1366x768 laptop viewport fits with 0 scroll, verifies all Collection PNG s
   expect(metrics.canvasBottom).toBeLessThanOrEqual(metrics.innerHeight);
   expect(metrics.canvasHeight).toBeGreaterThan(450);
 
-  // 4. Drag-and-drop Skeleton HUD card onto empty cell (col=1, row=2) on canvas
-  const skeletonCard = page.getByRole('button', { name: /Skeleton/i });
-  const cardBox = await skeletonCard.boundingBox();
+  // 4. Drag-and-drop Iron Golem (50 EN) HUD card onto empty cell (col=1, row=2) on canvas
+  const golemCard = page.getByRole('button', { name: /Iron Golem/i });
+  const cardBox = await golemCard.boundingBox();
   const canvasBox = await page.locator('canvas').boundingBox();
   const targetX = canvasBox.x + (304 / 1280) * canvasBox.width;
   const targetY = canvasBox.y + (352 / 720) * canvasBox.height;
@@ -157,15 +157,15 @@ test('1366x768 laptop viewport fits with 0 scroll, verifies all Collection PNG s
   await page.mouse.down();
   await page.mouse.move(targetX, targetY, { steps: 10 });
   await page.mouse.up();
-  await expect(skeletonCard).toContainText(/CD \d+\.\ds/);
+  await expect(golemCard).toContainText(/CD \d+\.\ds/);
 
-  // Verify Fusion Glove & Shovel controls, then remove placed Skeleton with Shovel
+  // Verify Fusion Glove & Shovel controls, then remove placed Iron Golem with Shovel
   await expect(page.getByRole('button', { name: /Glove/i })).toBeVisible();
   const shovelBtn = page.getByRole('button', { name: /Shovel/i });
   await expect(shovelBtn).toBeVisible();
   await shovelBtn.click();
   await page.mouse.click(targetX, targetY);
-  await expect(page.getByText('Removed Skeleton with Shovel')).toBeVisible();
+  await expect(page.getByText('Removed Iron Golem with Shovel')).toBeVisible();
 
   // 5. /playtest Campaign-parity sandbox check (1366x768 zero scroll + HUD controls + Balance Editor)
   await page.goto('/playtest');

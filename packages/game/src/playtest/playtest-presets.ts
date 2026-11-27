@@ -1,6 +1,11 @@
 // Test-only playtest presets for Owner balance evaluation. Never treat these values as approved production defaults.
 
-import type { AbilityDefinition, AbilitySessionInput } from '../abilities/ability-session';
+import type {
+  AbilityDamageType,
+  AbilityDefinition,
+  AbilitySessionInput,
+  AttachedStatusSpec,
+} from '../abilities/ability-session';
 import type { CombatSessionInput, EnemyBehavior, TargetingStrategy } from '../combat/combat-session';
 import type { ResourceSessionInput } from '../core/resource-session';
 import type { FusionSessionInput } from '../fusion/fusion-session';
@@ -52,6 +57,8 @@ export interface PlaytestDefenderConfig {
   attackRange: number;
   targeting: TargetingStrategy;
   armor: number;
+  attackDamageType?: AbilityDamageType;
+  basicAttackStatus?: AttachedStatusSpec;
 }
 
 /** Mutable test-only Enemy combat and reward configuration for live tuning. */
@@ -93,7 +100,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     accentColor: 0xe2e8f0,
     abilityId: 'earthquake',
     abilityName: 'Earthquake',
-    abilitySummary: '3x AD physical + 2s Stun (same lane)',
+    abilitySummary: '3x AD physical + 2s Stun (enemies ahead in lane)',
     requiresTarget: false,
   },
   {
@@ -117,7 +124,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     accentColor: 0x64748b,
     abilityId: 'arrow_storm',
     abilityName: 'Arrow Storm',
-    abilitySummary: '8 arrows @ 0.2s, 100% AD each (same lane)',
+    abilitySummary: '16 arrows @ 0.15s, 100% AD each (same lane)',
     requiresTarget: false,
   },
   {
@@ -141,7 +148,7 @@ export const PLAYTEST_DEFENDER_META: readonly PlaytestDefenderMeta[] = [
     accentColor: 0xfef08a,
     abilityId: 'inferno',
     abilityName: 'Inferno',
-    abilitySummary: '4 lobbed Fireballs @ 0.25s, 125% Fire AD + Burn 25%/s 5s',
+    abilitySummary: '8 lobbed Fireballs @ 0.18s, 125% Fire AD + Burn 25%/s 5s',
     requiresTarget: false,
   },
   {
@@ -368,57 +375,67 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
       {
         id: 'iron_golem',
         tier: 1,
-        summonEnergyCost: 150,
+        summonEnergyCost: 50,
         maxHp: 450,
         damage: 25,
-        attackSpeed: 0.7,
+        attackSpeed: 0.6,
         attackRange: 1.1,
         targeting: 'CLOSEST_TO_DEFENDER',
-        armor: 4,
+        armor: 5,
       },
       {
         id: 'snow_golem',
         tier: 1,
-        summonEnergyCost: 100,
-        maxHp: 200,
+        summonEnergyCost: 75,
+        maxHp: 250,
         damage: 20,
-        attackSpeed: 1.0,
-        attackRange: 6,
+        attackSpeed: 0.8,
+        attackRange: 3,
         targeting: 'CLOSEST_TO_DEFENDER',
         armor: 0,
+        attackDamageType: 'ice',
+        basicAttackStatus: { kind: 'slow', slowPct: 0.35, durationSeconds: 2.5 },
       },
       {
         id: 'skeleton',
         tier: 1,
         summonEnergyCost: 100,
-        maxHp: 150,
+        maxHp: 100,
         damage: 25,
-        attackSpeed: 1.2,
-        attackRange: 7,
+        attackSpeed: 1,
+        attackRange: 9,
         targeting: 'CLOSEST_TO_DEFENDER',
         armor: 0,
       },
       {
         id: 'wolf',
         tier: 1,
-        summonEnergyCost: 125,
-        maxHp: 220,
+        summonEnergyCost: 150,
+        maxHp: 200,
         damage: 35,
         attackSpeed: 1.5,
-        attackRange: 1.2,
+        attackRange: 1.5,
         targeting: 'CLOSEST_TO_DEFENDER',
         armor: 0,
       },
       {
         id: 'blaze',
         tier: 1,
-        summonEnergyCost: 175,
+        summonEnergyCost: 200,
         maxHp: 180,
-        damage: 30,
-        attackSpeed: 1.0,
-        attackRange: 5,
+        damage: 50,
+        attackSpeed: 0.8,
+        attackRange: 9,
         targeting: 'CLOSEST_TO_DEFENDER',
         armor: 0,
+        attackDamageType: 'fire',
+        basicAttackStatus: {
+          kind: 'burn',
+          damageMultiplierPerSecond: 0.2,
+          durationSeconds: 3,
+          tickIntervalSeconds: 1,
+          damageType: 'fire',
+        },
       },
       {
         id: 'steel_guardian',
@@ -458,7 +475,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         tier: 2,
         summonEnergyCost: 0,
         maxHp: 260,
-        damage: 65,
+        damage: 50,
         attackSpeed: 0.9,
         attackRange: 9,
         targeting: 'CLOSEST_TO_BASE',
@@ -589,11 +606,11 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
     enemies: [
       {
         id: 'zombie',
-        maxHp: 180,
+        maxHp: 200,
         moveSpeed: 0.35,
         behavior: 'STOP_AND_ATTACK',
         damage: 20,
-        attackSpeed: 0.8,
+        attackSpeed: 1,
         attackRange: 0,
         armor: 0,
         fireResistancePct: 0,
@@ -629,7 +646,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         fireResistancePct: 0,
         freezeResistancePct: 0,
         freezeImmune: false,
-        energyReward: 150,
+        energyReward: 125,
         crystalReward: 1,
       },
       {
@@ -644,7 +661,7 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         fireResistancePct: 0,
         freezeResistancePct: 0,
         freezeImmune: false,
-        energyReward: 200,
+        energyReward: 125,
         crystalReward: 1,
       },
     ],
@@ -672,11 +689,11 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         powerCrystalCost: 1,
         cooldownSeconds: 0,
         requiresTarget: false,
-        targetScope: 'same-lane-enemies',
+        targetScope: 'same-lane-enemies-ahead',
         effects: [
           {
             kind: 'instant-damage',
-            scope: 'same-lane-enemies',
+            scope: 'same-lane-enemies-ahead',
             damageMultiplier: 3,
             damageType: 'physical',
             applyStatus: { kind: 'stun', durationSeconds: 2 },
@@ -693,8 +710,8 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         effects: [
           {
             kind: 'multihit-projectile',
-            count: 8,
-            intervalSeconds: 0.2,
+            count: 16,
+            intervalSeconds: 0.15,
             damageMultiplier: 1,
             damageType: 'physical',
             projectileSpeed: 6,
@@ -732,9 +749,9 @@ export function createDefaultPlaytestPreset(): PlaytestPresetConfig {
         effects: [
           {
             kind: 'multihit-falling-area',
-            count: 4,
-            intervalSeconds: 0.25,
-            travelSeconds: 0.25,
+            count: 8,
+            intervalSeconds: 0.18,
+            travelSeconds: 0.45,
             radius: 0,
             sameLaneOnly: true,
             damageMultiplier: 1.25,
@@ -1246,6 +1263,8 @@ export function buildRuntimeInputsFromPreset(
       attackRange: defender.attackRange,
       targeting: defender.targeting,
       armor: defender.armor,
+      ...(defender.attackDamageType ? { attackDamageType: defender.attackDamageType } : {}),
+      ...(defender.basicAttackStatus ? { basicAttackStatus: defender.basicAttackStatus } : {}),
     })),
     enemies: [
       ...preset.enemies.map(enemy => ({

@@ -2102,4 +2102,167 @@ describe('Abilities v2.2 scopes, bonuses, vulnerable marks, and same-lane lobbed
     const afterCadence = game.snapshot();
     expect(afterCadence.abilities?.projectiles.filter(p => p.abilityId === 'arrow_storm').length).toBeGreaterThanOrEqual(2);
   });
+
+  it('applies Snow Golem basic Slow, Blaze basic Burn (checkpoint-safe), and restricts same-lane-enemies-ahead Earthquake to Enemies ahead', () => {
+    const resource: ResourceSessionInput = {
+      seed: 12,
+      defenders: [
+        { id: 'snow_golem', classification: 'base', summonEnergyCost: 0, unlocked: true },
+        { id: 'blaze', classification: 'base', summonEnergyCost: 0, unlocked: true },
+        { id: 'iron_golem', classification: 'base', summonEnergyCost: 0, unlocked: true },
+      ],
+      enemies: [{ id: 'enemy_pass', energy: 0, crystals: 0 }],
+      waves: [{ id: 'wave_1', crystals: 5 }],
+      energyItems: {
+        amount: 25,
+        intervalSeconds: 999,
+        region: { min: { x: 0.2, y: 0.2 }, max: { x: 0.8, y: 0.8 } },
+        positions: [{ x: 0.5, y: 0.5 }],
+      },
+    };
+    const combat: CombatSessionInput = {
+      spawnX: 9,
+      defenders: [
+        {
+          id: 'snow_golem',
+          maxHp: 200,
+          damage: 20,
+          attackSpeed: 1,
+          attackRange: 6,
+          targeting: 'CLOSEST_TO_DEFENDER',
+          attackDamageType: 'ice',
+          basicAttackStatus: { kind: 'slow', slowPct: 0.35, durationSeconds: 2.5 },
+        },
+        {
+          id: 'blaze',
+          maxHp: 200,
+          damage: 30,
+          attackSpeed: 1,
+          attackRange: 5,
+          targeting: 'CLOSEST_TO_DEFENDER',
+          attackDamageType: 'fire',
+          basicAttackStatus: {
+            kind: 'burn',
+            damageMultiplierPerSecond: 0.2,
+            durationSeconds: 3,
+            tickIntervalSeconds: 1,
+            damageType: 'fire',
+          },
+        },
+        {
+          id: 'iron_golem',
+          maxHp: 450,
+          damage: 25,
+          attackSpeed: 0.7,
+          attackRange: 1.1,
+          targeting: 'CLOSEST_TO_DEFENDER',
+        },
+      ],
+      enemies: [{ id: 'enemy_pass', maxHp: 1000, moveSpeed: 0.1, behavior: 'IGNORE_DEFENDER' }],
+    };
+    const abilities: AbilityDefinition[] = [
+      {
+        id: 'blizzard',
+        ownerDefenderId: 'snow_golem',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: false,
+        targetScope: 'same-lane-enemies',
+        effects: [
+          {
+            kind: 'status',
+            scope: 'same-lane-enemies',
+            status: { kind: 'slow', slowPct: 0.5, durationSeconds: 5 },
+          },
+        ],
+      },
+      {
+        id: 'inferno',
+        ownerDefenderId: 'blaze',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: false,
+        targetScope: 'same-lane-enemies',
+        effects: [
+          {
+            kind: 'status',
+            scope: 'same-lane-enemies',
+            status: {
+              kind: 'burn',
+              damageMultiplierPerSecond: 0.25,
+              durationSeconds: 5,
+              tickIntervalSeconds: 1,
+              damageType: 'fire',
+            },
+          },
+        ],
+      },
+      {
+        id: 'earthquake',
+        ownerDefenderId: 'iron_golem',
+        powerCrystalCost: 1,
+        cooldownSeconds: 0,
+        requiresTarget: false,
+        targetScope: 'same-lane-enemies-ahead',
+        effects: [
+          {
+            kind: 'instant-damage',
+            scope: 'same-lane-enemies-ahead',
+            damageMultiplier: 3,
+            damageType: 'physical',
+            applyStatus: { kind: 'stun', durationSeconds: 2 },
+          },
+        ],
+      },
+    ];
+
+    const game = new BattleRuntime(
+      { ticksPerSecond: 10, maxCatchUpTicks: 250 },
+      resource,
+      combat,
+      undefined,
+      undefined,
+      { abilities },
+    );
+
+    game.enqueue({ type: 'wave-reward', sourceId: 'wave_1' }, 1);
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'snow_golem', cell: { row: 0, column: 0 } } }, 1); // 0n
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'blaze', cell: { row: 1, column: 0 } } }, 1); // 1n
+    game.enqueue({ type: 'add', entity: { kind: 'defender', definitionId: 'iron_golem', cell: { row: 2, column: 4 } } }, 1); // 2n
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 0, position: 3 } }, 1); // 3n (in Snow Golem range)
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 1, position: 3 } }, 1); // 4n (in Blaze range)
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 2, position: 2 } }, 1); // 5n (behind Iron Golem at col 4)
+    game.enqueue({ type: 'add', entity: { kind: 'enemy', definitionId: 'enemy_pass', lane: 2, position: 6 } }, 1); // 6n (ahead of Iron Golem at col 4)
+
+    step(game, 2); // tick 1 adds units; tick 2 fires Snow Golem & Blaze basic attacks
+
+    const s1 = game.snapshot();
+    expect(
+      s1.abilities?.statuses.some(st => st.targetEntityId === 3n && st.kind === 'slow' && st.slowPct === 0.35),
+    ).toBe(true);
+    expect(
+      s1.abilities?.statuses.some(st => st.targetEntityId === 4n && st.kind === 'burn'),
+    ).toBe(true);
+
+    // Save/Resume checkpoint roundtrip preserves basic_attack statuses cleanly
+    const checkpoint = game.createCheckpoint('manual');
+    const restored = BattleRuntime.fromCheckpoint(
+      checkpoint.json,
+      { ticksPerSecond: 10, maxCatchUpTicks: 250 },
+      resource,
+      combat,
+      undefined,
+      undefined,
+      { abilities },
+    );
+
+    restored.enqueue({ type: 'activate-ability', defenderId: 2n }, 3);
+    step(restored); // tick 3
+
+    const s2 = restored.snapshot();
+    expect(s2.combat?.entities.get(5n)?.hp).toBe(1000); // enemy behind Iron Golem untouched by Earthquake
+    expect(s2.abilities?.statuses.some(st => st.targetEntityId === 5n && st.kind === 'stun')).toBe(false);
+    expect(s2.combat?.entities.get(6n)?.hp).toBe(925); // enemy ahead took 75 dmg (3 * 25) and got Stunned
+    expect(s2.abilities?.statuses.some(st => st.targetEntityId === 6n && st.kind === 'stun')).toBe(true);
+  });
 });

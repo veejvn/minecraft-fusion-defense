@@ -108,8 +108,10 @@ export type PlaytestProjectileView =
       readonly id: string;
       readonly kind: 'falling';
       readonly abilityId: string;
+      readonly sourceId: string;
       readonly impactCell: Cell;
       readonly remainingTravelTicks: number;
+      readonly totalTravelTicks: number;
       readonly damageType: DamageType;
     };
 
@@ -1317,12 +1319,21 @@ export class PlaytestController {
           damageType: proj.damageType,
         };
       }
+      const abilityDef = this.preset.abilities.find(a => a.id === proj.abilityId);
+      const fallingEffect = abilityDef?.effects.find(e => e.kind === 'multihit-falling-area');
+      const totalTravelTicks = fallingEffect
+        ? Math.max(1, Math.ceil(fallingEffect.travelSeconds * TICKS_PER_SECOND - 1e-9))
+        : proj.abilityId === 'inferno'
+          ? 9
+          : 8;
       return {
         id: String(proj.projectileId),
         kind: 'falling',
         abilityId: proj.abilityId,
+        sourceId: String(proj.sourceId),
         impactCell: proj.impactCell,
         remainingTravelTicks: proj.remainingTravelTicks,
+        totalTravelTicks,
         damageType: proj.damageType,
       };
     });

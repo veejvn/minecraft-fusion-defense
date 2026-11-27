@@ -82,14 +82,14 @@ Other combat stats, exact attack rules and targeting strategies remain TBD; prot
 
 Each Enemy Definition must declare: HP, movement speed, damage, lane behavior, interaction behavior (`STOP_AND_ATTACK`, `IGNORE_DEFENDER`, or `SPECIAL`), attack range/cooldown if applicable, rewards, animations and assets. Do not hardcode one enemy interaction rule globally.
 
-**Confirmed enemy rewards — 03/11/2026:**
+**Confirmed enemy rewards — 03/11/2026 (cập nhật cân bằng Vindicator/Pillager theo Owner ngày 2026-11-27):**
 
 | Enemy | Energy khi chết (cộng trực tiếp) | Power Crystal khi chết (tạo Item) |
 | --- | --- | --- |
 | Zombie | 50 | 0 |
 | Husk | 100 | 0 |
-| Vindicator | 150 | 1 |
-| Pillager | 200 | 1 |
+| Vindicator | 125 | 1 |
+| Pillager | 125 | 1 |
 
 **Confirmed:** Crystal reward tạo Item tại vị trí Enemy chết, kể cả khi storage đã đầy; mỗi Crystal được thưởng tạo một collectible Item. Các reward là integer không âm được cấu hình riêng trong Enemy Definition.
 

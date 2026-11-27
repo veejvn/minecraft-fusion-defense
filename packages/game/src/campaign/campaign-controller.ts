@@ -1110,26 +1110,37 @@ export class CampaignController {
     defenders.sort((a, b) => a.row - b.row || a.column - b.column);
     enemies.sort((a, b) => a.lane - b.lane || a.x - b.x);
 
-    const projectiles: PlaytestProjectileView[] = (abilities?.projectiles ?? []).map(proj =>
-      proj.kind === 'lane'
-        ? {
-            id: String(proj.projectileId),
-            kind: 'lane',
-            abilityId: proj.abilityId,
-            lane: proj.lane,
-            x: proj.x,
-            pierce: proj.pierce,
-            damageType: proj.damageType,
-          }
-        : {
-            id: String(proj.projectileId),
-            kind: 'falling',
-            abilityId: proj.abilityId,
-            impactCell: { row: proj.impactCell.row, column: proj.impactCell.column },
-            remainingTravelTicks: proj.remainingTravelTicks,
-            damageType: proj.damageType,
-          },
-    );
+    const abilityById = new Map(this.runtimeInputs.abilities.map(a => [a.id, a]));
+    const projectiles: PlaytestProjectileView[] = (abilities?.projectiles ?? []).map(proj => {
+      if (proj.kind === 'lane') {
+        return {
+          id: String(proj.projectileId),
+          kind: 'lane',
+          abilityId: proj.abilityId,
+          lane: proj.lane,
+          x: proj.x,
+          pierce: proj.pierce,
+          damageType: proj.damageType,
+        };
+      }
+      const abilityDef = abilityById.get(proj.abilityId);
+      const fallingEffect = abilityDef?.effects.find(e => e.kind === 'multihit-falling-area');
+      const totalTravelTicks = fallingEffect
+        ? Math.max(1, Math.ceil(fallingEffect.travelSeconds * TICKS_PER_SECOND - 1e-9))
+        : proj.abilityId === 'inferno'
+          ? 9
+          : 8;
+      return {
+        id: String(proj.projectileId),
+        kind: 'falling',
+        abilityId: proj.abilityId,
+        sourceId: String(proj.sourceId),
+        impactCell: { row: proj.impactCell.row, column: proj.impactCell.column },
+        remainingTravelTicks: proj.remainingTravelTicks,
+        totalTravelTicks,
+        damageType: proj.damageType,
+      };
+    });
 
     const items: PlaytestItemView[] = resources
       ? Array.from(resources.items.values())

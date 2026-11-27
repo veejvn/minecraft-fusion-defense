@@ -76,8 +76,6 @@ const CANVAS_HEIGHT = 720;
 const GRID_COLS = 9;
 const ITEM_HIT_RADIUS = 26;
 const DRAG_THRESHOLD_PX = 14;
-const METEOR_TRAVEL_TICKS = 8;
-const INFERNO_TRAVEL_TICKS = 5;
 
 function getGridGeometry(showAuxLanes: boolean): GridGeometry {
   if (!showAuxLanes) {
@@ -1086,20 +1084,46 @@ export class PlaytestScene extends Phaser.Scene {
         this.fxGraphics.lineStyle(2.5, 0xf87171, pulse);
         this.fxGraphics.strokeCircle(tx, ty, 22);
 
-        const totalTicks = proj.abilityId === 'inferno' ? INFERNO_TRAVEL_TICKS : METEOR_TRAVEL_TICKS;
+        const totalTicks = Math.max(1, proj.totalTravelTicks);
         const progress = Phaser.Math.Clamp(1 - proj.remainingTravelTicks / totalTicks, 0, 1);
-        const curX = proj.abilityId === 'inferno' ? tx - 65 * (1 - progress) : tx + 44 * (1 - progress);
-        const arcLift = proj.abilityId === 'inferno' ? Math.sin(progress * Math.PI) * 58 : 135 * (1 - progress);
-        const curY = ty - arcLift;
-        const projKey =
-          proj.abilityId === 'inferno'
-            ? EFFECT_SPRITE_ASSETS.proj_fireball.key
-            : EFFECT_SPRITE_ASSETS.proj_meteor_arrow.key;
-        if (usePng && this.hasTexture(projKey)) {
-          this.putFx(curX, curY, projKey, 34, 34, 1);
+
+        if (proj.abilityId === 'inferno') {
+          const caster = snap.defenders.find(d => d.id === proj.sourceId);
+          const casterRect = caster ? this.getCellRect({ row: caster.row, column: caster.column }, geom) : null;
+          const sx = casterRect ? casterRect.x + casterRect.w * 0.6 : tx - geom.cellW * 2.5;
+          const sy = casterRect ? casterRect.y + casterRect.h * 0.38 : ty;
+          const arcHeight = Math.max(72, Math.min(145, Math.abs(tx - sx) * 0.28 + 48));
+          const evalPoint = (p: number) => ({
+            x: sx + (tx - sx) * p,
+            y: sy + (ty - sy) * p - Math.sin(p * Math.PI) * arcHeight,
+          });
+          const cur = evalPoint(progress);
+          const trailA = evalPoint(Math.max(0, progress - 0.14));
+          const trailB = evalPoint(Math.max(0, progress - 0.28));
+          this.fxGraphics.lineStyle(5, 0xf97316, 0.45);
+          this.fxGraphics.lineBetween(trailB.x, trailB.y, trailA.x, trailA.y);
+          this.fxGraphics.lineStyle(4, 0xfacc15, 0.8);
+          this.fxGraphics.lineBetween(trailA.x, trailA.y, cur.x, cur.y);
+          this.fxGraphics.fillStyle(0xf97316, 0.35);
+          this.fxGraphics.fillCircle(cur.x, cur.y, 18);
+
+          const projKey = EFFECT_SPRITE_ASSETS.proj_fireball.key;
+          if (usePng && this.hasTexture(projKey)) {
+            this.putFx(cur.x, cur.y, projKey, 36, 36, 1);
+          } else {
+            this.fxGraphics.fillStyle(0xf97316, 1);
+            this.fxGraphics.fillCircle(cur.x, cur.y, 8);
+          }
         } else {
-          this.fxGraphics.fillStyle(0xf97316, 1);
-          this.fxGraphics.fillCircle(curX, curY, 7);
+          const curX = tx + 44 * (1 - progress);
+          const curY = ty - 135 * (1 - progress);
+          const projKey = EFFECT_SPRITE_ASSETS.proj_meteor_arrow.key;
+          if (usePng && this.hasTexture(projKey)) {
+            this.putFx(curX, curY, projKey, 34, 34, 1);
+          } else {
+            this.fxGraphics.fillStyle(0xf97316, 1);
+            this.fxGraphics.fillCircle(curX, curY, 7);
+          }
         }
       }
     }
@@ -1202,8 +1226,22 @@ export class PlaytestScene extends Phaser.Scene {
           this.putFx(cx, cy, EFFECT_SPRITE_ASSETS.vfx_steam_burst.key, geom.cellW * 2.6, geom.cellH * 2.6, alpha);
         } else if (aid === 'winter_pounce' && usePng && this.hasTexture(EFFECT_SPRITE_ASSETS.vfx_frost_claw.key)) {
           this.putFx(cx + geom.cellW * 1.1, cy, EFFECT_SPRITE_ASSETS.vfx_frost_claw.key, geom.cellW * 2.5, geom.cellH * 0.9, alpha);
-        } else if ((aid === 'earthquake' || aid === 'eruption') && usePng && this.hasTexture(EFFECT_SPRITE_ASSETS.vfx_earth_crack.key)) {
-          this.putFx(cx + geom.cellW, cy, EFFECT_SPRITE_ASSETS.vfx_earth_crack.key, 120, 96, alpha, aid === 'eruption' ? 0xf97316 : undefined);
+        } else if (aid === 'earthquake') {
+          const bandX = rect.x;
+          const bandW = (geom.cols - flash.cell.column) * geom.cellW;
+          this.fxGraphics.fillStyle(0xb45309, 0.24 * alpha);
+          this.fxGraphics.fillRect(bandX, rect.y + geom.cellH * 0.15, bandW, geom.cellH * 0.7);
+          this.fxGraphics.lineStyle(2.5, 0xfbbf24, alpha * 0.85);
+          this.fxGraphics.strokeRect(bandX, rect.y + geom.cellH * 0.15, bandW, geom.cellH * 0.7);
+          const crackKey = EFFECT_SPRITE_ASSETS.vfx_earth_crack.key;
+          for (let col = flash.cell.column; col < geom.cols; col++) {
+            const cRect = this.getCellRect({ row: flash.cell.row, column: col }, geom);
+            if (usePng && this.hasTexture(crackKey)) {
+              this.putFx(cRect.x + cRect.w / 2, cRect.y + cRect.h / 2, crackKey, cRect.w * 0.96, cRect.h * 0.76, alpha);
+            }
+          }
+        } else if (aid === 'eruption' && usePng && this.hasTexture(EFFECT_SPRITE_ASSETS.vfx_earth_crack.key)) {
+          this.putFx(cx + geom.cellW, cy, EFFECT_SPRITE_ASSETS.vfx_earth_crack.key, 120, 96, alpha, 0xf97316);
         } else if ((aid === 'pack_frenzy' || aid === 'alpha_howl') && usePng && this.hasTexture(EFFECT_SPRITE_ASSETS.vfx_howl_ring.key)) {
           this.putFx(cx, cy, EFFECT_SPRITE_ASSETS.vfx_howl_ring.key, aid === 'alpha_howl' ? geom.cellW * 2.4 : 96, aid === 'alpha_howl' ? geom.cellH * 2.4 : 96, alpha);
         } else {
