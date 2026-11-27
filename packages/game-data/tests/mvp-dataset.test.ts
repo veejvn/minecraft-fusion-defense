@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { MVP_GAME_DATA, parseHexColor, validateMvpDataset } from '../src';
+import {
+  MVP_GAME_DATA,
+  mergePlaytestPresetIntoDataset,
+  parseHexColor,
+  validateMvpDataset,
+} from '../src';
 
 describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
   it('validates the checked-in JSON dataset cleanly with expected entity, recipe, ability, and wave counts', () => {
@@ -107,5 +112,88 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     const badWaveCrystals = structuredClone(MVP_GAME_DATA);
     badWaveCrystals.grasslandLevel.waveCrystals.pop();
     expect(() => validateMvpDataset(badWaveCrystals)).toThrow(/waveCrystals length/);
+  });
+
+  it('merges a valid tuned Playtest preset into the JSON dataset while preserving UI metadata, recipes, energy items, and sandbox waves', () => {
+    const before = structuredClone(MVP_GAME_DATA);
+    const preset = {
+      seed: 99999,
+      fusionGloveCooldownSeconds: 12,
+      defenders: MVP_GAME_DATA.defenders.map(d => ({
+        id: d.id,
+        tier: d.tier,
+        summonEnergyCost: d.id === 'iron_golem' ? 60 : d.summonEnergyCost,
+        summonCooldownSeconds: d.id === 'iron_golem' ? 9 : d.summonCooldownSeconds,
+        maxHp: d.id === 'iron_golem' ? 500 : d.maxHp,
+        damage: d.damage,
+        attackSpeed: d.attackSpeed,
+        attackRange: d.attackRange,
+        targeting: d.targeting,
+        armor: d.armor,
+        ...(d.attackDamageType ? { attackDamageType: d.attackDamageType } : {}),
+        ...(d.basicAttackStatus ? { basicAttackStatus: structuredClone(d.basicAttackStatus) } : {}),
+      })),
+      enemies: MVP_GAME_DATA.enemies.map(e => ({
+        id: e.id,
+        maxHp: e.id === 'zombie' ? 240 : e.maxHp,
+        moveSpeed: e.moveSpeed,
+        behavior: e.behavior,
+        damage: e.damage,
+        attackSpeed: e.attackSpeed,
+        attackRange: e.attackRange,
+        armor: e.armor,
+        fireResistancePct: e.fireResistancePct,
+        freezeResistancePct: e.freezeResistancePct,
+        freezeImmune: e.freezeImmune,
+        energyReward: e.id === 'vindicator' ? 140 : e.energyReward,
+        crystalReward: e.crystalReward,
+      })),
+      abilities: structuredClone(MVP_GAME_DATA.abilities),
+      waves: structuredClone(MVP_GAME_DATA.grasslandLevel.waves),
+      waveCrystals: [1, 2, 1, 2, 2],
+    };
+
+    const merged = mergePlaytestPresetIntoDataset(MVP_GAME_DATA, preset);
+
+    // Original dataset remains completely unmutated
+    expect(MVP_GAME_DATA).toEqual(before);
+
+    // Gameplay balance values & seed updated
+    const mergedGolem = merged.defenders.find(d => d.id === 'iron_golem')!;
+    expect(mergedGolem).toMatchObject({
+      maxHp: 500,
+      summonEnergyCost: 60,
+      summonCooldownSeconds: 9,
+      name: 'Iron Golem',
+      color: '#94a3b8',
+      role: 'Frontline Tank',
+    });
+    expect(merged.enemies.find(e => e.id === 'zombie')?.maxHp).toBe(240);
+    expect(merged.enemies.find(e => e.id === 'vindicator')).toMatchObject({
+      energyReward: 140,
+      name: 'Vindicator',
+      color: '#2563eb',
+    });
+    expect(merged.grasslandLevel.seed).toBe(99999);
+    expect(merged.grasslandLevel.fusionGloveCooldownSeconds).toBe(12);
+    expect(merged.grasslandLevel.waveCrystals).toEqual([1, 2, 1, 2, 2]);
+
+    // Preserved structural sections
+    expect(merged.grasslandLevel.energyItems).toEqual(MVP_GAME_DATA.grasslandLevel.energyItems);
+    expect(merged.fusionRecipes).toEqual(MVP_GAME_DATA.fusionRecipes);
+    expect(merged.sandboxLevel).toEqual(MVP_GAME_DATA.sandboxLevel);
+
+    // Rejects unknown defender, negative stats, or mismatched waveCrystals
+    const unknownDef = structuredClone(preset);
+    unknownDef.defenders[0].id = 'unknown_golem';
+    expect(() => mergePlaytestPresetIntoDataset(MVP_GAME_DATA, unknownDef)).toThrow(/Unknown defender ID/);
+
+    const missingEnemy = structuredClone(preset);
+    missingEnemy.enemies.pop();
+    expect(() => mergePlaytestPresetIntoDataset(MVP_GAME_DATA, missingEnemy)).toThrow(/Missing enemy/);
+
+    const badWaveCount = structuredClone(preset);
+    badWaveCount.waveCrystals.pop();
+    expect(() => mergePlaytestPresetIntoDataset(MVP_GAME_DATA, badWaveCount)).toThrow(/waveCrystals length/);
   });
 });

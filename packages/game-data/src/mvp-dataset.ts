@@ -484,6 +484,49 @@ export type MvpGrasslandLevelData = z.infer<typeof mvpGrasslandLevelSchema>;
 export type MvpSandboxLevelData = z.infer<typeof mvpSandboxLevelSchema>;
 export type MvpDataset = z.infer<typeof mvpDatasetSchema>;
 
+export const playtestDefenderSyncSchema = z.strictObject({
+  id: stableIdSchema,
+  tier: z.union([z.literal(1), z.literal(2)]),
+  summonEnergyCost: nonNegativeIntegerSchema,
+  summonCooldownSeconds: nonNegativeNumberSchema.optional(),
+  maxHp: positiveNumberSchema,
+  damage: nonNegativeNumberSchema,
+  attackSpeed: positiveNumberSchema,
+  attackRange: nonNegativeNumberSchema,
+  targeting: targetingStrategySchema,
+  armor: nonNegativeNumberSchema,
+  attackDamageType: abilityDamageTypeSchema.optional(),
+  basicAttackStatus: attachedStatusSpecSchema.optional(),
+});
+
+export const playtestEnemySyncSchema = z.strictObject({
+  id: stableIdSchema,
+  maxHp: positiveNumberSchema,
+  moveSpeed: positiveNumberSchema,
+  behavior: enemyBehaviorSchema,
+  damage: nonNegativeNumberSchema,
+  attackSpeed: positiveNumberSchema,
+  attackRange: nonNegativeNumberSchema,
+  armor: nonNegativeNumberSchema,
+  fireResistancePct: unitIntervalSchema,
+  freezeResistancePct: unitIntervalSchema,
+  freezeImmune: z.boolean(),
+  energyReward: nonNegativeIntegerSchema,
+  crystalReward: nonNegativeIntegerSchema,
+});
+
+export const playtestPresetSyncSchema = z.strictObject({
+  seed: z.number().int(),
+  fusionGloveCooldownSeconds: nonNegativeNumberSchema.optional(),
+  defenders: z.array(playtestDefenderSyncSchema),
+  enemies: z.array(playtestEnemySyncSchema),
+  abilities: z.array(mvpAbilitySchema),
+  waves: z.array(mvpWaveSchema),
+  waveCrystals: z.array(nonNegativeIntegerSchema),
+});
+
+export type PlaytestPresetSyncInput = z.infer<typeof playtestPresetSyncSchema>;
+
 /** Parse a #rrggbb hex color string into a 24-bit numeric color value for Phaser. */
 export function parseHexColor(hex: string): number {
   const parsed = hexColorSchema.parse(hex);
@@ -493,6 +536,123 @@ export function parseHexColor(hex: string): number {
 /** Parse and validate an assembled MVP game dataset against strict schemas and referential checks. */
 export function validateMvpDataset(candidate: unknown): MvpDataset {
   return mvpDatasetSchema.parse(candidate);
+}
+
+/**
+ * Validate a Playtest balance preset and merge its gameplay values into a deep clone
+ * of `baseDataset`, preserving UI metadata, fusion recipes, energy items, and sandbox waves.
+ */
+export function mergePlaytestPresetIntoDataset(
+  baseDataset: MvpDataset,
+  rawPreset: unknown,
+): MvpDataset {
+  const preset = playtestPresetSyncSchema.parse(rawPreset);
+
+  const baseDefIds = new Set(baseDataset.defenders.map(d => d.id));
+  const presetDefMap = new Map<string, z.infer<typeof playtestDefenderSyncSchema>>();
+  for (const def of preset.defenders) {
+    if (!baseDefIds.has(def.id)) {
+      throw new Error(`Unknown defender ID in balance preset: ${def.id}`);
+    }
+    if (presetDefMap.has(def.id)) {
+      throw new Error(`Duplicate defender ID in balance preset: ${def.id}`);
+    }
+    presetDefMap.set(def.id, def);
+  }
+  for (const baseDef of baseDataset.defenders) {
+    if (!presetDefMap.has(baseDef.id)) {
+      throw new Error(`Missing defender in balance preset: ${baseDef.id}`);
+    }
+  }
+
+  const baseEnemyIds = new Set(baseDataset.enemies.map(e => e.id));
+  const presetEnemyMap = new Map<string, z.infer<typeof playtestEnemySyncSchema>>();
+  for (const enemy of preset.enemies) {
+    if (!baseEnemyIds.has(enemy.id)) {
+      throw new Error(`Unknown enemy ID in balance preset: ${enemy.id}`);
+    }
+    if (presetEnemyMap.has(enemy.id)) {
+      throw new Error(`Duplicate enemy ID in balance preset: ${enemy.id}`);
+    }
+    presetEnemyMap.set(enemy.id, enemy);
+  }
+  for (const baseEnemy of baseDataset.enemies) {
+    if (!presetEnemyMap.has(baseEnemy.id)) {
+      throw new Error(`Missing enemy in balance preset: ${baseEnemy.id}`);
+    }
+  }
+
+  const abilityByDefenderId = new Map(preset.abilities.map(a => [a.ownerDefenderId, a]));
+
+  const mergedDefenders: MvpDefenderData[] = baseDataset.defenders.map(baseDef => {
+    const tuned = presetDefMap.get(baseDef.id)!;
+    const ability = abilityByDefenderId.get(baseDef.id);
+    const next: MvpDefenderData = {
+      id: baseDef.id,
+      name: baseDef.name,
+      shortLabel: baseDef.shortLabel,
+      tier: tuned.tier,
+      role: baseDef.role,
+      color: baseDef.color,
+      accentColor: baseDef.accentColor,
+      summonEnergyCost: tuned.summonEnergyCost,
+      summonCooldownSeconds: tuned.summonCooldownSeconds ?? baseDef.summonCooldownSeconds,
+      maxHp: tuned.maxHp,
+      damage: tuned.damage,
+      attackSpeed: tuned.attackSpeed,
+      attackRange: tuned.attackRange,
+      targeting: tuned.targeting,
+      armor: tuned.armor,
+      ...(tuned.attackDamageType ? { attackDamageType: tuned.attackDamageType } : {}),
+      ...(tuned.basicAttackStatus ? { basicAttackStatus: structuredClone(tuned.basicAttackStatus) } : {}),
+      abilityId: baseDef.abilityId,
+      abilityName: baseDef.abilityName,
+      abilitySummary: baseDef.abilitySummary,
+      requiresTarget: ability ? ability.requiresTarget : baseDef.requiresTarget,
+    };
+    return next;
+  });
+
+  const mergedEnemies: MvpEnemyData[] = baseDataset.enemies.map(baseEnemy => {
+    const tuned = presetEnemyMap.get(baseEnemy.id)!;
+    return {
+      id: baseEnemy.id,
+      name: baseEnemy.name,
+      shortLabel: baseEnemy.shortLabel,
+      color: baseEnemy.color,
+      role: baseEnemy.role,
+      maxHp: tuned.maxHp,
+      moveSpeed: tuned.moveSpeed,
+      behavior: tuned.behavior,
+      damage: tuned.damage,
+      attackSpeed: tuned.attackSpeed,
+      attackRange: tuned.attackRange,
+      armor: tuned.armor,
+      fireResistancePct: tuned.fireResistancePct,
+      freezeResistancePct: tuned.freezeResistancePct,
+      freezeImmune: tuned.freezeImmune,
+      energyReward: tuned.energyReward,
+      crystalReward: tuned.crystalReward,
+    };
+  });
+
+  const merged: MvpDataset = {
+    defenders: mergedDefenders,
+    enemies: mergedEnemies,
+    fusionRecipes: structuredClone(baseDataset.fusionRecipes),
+    abilities: structuredClone(preset.abilities),
+    grasslandLevel: {
+      ...structuredClone(baseDataset.grasslandLevel),
+      seed: preset.seed,
+      fusionGloveCooldownSeconds:
+        preset.fusionGloveCooldownSeconds ?? baseDataset.grasslandLevel.fusionGloveCooldownSeconds,
+      waveCrystals: [...preset.waveCrystals],
+      waves: structuredClone(preset.waves),
+    },
+    sandboxLevel: structuredClone(baseDataset.sandboxLevel),
+  };
+
+  return validateMvpDataset(merged);
 }
 
 /** Validated singleton JSON dataset powering both Campaign (/) and Playtest (/playtest). */

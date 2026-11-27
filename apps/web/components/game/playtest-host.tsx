@@ -49,6 +49,7 @@ const DRAG_ACTIVATION_PX = 8;
 const SPEED_OPTIONS: readonly PlaytestSpeed[] = [1, 2, 4, 0.5];
 const ALL_ENEMY_IDS = ['zombie', 'husk', 'vindicator', 'pillager'] as const;
 const PLAYTEST_BALANCE_STORAGE_KEY = 'mfd_playtest_balance_preset_v1';
+const IS_DEV_MODE = process.env.NODE_ENV === 'development';
 
 function isValidPlaytestPresetShape(value: unknown): value is PlaytestPresetConfig {
   if (!value || typeof value !== 'object') return false;
@@ -207,6 +208,9 @@ export function PlaytestHost() {
   const [jsonInputText, setJsonInputText] = useState<string>('');
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [copiedJson, setCopiedJson] = useState<boolean>(false);
+  const [isSyncingGameData, setIsSyncingGameData] = useState<boolean>(false);
+  const [syncFeedback, setSyncFeedback] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Wave Burst spawner states
   const [burstEnemyId, setBurstEnemyId] = useState<string>('zombie');
@@ -535,6 +539,7 @@ export function PlaytestHost() {
     setDraftPreset(nextPreset);
     setJsonInputText(JSON.stringify(nextPreset, null, 2));
     setJsonError(null);
+    setSyncFeedback(null);
     if (savePlaytestPreset(nextPreset)) {
       setHasSavedPreset(true);
     }
@@ -736,6 +741,112 @@ export function PlaytestHost() {
       }
     } catch (err) {
       setJsonError(err instanceof Error ? err.message : 'Invalid JSON syntax');
+    }
+  };
+
+  const syncPresetToGameJson = async (presetToSync: PlaytestPresetConfig) => {
+    if (!IS_DEV_MODE || isSyncingGameData) return;
+    setIsSyncingGameData(true);
+    setSyncFeedback(null);
+    setJsonError(null);
+    try {
+      const response = await fetch('/api/dev/sync-game-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preset: presetToSync }),
+      });
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        updatedFiles?: string[];
+        error?: string;
+      } | null;
+      if (!response.ok || !payload?.ok) {
+        setSyncFeedback({
+          kind: 'error',
+          message: payload?.error ?? `Failed to save JSON (${response.status})`,
+        });
+        return;
+      }
+      clearSavedPlaytestPreset();
+      setHasSavedPreset(false);
+      const formatted = JSON.stringify(presetToSync, null, 2);
+      setDraftPreset(presetToSync);
+      setJsonInputText(formatted);
+      setAppliedPresetJson(formatted);
+      if (controller) {
+        const multiLane = snapshot?.showAuxLanes ?? true;
+        controller.reset(presetToSync, snapshot?.mode ?? 'five-waves', multiLane);
+        controller.setShowAuxLanes(multiLane);
+      }
+      const filesLabel = payload.updatedFiles?.map(f => f.split('/').pop()).join(', ') ?? 'packages/game-data/*.json';
+      setSyncFeedback({
+        kind: 'success',
+        message: `Saved directly to ${filesLabel}. Campaign (/) & Playtest defaults updated!`,
+      });
+    } catch (err) {
+      setSyncFeedback({
+        kind: 'error',
+        message: err instanceof Error ? err.message : 'Network error while saving Game JSON',
+      });
+    } finally {
+      setIsSyncingGameData(false);
+    }
+  };
+
+  const handleSaveDraftToGameJson = async () => {
+    if (balanceTab === 'json') {
+      try {
+        const parsed = JSON.parse(jsonInputText) as PlaytestPresetConfig;
+        if (!isValidPlaytestPresetShape(parsed)) {
+          setJsonError('JSON missing required fields: seed, defenders, enemies, waves, abilities, waveCrystals.');
+          return;
+        }
+        await syncPresetToGameJson(parsed);
+      } catch (err) {
+        setJsonError(err instanceof Error ? err.message : 'Invalid JSON syntax');
+      }
+      return;
+    }
+    if (!draftPreset) return;
+    await syncPresetToGameJson(draftPreset);
+  };
+
+  const handleImportAndSaveToGameJson = async () => {
+    try {
+      const parsed = JSON.parse(jsonInputText) as PlaytestPresetConfig;
+      if (!isValidPlaytestPresetShape(parsed)) {
+        setJsonError('JSON missing required fields: seed, defenders, enemies, waves, abilities, waveCrystals.');
+        return;
+      }
+      await syncPresetToGameJson(parsed);
+    } catch (err) {
+      setJsonError(err instanceof Error ? err.message : 'Invalid JSON syntax');
+    }
+  };
+
+  const handleDownloadJson = () => {
+    if (!draftPreset) return;
+    const json = JSON.stringify(draftPreset, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mfd-balance-preset.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleLoadJsonFile = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      setJsonInputText(text);
+      setJsonError(null);
+      setSyncFeedback(null);
+    } catch (err) {
+      setJsonError(err instanceof Error ? err.message : 'Failed to read JSON file');
     }
   };
 
@@ -1958,6 +2069,17 @@ export function PlaytestHost() {
 
             {balanceTab === 'json' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    void handleLoadJsonFile(file);
+                    e.currentTarget.value = '';
+                  }}
+                />
                 <textarea
                   value={jsonInputText}
                   onChange={e => setJsonInputText(e.target.value)}
@@ -1970,7 +2092,7 @@ export function PlaytestHost() {
                   }}
                 />
                 {jsonError && <div style={{ fontSize: 12, color: '#F87171' }}>{jsonError}</div>}
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button
                     type="button"
                     className="mfd-btn mfd-btn-crystal"
@@ -1979,15 +2101,57 @@ export function PlaytestHost() {
                   >
                     Import JSON &amp; Restart
                   </button>
+                  {IS_DEV_MODE && (
+                    <button
+                      type="button"
+                      className="mfd-btn mfd-btn-primary"
+                      style={{ flex: 1, padding: '7px 12px', fontSize: 12 }}
+                      disabled={isSyncingGameData}
+                      onClick={() => void handleImportAndSaveToGameJson()}
+                    >
+                      {isSyncingGameData ? 'Saving to Game JSON...' : 'Import & Save to Game JSON (Dev)'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="mfd-btn"
-                    style={{ flex: 1, padding: '7px 12px', fontSize: 12 }}
+                    style={{ padding: '7px 12px', fontSize: 12 }}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Load .json File
+                  </button>
+                  <button
+                    type="button"
+                    className="mfd-btn"
+                    style={{ padding: '7px 12px', fontSize: 12 }}
+                    onClick={handleDownloadJson}
+                  >
+                    Download .json
+                  </button>
+                  <button
+                    type="button"
+                    className="mfd-btn"
+                    style={{ padding: '7px 12px', fontSize: 12 }}
                     onClick={() => void handleCopyTunedJson()}
                   >
                     {copiedJson ? 'Copied Tuned JSON!' : 'Copy Tuned JSON'}
                   </button>
                 </div>
+              </div>
+            )}
+
+            {syncFeedback && (
+              <div
+                style={{
+                  fontSize: 12,
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  border: `1px solid ${syncFeedback.kind === 'success' ? '#22c55e' : '#ef4444'}`,
+                  background: syncFeedback.kind === 'success' ? 'rgba(34, 197, 94, 0.14)' : 'rgba(239, 68, 68, 0.14)',
+                  color: syncFeedback.kind === 'success' ? '#86efac' : '#fca5a5',
+                }}
+              >
+                {syncFeedback.message}
               </div>
             )}
 
@@ -2000,6 +2164,17 @@ export function PlaytestHost() {
               >
                 Apply &amp; Restart Playtest
               </button>
+              {IS_DEV_MODE && (
+                <button
+                  type="button"
+                  className="mfd-btn mfd-btn-crystal"
+                  style={{ padding: '8px 14px', fontSize: 13 }}
+                  disabled={isSyncingGameData}
+                  onClick={() => void handleSaveDraftToGameJson()}
+                >
+                  {isSyncingGameData ? 'Saving to Game JSON...' : 'Save to Game JSON (Dev)'}
+                </button>
+              )}
               <button
                 type="button"
                 className="mfd-btn"

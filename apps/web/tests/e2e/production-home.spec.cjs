@@ -237,6 +237,14 @@ test('/playtest persists tuned balance preset in localStorage across reload and 
 
   await page.getByRole('button', { name: /Close \[Esc\]/i }).click();
 
+  // Dev-only game-data sync button must not appear in production, and API route must reject with 403
+  await page.getByRole('button', { name: /Balance/i }).click();
+  await expect(page.getByRole('button', { name: /Save to Game JSON/i })).toHaveCount(0);
+  await page.getByRole('button', { name: /Close \[Esc\]/i }).click();
+
+  const syncResp = await page.request.post('/api/dev/sync-game-data', { data: {} });
+  expect(syncResp.status()).toBe(403);
+
   expect(browserErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });

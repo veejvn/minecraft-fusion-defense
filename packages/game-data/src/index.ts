@@ -22,6 +22,7 @@ export {
   abilityTargetScopeSchema,
   attachedStatusSpecSchema,
   enemyBehaviorSchema,
+  mergePlaytestPresetIntoDataset,
   mvpAbilitySchema,
   mvpDatasetSchema,
   mvpDefenderSchema,
@@ -32,6 +33,9 @@ export {
   mvpSpawnGroupSchema,
   mvpWaveSchema,
   parseHexColor,
+  playtestDefenderSyncSchema,
+  playtestEnemySyncSchema,
+  playtestPresetSyncSchema,
   targetingStrategySchema,
   validateMvpDataset,
 } from './mvp-dataset';
@@ -44,4 +48,5 @@ export type {
   MvpGrasslandLevelData,
   MvpSandboxLevelData,
   MvpWaveData,
+  PlaytestPresetSyncInput,
 } from './mvp-dataset';
