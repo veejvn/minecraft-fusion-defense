@@ -16,7 +16,7 @@
     "freezeResistancePct": 0,
     "freezeImmune": false,
     "energyReward": 50,
-    "crystalReward": 1,
+    "crystalReward": 0,
     "crystalDropChance": 0
   },
   {
@@ -35,7 +35,7 @@
     "fireResistancePct": 0,
     "freezeResistancePct": 0,
     "freezeImmune": false,
-    "energyReward": 100,
+    "energyReward": 75,
     "crystalReward": 1,
     "crystalDropChance": 0.1
   },
@@ -55,7 +55,7 @@
     "fireResistancePct": 0,
     "freezeResistancePct": 0,
     "freezeImmune": false,
-    "energyReward": 125,
+    "energyReward": 100,
     "crystalReward": 1,
     "crystalDropChance": 0.35
   },
@@ -75,7 +75,7 @@
     "fireResistancePct": 0,
     "freezeResistancePct": 0,
     "freezeImmune": false,
-    "energyReward": 125,
+    "energyReward": 100,
     "crystalReward": 1,
     "crystalDropChance": 0.4
   }
