@@ -15,3 +15,33 @@ export { waveDefinitionSchema } from './schemas/wave';
 export type { WaveDefinition } from './schemas/wave';
 export { resourceConfigurationSchema } from './schemas/resources';
 export type { ResourceConfiguration } from './schemas/resources';
+export {
+  MVP_GAME_DATA,
+  abilityDamageTypeSchema,
+  abilityEffectSchema,
+  abilityTargetScopeSchema,
+  attachedStatusSpecSchema,
+  enemyBehaviorSchema,
+  mvpAbilitySchema,
+  mvpDatasetSchema,
+  mvpDefenderSchema,
+  mvpEnemySchema,
+  mvpFusionRecipeSchema,
+  mvpGrasslandLevelSchema,
+  mvpSandboxLevelSchema,
+  mvpSpawnGroupSchema,
+  mvpWaveSchema,
+  parseHexColor,
+  targetingStrategySchema,
+  validateMvpDataset,
+} from './mvp-dataset';
+export type {
+  MvpAbilityData,
+  MvpDataset,
+  MvpDefenderData,
+  MvpEnemyData,
+  MvpFusionRecipeData,
+  MvpGrasslandLevelData,
+  MvpSandboxLevelData,
+  MvpWaveData,
+} from './mvp-dataset';

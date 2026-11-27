@@ -1,0 +1,124 @@
+{
+  "id": "playtest_sandbox",
+  "seed": 101,
+  "rows": 5,
+  "columns": 9,
+  "waveCrystals": [1, 1, 1, 2, 2],
+  "waves": [
+    {
+      "id": "wave_1",
+      "initialDelaySeconds": 2,
+      "delayBeforeNextWaveSeconds": 3,
+      "spawnGroups": [
+        {
+          "enemyId": "zombie",
+          "count": 3,
+          "allowedLanes": [0],
+          "laneMode": "fixed",
+          "startOffsetSeconds": 0,
+          "intervalSeconds": 3
+        }
+      ]
+    },
+    {
+      "id": "wave_2",
+      "initialDelaySeconds": 0,
+      "delayBeforeNextWaveSeconds": 3,
+      "spawnGroups": [
+        {
+          "enemyId": "zombie",
+          "count": 3,
+          "allowedLanes": [0],
+          "laneMode": "fixed",
+          "startOffsetSeconds": 0,
+          "intervalSeconds": 2.5
+        },
+        {
+          "enemyId": "husk",
+          "count": 2,
+          "allowedLanes": [0],
+          "laneMode": "fixed",
+          "startOffsetSeconds": 2,
+          "intervalSeconds": 3
+        }
+      ]
+    },
+    {
+      "id": "wave_3",
+      "initialDelaySeconds": 0,
+      "delayBeforeNextWaveSeconds": 3,
+      "spawnGroups": [
+        {
+          "enemyId": "husk",
+          "count": 2,
+          "allowedLanes": [0],
+          "laneMode": "fixed",
+          "startOffsetSeconds": 0,
+          "intervalSeconds": 2.5
+        },
+        {
+          "enemyId": "vindicator",
+          "count": 2,
+          "allowedLanes": [0],
+          "laneMode": "fixed",
+          "startOffsetSeconds": 2,
+          "intervalSeconds": 3
+        }
+      ]
+    },
+    {
+      "id": "wave_4",
+      "initialDelaySeconds": 0,
+      "delayBeforeNextWaveSeconds": 3,
+      "spawnGroups": [
+        {
+          "enemyId": "zombie",
+          "count": 3,
+          "allowedLanes": [0],
+          "laneMode": "fixed",
+          "startOffsetSeconds": 0,
+          "intervalSeconds": 2
+        },
+        {
+          "enemyId": "pillager",
+          "count": 2,
+          "allowedLanes": [0],
+          "laneMode": "fixed",
+          "startOffsetSeconds": 1.5,
+          "intervalSeconds": 3
+        }
+      ]
+    },
+    {
+      "id": "wave_5",
+      "initialDelaySeconds": 0,
+      "delayBeforeNextWaveSeconds": 3,
+      "spawnGroups": [
+        {
+          "enemyId": "husk",
+          "count": 2,
+          "allowedLanes": [0],
+          "laneMode": "fixed",
+          "startOffsetSeconds": 0,
+          "intervalSeconds": 2.5
+        },
+        {
+          "enemyId": "vindicator",
+          "count": 2,
+          "allowedLanes": [0],
+          "laneMode": "fixed",
+          "startOffsetSeconds": 1.5,
+          "intervalSeconds": 2.5
+        },
+        {
+          "enemyId": "pillager",
+          "count": 2,
+          "allowedLanes": [0],
+          "laneMode": "fixed",
+          "startOffsetSeconds": 3,
+          "intervalSeconds": 2.5
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,462 @@
+[
+  {
+    "id": "blizzard",
+    "ownerDefenderId": "snow_golem",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "same-lane-enemies",
+    "effects": [
+      {
+        "kind": "instant-damage",
+        "scope": "same-lane-enemies",
+        "damageMultiplier": 1,
+        "damageType": "ice",
+        "applyStatus": {
+          "kind": "slow",
+          "slowPct": 0.5,
+          "durationSeconds": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "earthquake",
+    "ownerDefenderId": "iron_golem",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "same-lane-enemies-ahead",
+    "effects": [
+      {
+        "kind": "instant-damage",
+        "scope": "same-lane-enemies-ahead",
+        "damageMultiplier": 3,
+        "damageType": "physical",
+        "applyStatus": {
+          "kind": "stun",
+          "durationSeconds": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "arrow_storm",
+    "ownerDefenderId": "skeleton",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "same-lane-enemy-in-range",
+    "effects": [
+      {
+        "kind": "multihit-projectile",
+        "count": 16,
+        "intervalSeconds": 0.15,
+        "damageMultiplier": 1,
+        "damageType": "physical",
+        "projectileSpeed": 6,
+        "pierce": false
+      }
+    ]
+  },
+  {
+    "id": "pack_frenzy",
+    "ownerDefenderId": "wolf",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "self",
+    "effects": [
+      {
+        "kind": "status",
+        "scope": "self",
+        "status": {
+          "kind": "buff",
+          "attackSpeedBonusPct": 1,
+          "attackDamageBonusPct": 0.5,
+          "durationSeconds": 8
+        }
+      }
+    ]
+  },
+  {
+    "id": "inferno",
+    "ownerDefenderId": "blaze",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "same-lane-enemies",
+    "effects": [
+      {
+        "kind": "multihit-falling-area",
+        "count": 8,
+        "intervalSeconds": 0.18,
+        "travelSeconds": 0.45,
+        "radius": 0,
+        "sameLaneOnly": true,
+        "damageMultiplier": 1.25,
+        "damageType": "fire",
+        "armorPiercing": true,
+        "applyStatus": {
+          "kind": "burn",
+          "damageMultiplierPerSecond": 0.25,
+          "durationSeconds": 5,
+          "tickIntervalSeconds": 1,
+          "damageType": "fire"
+        }
+      }
+    ]
+  },
+  {
+    "id": "piercing_barrage",
+    "ownerDefenderId": "skeleton_sniper",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "self",
+    "effects": [
+      {
+        "kind": "projectile",
+        "damageMultiplier": 6,
+        "damageType": "physical",
+        "projectileSpeed": 12,
+        "pierce": true
+      }
+    ]
+  },
+  {
+    "id": "absolute_zero",
+    "ownerDefenderId": "ice_golem",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "all-enemies",
+    "effects": [
+      {
+        "kind": "status",
+        "scope": "all-enemies",
+        "status": {
+          "kind": "freeze",
+          "durationSeconds": 4
+        }
+      }
+    ]
+  },
+  {
+    "id": "glacial_fortress",
+    "ownerDefenderId": "frost_guardian",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "self",
+    "effects": [
+      {
+        "kind": "shield",
+        "shieldMaxHpPct": 0.5,
+        "frontSlowZone": {
+          "slowPct": 0.5,
+          "residualDurationSeconds": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "wildfire_rush",
+    "ownerDefenderId": "flame_fang",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "first-enemy-per-lane",
+    "effects": [
+      {
+        "kind": "instant-damage",
+        "scope": "first-enemy-per-lane",
+        "damageMultiplier": 2.5,
+        "damageType": "fire",
+        "armorPiercing": true,
+        "applyStatus": {
+          "kind": "burn",
+          "damageMultiplierPerSecond": 0.5,
+          "durationSeconds": 6,
+          "tickIntervalSeconds": 1,
+          "damageType": "fire"
+        }
+      }
+    ]
+  },
+  {
+    "id": "meteor_arrow_rain",
+    "ownerDefenderId": "inferno_archer",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "area-3x3-closest-enemy",
+    "effects": [
+      {
+        "kind": "multihit-falling-area",
+        "count": 8,
+        "intervalSeconds": 0.2,
+        "travelSeconds": 0.4,
+        "radius": 1,
+        "damageMultiplier": 1,
+        "damageType": "fire",
+        "applyStatus": {
+          "kind": "burn",
+          "damageMultiplierPerSecond": 0.25,
+          "durationSeconds": 5,
+          "tickIntervalSeconds": 1,
+          "damageType": "fire"
+        }
+      }
+    ]
+  },
+  {
+    "id": "alpha_howl",
+    "ownerDefenderId": "alpha_wolf",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "ally-3x3",
+    "allowWhileDisabled": true,
+    "effects": [
+      {
+        "kind": "status",
+        "scope": "ally-3x3",
+        "radius": 1,
+        "status": {
+          "kind": "buff",
+          "attackSpeedBonusPct": 1,
+          "attackDamageBonusPct": 0.5,
+          "durationSeconds": 8
+        }
+      }
+    ]
+  },
+  {
+    "id": "iron_bastion",
+    "ownerDefenderId": "steel_guardian",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "ally-3x3",
+    "effects": [
+      {
+        "kind": "shield",
+        "shieldMaxHpPct": 1
+      },
+      {
+        "kind": "redirect",
+        "radius": 1,
+        "redirectSharePct": 0.5,
+        "durationSeconds": 8
+      }
+    ]
+  },
+  {
+    "id": "siege_volley",
+    "ownerDefenderId": "iron_ranger",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "same-lane-enemy-in-range",
+    "effects": [
+      {
+        "kind": "projectile",
+        "damageMultiplier": 4.5,
+        "targetMaxHpBonusPct": 0.2,
+        "damageType": "physical",
+        "projectileSpeed": 8.5,
+        "pierce": false,
+        "armorPiercing": true,
+        "applyStatus": {
+          "kind": "stun",
+          "durationSeconds": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": "guardian_charge",
+    "ownerDefenderId": "ironfang_guardian",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "self",
+    "effects": [
+      {
+        "kind": "projectile",
+        "damageMultiplier": 3.5,
+        "damageType": "physical",
+        "projectileSpeed": 9.5,
+        "pierce": true,
+        "applyStatus": {
+          "kind": "stun",
+          "durationSeconds": 1.5
+        }
+      }
+    ]
+  },
+  {
+    "id": "eruption",
+    "ownerDefenderId": "magma_colossus",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "same-lane-enemies",
+    "effects": [
+      {
+        "kind": "instant-damage",
+        "scope": "same-lane-enemies",
+        "damageMultiplier": 3.5,
+        "damageType": "fire",
+        "armorPiercing": true,
+        "applyStatus": {
+          "kind": "burn",
+          "damageMultiplierPerSecond": 0.3,
+          "durationSeconds": 5,
+          "tickIntervalSeconds": 1,
+          "damageType": "fire"
+        }
+      },
+      {
+        "kind": "shield",
+        "shieldMaxHpPct": 0.3
+      }
+    ]
+  },
+  {
+    "id": "glacier_barrage",
+    "ownerDefenderId": "frostbite_ranger",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "self",
+    "effects": [
+      {
+        "kind": "projectile",
+        "damageMultiplier": 3,
+        "damageType": "ice",
+        "projectileSpeed": 11,
+        "pierce": true,
+        "applyStatuses": [
+          {
+            "kind": "freeze",
+            "durationSeconds": 2.5
+          },
+          {
+            "kind": "slow",
+            "slowPct": 0.5,
+            "durationSeconds": 5
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "winter_pounce",
+    "ownerDefenderId": "frostfang",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "front-3-cells",
+    "effects": [
+      {
+        "kind": "instant-damage",
+        "scope": "front-3-cells",
+        "frontCells": 3,
+        "damageMultiplier": 2.5,
+        "bonusDamageMultiplierIfChilled": 1.5,
+        "damageType": "ice",
+        "applyStatus": {
+          "kind": "slow",
+          "slowPct": 0.5,
+          "durationSeconds": 4
+        }
+      }
+    ]
+  },
+  {
+    "id": "thermal_collapse",
+    "ownerDefenderId": "steam_warden",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "area-3x3-self",
+    "effects": [
+      {
+        "kind": "instant-damage",
+        "scope": "area-3x3-self",
+        "radius": 1,
+        "damageMultiplier": 2.5,
+        "bonusDamageMultiplierIfBurnOrFreeze": 1.5,
+        "damageType": "fire",
+        "armorPiercing": true,
+        "applyStatus": {
+          "kind": "slow",
+          "slowPct": 0.5,
+          "durationSeconds": 5
+        }
+      }
+    ]
+  },
+  {
+    "id": "predator_mark",
+    "ownerDefenderId": "bonefang_hunter",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "highest-hp-same-lane",
+    "effects": [
+      {
+        "kind": "status",
+        "scope": "self",
+        "status": {
+          "kind": "buff",
+          "attackSpeedBonusPct": 0.5,
+          "attackDamageBonusPct": 0,
+          "durationSeconds": 6
+        }
+      },
+      {
+        "kind": "status",
+        "scope": "highest-hp-same-lane",
+        "status": {
+          "kind": "vulnerable",
+          "damageTakenBonusPct": 0.4,
+          "durationSeconds": 6
+        }
+      },
+      {
+        "kind": "instant-damage",
+        "scope": "highest-hp-same-lane",
+        "damageMultiplier": 2.5,
+        "damageType": "physical",
+        "armorPiercing": true
+      }
+    ]
+  },
+  {
+    "id": "solar_cataclysm",
+    "ownerDefenderId": "infernal_archon",
+    "powerCrystalCost": 1,
+    "cooldownSeconds": 0,
+    "requiresTarget": false,
+    "targetScope": "all-enemies",
+    "effects": [
+      {
+        "kind": "instant-damage",
+        "scope": "all-enemies",
+        "damageMultiplier": 2.5,
+        "damageType": "fire",
+        "armorPiercing": true,
+        "applyStatus": {
+          "kind": "burn",
+          "damageMultiplierPerSecond": 0.3,
+          "durationSeconds": 5,
+          "tickIntervalSeconds": 1,
+          "damageType": "fire"
+        }
+      }
+    ]
+  }
+]

@@ -1,0 +1,92 @@
+[
+  {
+    "id": "fusion_skeleton_sniper",
+    "inputs": ["skeleton", "skeleton"],
+    "output": "skeleton_sniper",
+    "label": "Skeleton + Skeleton -> Skeleton Sniper"
+  },
+  {
+    "id": "fusion_steel_guardian",
+    "inputs": ["iron_golem", "iron_golem"],
+    "output": "steel_guardian",
+    "label": "Iron Golem + Iron Golem -> Steel Guardian"
+  },
+  {
+    "id": "fusion_iron_ranger",
+    "inputs": ["iron_golem", "skeleton"],
+    "output": "iron_ranger",
+    "label": "Iron Golem + Skeleton -> Iron Ranger"
+  },
+  {
+    "id": "fusion_ice_golem",
+    "inputs": ["snow_golem", "snow_golem"],
+    "output": "ice_golem",
+    "label": "Snow Golem + Snow Golem -> Ice Golem"
+  },
+  {
+    "id": "fusion_frost_guardian",
+    "inputs": ["iron_golem", "snow_golem"],
+    "output": "frost_guardian",
+    "label": "Iron Golem + Snow Golem -> Frost Guardian"
+  },
+  {
+    "id": "fusion_frostbite_ranger",
+    "inputs": ["snow_golem", "skeleton"],
+    "output": "frostbite_ranger",
+    "label": "Snow Golem + Skeleton -> Frostbite Ranger"
+  },
+  {
+    "id": "fusion_alpha_wolf",
+    "inputs": ["wolf", "wolf"],
+    "output": "alpha_wolf",
+    "label": "Wolf + Wolf -> Alpha Wolf"
+  },
+  {
+    "id": "fusion_ironfang_guardian",
+    "inputs": ["iron_golem", "wolf"],
+    "output": "ironfang_guardian",
+    "label": "Iron Golem + Wolf -> Ironfang Guardian"
+  },
+  {
+    "id": "fusion_bonefang_hunter",
+    "inputs": ["skeleton", "wolf"],
+    "output": "bonefang_hunter",
+    "label": "Skeleton + Wolf -> Bonefang Hunter"
+  },
+  {
+    "id": "fusion_frostfang",
+    "inputs": ["snow_golem", "wolf"],
+    "output": "frostfang",
+    "label": "Snow Golem + Wolf -> Frostfang"
+  },
+  {
+    "id": "fusion_infernal_archon",
+    "inputs": ["blaze", "blaze"],
+    "output": "infernal_archon",
+    "label": "Blaze + Blaze -> Infernal Archon"
+  },
+  {
+    "id": "fusion_magma_colossus",
+    "inputs": ["iron_golem", "blaze"],
+    "output": "magma_colossus",
+    "label": "Iron Golem + Blaze -> Magma Colossus"
+  },
+  {
+    "id": "fusion_steam_warden",
+    "inputs": ["snow_golem", "blaze"],
+    "output": "steam_warden",
+    "label": "Snow Golem + Blaze -> Steam Warden"
+  },
+  {
+    "id": "fusion_inferno_archer",
+    "inputs": ["blaze", "skeleton"],
+    "output": "inferno_archer",
+    "label": "Blaze + Skeleton -> Inferno Archer"
+  },
+  {
+    "id": "fusion_flame_fang",
+    "inputs": ["blaze", "wolf"],
+    "output": "flame_fang",
+    "label": "Blaze + Wolf -> Flame Fang"
+  }
+]

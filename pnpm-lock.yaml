@@ -51,6 +51,9 @@ importers:
 
   packages/game:
     dependencies:
+      '@mfd/game-data':
+        specifier: workspace:*
+        version: link:../game-data
       phaser:
         specifier: 3.90.0
         version: 3.90.0

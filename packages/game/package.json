@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@mfd/game-data": "workspace:*",
     "phaser": "3.90.0"
   },
   "devDependencies": {

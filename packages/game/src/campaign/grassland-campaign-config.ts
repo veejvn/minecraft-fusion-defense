@@ -1,3 +1,4 @@
+import { MVP_GAME_DATA } from '@mfd/game-data';
 import type { AbilityDefinition, AbilitySessionInput } from '../abilities/ability-session';
 import {
   DEFENDER_SPRITE_ASSETS,
@@ -62,190 +63,26 @@ export interface CampaignEnemyCatalogItem {
   readonly crystalReward: number;
 }
 
-const DEFENDER_ROLES_BY_ID: Readonly<Record<string, string>> = {
-  iron_golem: 'Frontline Tank',
-  snow_golem: 'Frost Control',
-  skeleton: 'Ranged Marksman',
-  wolf: 'Fast Melee',
-  blaze: 'Lobbed Fire',
-  steel_guardian: 'Crowd Control Guardian',
-  frost_guardian: 'Tank / Ice Control',
-  ice_golem: 'Map-Wide Cryo Control',
-  skeleton_sniper: 'Long-Range Piercing Burst',
-  iron_ranger: 'Heavy Marksman (Anti-Tank)',
-  frostbite_ranger: 'Ranged Freeze Control',
-  alpha_wolf: 'Melee Support (3x3 Aura)',
-  ironfang_guardian: 'Armored Melee / Lane Charge',
-  bonefang_hunter: 'Agile Hunter / Mark (+40% Dmg)',
-  frostfang: 'Cryo Executioner (3-Cell Front)',
-  infernal_archon: 'Map-Wide Fire Cataclysm',
-  magma_colossus: 'Heavy Melee / Fire Bruiser',
-  steam_warden: 'Elemental 3x3 Thermal Shock',
-  inferno_archer: 'Ranged Meteor Burn (3x3)',
-  flame_fang: '5-Lane Fire Wolf Summoner',
-};
+const DEFENDER_ROLES_BY_ID: Readonly<Record<string, string>> = Object.fromEntries(
+  MVP_GAME_DATA.defenders.map(d => [d.id, d.role]),
+);
 
-export const CAMPAIGN_BASE_COSTS: Readonly<Record<string, number>> = {
-  iron_golem: 50,
-  snow_golem: 75,
-  skeleton: 100,
-  wolf: 150,
-  blaze: 200,
-};
+export const CAMPAIGN_BASE_COSTS: Readonly<Record<string, number>> = Object.fromEntries(
+  MVP_GAME_DATA.defenders.filter(d => d.tier === 1).map(d => [d.id, d.summonEnergyCost]),
+);
 
-export const CAMPAIGN_BASE_COOLDOWNS: Readonly<Record<string, number>> = {
-  iron_golem: 10,
-  snow_golem: 5,
-  skeleton: 5,
-  wolf: 5,
-  blaze: 8,
-};
+export const CAMPAIGN_BASE_COOLDOWNS: Readonly<Record<string, number>> = Object.fromEntries(
+  MVP_GAME_DATA.defenders.filter(d => d.tier === 1).map(d => [d.id, d.summonCooldownSeconds]),
+);
 
-export const CAMPAIGN_GLOVE_COOLDOWN_SECONDS = 15;
+export const CAMPAIGN_GLOVE_COOLDOWN_SECONDS =
+  MVP_GAME_DATA.grasslandLevel.fusionGloveCooldownSeconds;
 
-export const GRASSLAND_WAVE_CRYSTALS: readonly number[] = [1, 1, 1, 1, 2];
+export const GRASSLAND_WAVE_CRYSTALS: readonly number[] =
+  MVP_GAME_DATA.grasslandLevel.waveCrystals;
 
-export const GRASSLAND_CAMPAIGN_WAVES: readonly WaveConfigDefinition[] = [
-  {
-    id: 'wave_1',
-    initialDelaySeconds: 3,
-    delayBeforeNextWaveSeconds: 5,
-    spawnGroups: [
-      {
-        enemyId: 'zombie',
-        count: 4,
-        allowedLanes: [0, 1, 2, 3, 4],
-        laneMode: 'sequential',
-        startOffsetSeconds: 0,
-        intervalSeconds: 3.5,
-      },
-    ],
-  },
-  {
-    id: 'wave_2',
-    initialDelaySeconds: 0,
-    delayBeforeNextWaveSeconds: 5,
-    spawnGroups: [
-      {
-        enemyId: 'zombie',
-        count: 4,
-        allowedLanes: [0, 2, 4, 1],
-        laneMode: 'sequential',
-        startOffsetSeconds: 0,
-        intervalSeconds: 2.5,
-      },
-      {
-        enemyId: 'husk',
-        count: 2,
-        allowedLanes: [1, 3],
-        laneMode: 'sequential',
-        startOffsetSeconds: 3,
-        intervalSeconds: 4,
-      },
-    ],
-  },
-  {
-    id: 'wave_3',
-    initialDelaySeconds: 0,
-    delayBeforeNextWaveSeconds: 5,
-    spawnGroups: [
-      {
-        enemyId: 'zombie',
-        count: 3,
-        allowedLanes: [0, 2, 4],
-        laneMode: 'sequential',
-        startOffsetSeconds: 0,
-        intervalSeconds: 2.2,
-      },
-      {
-        enemyId: 'husk',
-        count: 2,
-        allowedLanes: [1, 3],
-        laneMode: 'sequential',
-        startOffsetSeconds: 2,
-        intervalSeconds: 3.5,
-      },
-      {
-        enemyId: 'pillager',
-        count: 2,
-        allowedLanes: [0, 4],
-        laneMode: 'sequential',
-        startOffsetSeconds: 4,
-        intervalSeconds: 4,
-      },
-    ],
-  },
-  {
-    id: 'wave_4',
-    initialDelaySeconds: 0,
-    delayBeforeNextWaveSeconds: 5,
-    spawnGroups: [
-      {
-        enemyId: 'husk',
-        count: 3,
-        allowedLanes: [0, 2, 4],
-        laneMode: 'sequential',
-        startOffsetSeconds: 0,
-        intervalSeconds: 2.8,
-      },
-      {
-        enemyId: 'vindicator',
-        count: 2,
-        allowedLanes: [1, 3],
-        laneMode: 'sequential',
-        startOffsetSeconds: 2.5,
-        intervalSeconds: 3.5,
-      },
-      {
-        enemyId: 'pillager',
-        count: 2,
-        allowedLanes: [0, 3],
-        laneMode: 'sequential',
-        startOffsetSeconds: 4.5,
-        intervalSeconds: 3.5,
-      },
-    ],
-  },
-  {
-    id: 'wave_5',
-    initialDelaySeconds: 0,
-    delayBeforeNextWaveSeconds: 4,
-    spawnGroups: [
-      {
-        enemyId: 'zombie',
-        count: 5,
-        allowedLanes: [0, 1, 2, 3, 4],
-        laneMode: 'sequential',
-        startOffsetSeconds: 0,
-        intervalSeconds: 1.5,
-      },
-      {
-        enemyId: 'husk',
-        count: 3,
-        allowedLanes: [1, 2, 3],
-        laneMode: 'sequential',
-        startOffsetSeconds: 2,
-        intervalSeconds: 3,
-      },
-      {
-        enemyId: 'vindicator',
-        count: 3,
-        allowedLanes: [0, 2, 4],
-        laneMode: 'sequential',
-        startOffsetSeconds: 4,
-        intervalSeconds: 3,
-      },
-      {
-        enemyId: 'pillager',
-        count: 2,
-        allowedLanes: [1, 3],
-        laneMode: 'sequential',
-        startOffsetSeconds: 5,
-        intervalSeconds: 3.5,
-      },
-    ],
-  },
-];
+export const GRASSLAND_CAMPAIGN_WAVES: readonly WaveConfigDefinition[] =
+  MVP_GAME_DATA.grasslandLevel.waves;
 
 const DEFAULT_PRESET_REF = createDefaultPlaytestPreset();
 const PRESET_DEFENDER_BY_ID = new Map<string, PlaytestDefenderConfig>(
@@ -329,7 +166,7 @@ export function createGrasslandCampaignInputs(
   options: { readonly unlockAll?: boolean; readonly seed?: number } = {},
 ): GrasslandCampaignRuntimeInputs {
   const preset = createDefaultPlaytestPreset();
-  const seed = options.seed ?? 20261123;
+  const seed = options.seed ?? MVP_GAME_DATA.grasslandLevel.seed;
 
   const baseDefenders = preset.defenders.map(d => ({
     ...d,
@@ -354,18 +191,7 @@ export function createGrasslandCampaignInputs(
       id: w.id,
       crystals: GRASSLAND_WAVE_CRYSTALS[idx] ?? 1,
     })),
-    energyItems: {
-      amount: 25,
-      intervalSeconds: 5,
-      region: { min: { x: 0.12, y: 0.12 }, max: { x: 0.88, y: 0.88 } },
-      positions: [
-        { x: 0.25, y: 0.22 },
-        { x: 0.5, y: 0.5 },
-        { x: 0.72, y: 0.78 },
-        { x: 0.35, y: 0.72 },
-        { x: 0.65, y: 0.28 },
-      ],
-    },
+    energyItems: structuredClone(MVP_GAME_DATA.grasslandLevel.energyItems),
     enableRandomEnergyItems: false,
     enableRandomCrystalItems: false,
     fusionGloveCooldownSeconds: CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
@@ -452,7 +278,7 @@ export function createCampaignPlaytestPreset(): PlaytestPresetConfig {
   const base = createDefaultPlaytestPreset();
   return {
     ...base,
-    seed: 20261123,
+    seed: MVP_GAME_DATA.grasslandLevel.seed,
     fusionGloveCooldownSeconds: CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
     defenders: base.defenders.map(d => ({
       ...d,
