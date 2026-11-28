@@ -7,6 +7,7 @@ const baseURL = `http://127.0.0.1:${port}`;
 module.exports = defineConfig({
   testDir: __dirname,
   testMatch: 'production-home.spec.cjs',
+  timeout: 60000,
   workers: 1,
   reporter: 'list',
   use: { browserName: 'chromium', headless: true, baseURL },

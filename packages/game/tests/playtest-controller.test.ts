@@ -416,4 +416,58 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5 / T-14)', () => {
     expect(controller.getSnapshot().lastToast?.message).toContain('restricted in this stage');
     expect(controller.placeDefender('iron_golem', { row: 0, column: 0 }, false)).toBe(true);
   });
+
+  it('applies tuned ability parameters (e.g. Skeleton arrow_storm count and % AD) on live reset', () => {
+    const controller = new PlaytestController({ mode: 'sandbox' });
+    const tuned = controller.getPreset();
+    const arrowStorm = tuned.abilities.find(a => a.id === 'arrow_storm')!;
+    const eff = arrowStorm.effects[0];
+    if (eff.kind !== 'multihit-projectile') throw new Error('Expected multihit-projectile');
+    tuned.abilities = tuned.abilities.map(a =>
+      a.id === 'arrow_storm'
+        ? { ...a, effects: [{ ...eff, count: 20, damageMultiplier: 1.5 }] }
+        : a,
+    );
+
+    controller.reset(tuned, 'sandbox');
+    expect(controller.getPreset().abilities.find(a => a.id === 'arrow_storm')?.effects[0]).toMatchObject({
+      kind: 'multihit-projectile',
+      count: 20,
+      damageMultiplier: 1.5,
+    });
+
+    // Place Skeleton (25 AD) + tanky Husk on Lane 0, grant Crystals, and activate arrow_storm
+    expect(controller.placeDefender('skeleton', { row: 0, column: 0 }, true)).toBe(true);
+    expect(controller.spawnEnemy('husk', 0)).toBe(true);
+    expect(controller.grantCrystals()).toBe(true);
+    controller.stepMs(50);
+
+    const skeleton = controller.getSnapshot().defenders[0]!;
+    const enemyBefore = controller.getSnapshot().enemies[0]!.hp;
+    expect(controller.activateAbility(skeleton.id)).toBe(true);
+    controller.stepMs(50);
+    expect(controller.getSnapshot().projectiles.some(p => p.abilityId === 'arrow_storm')).toBe(true);
+
+    // Let arrows fly and verify Husk takes boosted damage (each arrow deals 1.5 * 25 = 37.5 > baseline 25)
+    for (let i = 0; i < 65; i++) {
+      controller.stepMs(50);
+    }
+    const enemyAfter = controller.getSnapshot().enemies[0];
+    expect(!enemyAfter || enemyAfter.hp < enemyBefore - 300).toBe(true);
+  });
+
+  it('applies tuned basicAttackStatus (e.g. Snow Golem on-hit slowPct and duration) on live reset', () => {
+    const controller = new PlaytestController({ mode: 'sandbox' });
+    const tuned = controller.getPreset();
+    const snowGolem = tuned.defenders.find(d => d.id === 'snow_golem')!;
+    snowGolem.basicAttackStatus = { kind: 'slow', slowPct: 0.6, durationSeconds: 4 };
+    controller.reset(tuned, 'sandbox');
+
+    expect(controller.placeDefender('snow_golem', { row: 0, column: 6 }, true)).toBe(true);
+    expect(controller.spawnEnemy('zombie', 0)).toBe(true);
+    controller.stepMs(100);
+
+    const enemy = controller.getSnapshot().enemies[0];
+    expect(enemy?.slowPct).toBeCloseTo(0.6);
+  });
 });

@@ -199,8 +199,15 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
         attackRange: d.attackRange,
         targeting: d.targeting,
         armor: d.armor,
-        ...(d.attackDamageType ? { attackDamageType: d.attackDamageType } : {}),
-        ...(d.basicAttackStatus ? { basicAttackStatus: structuredClone(d.basicAttackStatus) } : {}),
+        ...(d.id === 'snow_golem'
+          ? {
+              attackDamageType: 'ice' as const,
+              basicAttackStatus: { kind: 'slow' as const, slowPct: 0.5, durationSeconds: 4 },
+            }
+          : {
+              ...(d.attackDamageType ? { attackDamageType: d.attackDamageType } : {}),
+              ...(d.basicAttackStatus ? { basicAttackStatus: structuredClone(d.basicAttackStatus) } : {}),
+            }),
         ...(d.id === 'villager' && d.economyProduction
           ? {
               economyProduction: {
@@ -228,7 +235,14 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
         crystalReward: e.crystalReward,
         crystalDropChance: e.id === 'husk' ? 0.25 : e.crystalDropChance,
       })),
-      abilities: structuredClone(MVP_GAME_DATA.abilities),
+      abilities: MVP_GAME_DATA.abilities.map(a =>
+        a.id === 'arrow_storm' && a.effects[0]?.kind === 'multihit-projectile'
+          ? {
+              ...structuredClone(a),
+              effects: [{ ...structuredClone(a.effects[0]), count: 20, damageMultiplier: 1.5 }],
+            }
+          : structuredClone(a),
+      ),
       waves: structuredClone(MVP_GAME_DATA.grasslandLevel.waves),
       waveCrystals: [1, 2, 1, 2, 2],
     };
@@ -263,6 +277,16 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
       intervalSeconds: 8,
     });
     expect(merged.defenders.find(d => d.id === 'villager')?.economyProduction?.amountPerItem).toBe(30);
+    expect(merged.defenders.find(d => d.id === 'snow_golem')?.basicAttackStatus).toEqual({
+      kind: 'slow',
+      slowPct: 0.5,
+      durationSeconds: 4,
+    });
+    expect(merged.abilities.find(a => a.id === 'arrow_storm')?.effects[0]).toMatchObject({
+      kind: 'multihit-projectile',
+      count: 20,
+      damageMultiplier: 1.5,
+    });
     expect(merged.grasslandLevel.fusionGloveCooldownSeconds).toBe(12);
     expect(merged.grasslandLevel.waveCrystals).toEqual([1, 2, 1, 2, 2]);
 

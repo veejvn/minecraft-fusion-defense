@@ -2,6 +2,13 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  PlaytestAbilityEditor,
+  PlaytestBasicAttackEditor,
+  mergeSavedAbilities,
+  sanitizeBasicAttackStatus,
+  type AbilityDef,
+} from './playtest-ability-editor';
 import type {
   PlaytestController,
   PlaytestDefenderConfig,
@@ -118,8 +125,11 @@ function loadSavedPlaytestPreset(fallback: PlaytestPresetConfig): {
           ? {
               ...def,
               ...saved,
-              attackDamageType: def.attackDamageType,
-              basicAttackStatus: def.basicAttackStatus,
+              attackDamageType:
+                saved.attackDamageType === 'fire' || saved.attackDamageType === 'ice'
+                  ? saved.attackDamageType
+                  : undefined,
+              basicAttackStatus: sanitizeBasicAttackStatus(saved.basicAttackStatus),
               economyProduction: saved.economyProduction ?? def.economyProduction,
             }
           : { ...def };
@@ -137,8 +147,8 @@ function loadSavedPlaytestPreset(fallback: PlaytestPresetConfig): {
             }
           : { ...enemy };
       }),
-      // Always sync skill mechanics (counts, scopes, requiresTarget) from code defaults while keeping saved stat tweaks.
-      abilities: fallback.abilities,
+      // Merge tuned ability parameters while preserving structural ability fields.
+      abilities: mergeSavedAbilities(fallback.abilities, parsed.abilities),
       waves: parsed.waves.length > 0 ? parsed.waves : fallback.waves,
       waveCrystals: parsed.waveCrystals.length > 0 ? parsed.waveCrystals : fallback.waveCrystals,
     };
@@ -502,6 +512,11 @@ export function PlaytestHost() {
     return modMeta.defenderMeta.find(d => d.id === tuneDefenderId) ?? null;
   }, [modMeta, tuneDefenderId]);
 
+  const editedAbility = useMemo(() => {
+    if (!draftPreset) return null;
+    return draftPreset.abilities.find(a => a.ownerDefenderId === tuneDefenderId) ?? null;
+  }, [draftPreset, tuneDefenderId]);
+
   const editedEnemy = useMemo(() => {
     if (!draftPreset) return null;
     return draftPreset.enemies.find(e => e.id === tuneEnemyId) ?? null;
@@ -699,6 +714,36 @@ export function PlaytestHost() {
           ? Math.round(value)
           : value,
     };
+    commitDraftPreset(cloned);
+  };
+
+  const updateEditedAbility = (nextAbility: AbilityDef) => {
+    if (!draftPreset || !modMeta) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    cloned.abilities = cloned.abilities.map(a =>
+      a.id === nextAbility.id ? nextAbility : a,
+    );
+    commitDraftPreset(cloned);
+  };
+
+  const updateDefenderBasicAttack = (patch: {
+    attackDamageType?: 'physical' | 'fire' | 'ice';
+    basicAttackStatus?: PlaytestDefenderConfig['basicAttackStatus'];
+  }) => {
+    if (!draftPreset || !modMeta) return;
+    const cloned = modMeta.clonePreset(draftPreset);
+    const target = cloned.defenders.find(d => d.id === tuneDefenderId);
+    if (!target) return;
+    if (patch.attackDamageType && patch.attackDamageType !== 'physical') {
+      target.attackDamageType = patch.attackDamageType;
+    } else {
+      delete target.attackDamageType;
+    }
+    if (patch.basicAttackStatus) {
+      target.basicAttackStatus = structuredClone(patch.basicAttackStatus);
+    } else {
+      delete target.basicAttackStatus;
+    }
     commitDraftPreset(cloned);
   };
 
@@ -1700,6 +1745,7 @@ export function PlaytestHost() {
                   />
                   <div style={{ flex: 1 }}>
                     <select
+                      aria-label="Select Defender"
                       value={tuneDefenderId}
                       onChange={e => setTuneDefenderId(e.target.value)}
                       style={{ ...inputStyle, fontWeight: 700, fontSize: 13 }}
@@ -1866,6 +1912,23 @@ export function PlaytestHost() {
                       />
                     </label>
                   </div>
+                )}
+
+                <PlaytestBasicAttackEditor
+                  defender={editedDefender}
+                  inputStyle={inputStyle}
+                  onChange={updateDefenderBasicAttack}
+                />
+
+                {editedAbility && (
+                  <PlaytestAbilityEditor
+                    ability={editedAbility}
+                    defender={editedDefender}
+                    abilityName={editedDefenderMeta?.abilityName ?? editedAbility.id}
+                    abilitySummary={editedDefenderMeta?.abilitySummary ?? ''}
+                    inputStyle={inputStyle}
+                    onChange={updateEditedAbility}
+                  />
                 )}
               </div>
             )}
