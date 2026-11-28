@@ -348,19 +348,57 @@ test('mobile portrait shows rotate-to-landscape guard and rotating to landscape 
   const landscapeMetrics = await page.evaluate(() => {
     const canvas = document.querySelector('canvas');
     const rect = canvas.getBoundingClientRect();
+    const hud = document.querySelector('.mfd-hud-bar');
     return {
       scrollHeight: document.documentElement.scrollHeight,
       innerHeight: window.innerHeight,
       canvasBottom: rect.bottom,
       canvasWidth: rect.width,
       canvasHeight: rect.height,
+      hudScrollWidth: hud ? hud.scrollWidth : 0,
+      hudClientWidth: hud ? hud.clientWidth : 0,
     };
   });
   expect(landscapeMetrics.scrollHeight).toBeLessThanOrEqual(landscapeMetrics.innerHeight);
   expect(landscapeMetrics.canvasBottom).toBeLessThanOrEqual(landscapeMetrics.innerHeight);
   expect(landscapeMetrics.canvasWidth).toBeGreaterThan(400);
   expect(landscapeMetrics.canvasHeight).toBeGreaterThan(220);
-  await expect(page.getByRole('button', { name: 'Toggle Fullscreen Landscape' })).toBeVisible();
+  expect(landscapeMetrics.hudScrollWidth).toBeLessThanOrEqual(landscapeMetrics.hudClientWidth + 1);
+
+  for (const label of ['Villager', 'Fusion Glove', 'Shovel', 'Toggle Fullscreen Landscape', 'Pause']) {
+    const btn = page.getByRole('button', { name: new RegExp(label, 'i') }).first();
+    await expect(btn).toBeVisible();
+    const box = await btn.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(844);
+    expect(box.y + box.height).toBeLessThanOrEqual(390);
+  }
+
+  // 3. Smaller Phone Landscape (667x375) -> HUD still fits cleanly with zero horizontal clipping
+  await page.setViewportSize({ width: 667, height: 375 });
+  const smallLandscapeMetrics = await page.evaluate(() => {
+    const hud = document.querySelector('.mfd-hud-bar');
+    const canvas = document.querySelector('canvas');
+    const rect = canvas.getBoundingClientRect();
+    return {
+      scrollHeight: document.documentElement.scrollHeight,
+      innerHeight: window.innerHeight,
+      canvasBottom: rect.bottom,
+      hudScrollWidth: hud ? hud.scrollWidth : 0,
+      hudClientWidth: hud ? hud.clientWidth : 0,
+    };
+  });
+  expect(smallLandscapeMetrics.scrollHeight).toBeLessThanOrEqual(smallLandscapeMetrics.innerHeight);
+  expect(smallLandscapeMetrics.canvasBottom).toBeLessThanOrEqual(smallLandscapeMetrics.innerHeight);
+  expect(smallLandscapeMetrics.hudScrollWidth).toBeLessThanOrEqual(smallLandscapeMetrics.hudClientWidth + 1);
+
+  for (const label of ['Fusion Glove', 'Shovel', 'Toggle Fullscreen Landscape', 'Pause']) {
+    const btn = page.getByRole('button', { name: new RegExp(label, 'i') }).first();
+    const box = await btn.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.x + box.width).toBeLessThanOrEqual(667);
+  }
 
   expect(browserErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);

@@ -285,25 +285,46 @@ body {
   animation: mfd-rotate-phone 2.4s ease-in-out infinite;
 }
 
-@media (max-height: 540px) and (orientation: landscape) {
+@media (max-width: 900px), (max-height: 540px) {
+  .mfd-modal-backdrop {
+    padding: 8px;
+  }
+
+  .mfd-modal {
+    padding: 14px !important;
+    max-height: 94dvh;
+    border-width: 2px;
+  }
+
+  .mfd-card {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 960px), (max-height: 540px) and (orientation: landscape) {
   .mfd-shell {
-    padding: 8px max(12px, env(safe-area-inset-right)) 14px max(12px, env(safe-area-inset-left));
+    padding: 8px max(10px, env(safe-area-inset-right)) 14px max(10px, env(safe-area-inset-left));
   }
 
   .mfd-shell.mfd-shell-battle {
-    padding: max(4px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
-      max(4px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    padding: max(2px, env(safe-area-inset-top)) max(4px, env(safe-area-inset-right))
+      max(2px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
   }
 
   .mfd-battle-section {
-    gap: 4px;
+    gap: 3px;
+  }
+
+  .mfd-battle-canvas-frame {
+    border-width: 2px !important;
+    border-radius: 6px !important;
   }
 
   .mfd-hud-bar {
     flex-wrap: nowrap !important;
     overflow-x: auto;
-    padding: 3px 6px !important;
-    gap: 5px !important;
+    padding: 2px 4px !important;
+    gap: 3px !important;
     scrollbar-width: none;
   }
 
@@ -311,20 +332,93 @@ body {
     display: none;
   }
 
-  .mfd-hud-bar > div {
+  .mfd-hud-resource-group,
+  .mfd-hud-cards-group,
+  .mfd-hud-controls-group {
     flex-wrap: nowrap !important;
+    gap: 3px !important;
     flex-shrink: 0;
+  }
+
+  .mfd-hud-resource {
+    padding: 2px 5px !important;
+    gap: 4px !important;
+    border-radius: 6px !important;
+  }
+
+  .mfd-hud-label,
+  .mfd-hud-card-name,
+  .mfd-hud-wave-prefix {
+    display: none !important;
+  }
+
+  .mfd-hud-value {
+    font-size: 12px !important;
   }
 
   .mfd-hud-bar .mfd-btn {
-    padding: 2px 6px !important;
-    font-size: 11px !important;
+    padding: 2px 4px !important;
+    font-size: 10px !important;
     white-space: nowrap;
     flex-shrink: 0;
+    border-radius: 5px !important;
   }
 
-  .mfd-hud-bar img.mfd-pixel {
-    width: 20px;
-    height: 20px;
+  .mfd-hud-bar .mfd-defender-card {
+    flex-direction: column;
+    gap: 1px !important;
+    padding: 2px 4px !important;
+    min-width: 34px;
+  }
+
+  .mfd-hud-card-meta,
+  .mfd-hud-tool-text {
+    text-align: center !important;
+  }
+
+  .mfd-hud-card-cost {
+    font-size: 8px !important;
+    line-height: 1.05 !important;
+  }
+
+  .mfd-hud-bar img.mfd-pixel,
+  .mfd-hud-bar svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .mfd-hud-wave-box {
+    padding: 2px 5px !important;
+    border-radius: 6px !important;
+  }
+
+  .mfd-hud-wave-main,
+  .mfd-hud-wave-sub {
+    font-size: 8.5px !important;
+    white-space: nowrap;
+    line-height: 1.1 !important;
+  }
+
+  .mfd-hud-icon-btn,
+  .mfd-hud-pause-btn {
+    padding: 4px 6px !important;
+    font-size: 10px !important;
+  }
+
+  .mfd-playtest-strip {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    padding: 3px 5px !important;
+    gap: 4px !important;
+    scrollbar-width: none;
+  }
+
+  .mfd-playtest-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mfd-playtest-strip > div {
+    flex-wrap: nowrap !important;
+    flex-shrink: 0;
   }
 }

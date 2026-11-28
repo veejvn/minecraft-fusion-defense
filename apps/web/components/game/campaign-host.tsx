@@ -168,6 +168,7 @@ export function CampaignHost({
     >
       <div
         ref={hostRef}
+        className="mfd-battle-canvas-frame"
         aria-label="Grassland 5x9 Battlefield"
         style={{
           width: '100%',

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MobileLandscapeGuard } from '../layout/mobile-landscape-guard';
+import { MobileLandscapeGuard, toggleLandscapeFullscreen } from '../layout/mobile-landscape-guard';
 import {
   PlaytestAbilityEditor,
   PlaytestBasicAttackEditor,
@@ -1080,7 +1080,7 @@ export function PlaytestHost() {
         <section className="mfd-battle-section">
           {/* Row 1: Main Campaign-Identical Tactical HUD Bar */}
           <div
-            className="mfd-card"
+            className="mfd-card mfd-hud-bar"
             style={{
               padding: '5px 10px',
               display: 'flex',
@@ -1092,8 +1092,9 @@ export function PlaytestHost() {
             }}
           >
             {/* Resources: Emeralds & Power Crystal */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div className="mfd-hud-resource-group" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <div
+                className="mfd-hud-resource"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1107,8 +1108,10 @@ export function PlaytestHost() {
               >
                 <img src="/assets/sprites/items/emerald.png" alt="Emeralds" width={20} height={20} className="mfd-pixel" />
                 <div>
-                  <div style={{ fontSize: 9, color: '#6EE7B7', fontWeight: 700, lineHeight: 1.1 }}>EMERALDS</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#A7F3D0', lineHeight: 1.1 }}>
+                  <div className="mfd-hud-label" style={{ fontSize: 9, color: '#6EE7B7', fontWeight: 700, lineHeight: 1.1 }}>
+                    EMERALDS
+                  </div>
+                  <div className="mfd-hud-value" style={{ fontSize: 13, fontWeight: 700, color: '#A7F3D0', lineHeight: 1.1 }}>
                     {snapshot?.energy ?? 100}
                   </div>
                 </div>
@@ -1116,9 +1119,10 @@ export function PlaytestHost() {
 
               <button
                 type="button"
-                className={`mfd-btn ${tool.kind === 'crystal' ? 'mfd-btn-crystal' : ''}`}
+                className={`mfd-btn mfd-hud-crystal ${tool.kind === 'crystal' ? 'mfd-btn-crystal' : ''}`}
                 style={{ padding: '3px 7px', touchAction: 'none', userSelect: 'none' }}
                 disabled={!snapshot || snapshot.crystals < 1 || snapshot.terminal !== null}
+                aria-label={`Power Crystals (${snapshot?.crystals ?? 0} of ${snapshot?.maxCrystals ?? 5})`}
                 onPointerDown={e => {
                   if (snapshot && snapshot.crystals >= 1) {
                     startHudDrag(e, { kind: 'crystal' }, '/assets/sprites/items/power_crystal.png', 'Power Crystal');
@@ -1135,8 +1139,10 @@ export function PlaytestHost() {
               >
                 <img src="/assets/sprites/items/power_crystal.png" alt="Crystal" width={20} height={20} className="mfd-pixel" />
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 9, color: '#BAE6FD', lineHeight: 1.1 }}>CRYSTALS</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.1 }}>
+                  <div className="mfd-hud-label" style={{ fontSize: 9, color: '#BAE6FD', lineHeight: 1.1 }}>
+                    CRYSTALS
+                  </div>
+                  <div className="mfd-hud-value" style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.1 }}>
                     {snapshot?.crystals ?? 0} / {snapshot?.maxCrystals ?? 5}
                   </div>
                 </div>
@@ -1145,7 +1151,7 @@ export function PlaytestHost() {
               {snapshot && snapshot.pendingCrystals > 0 && (
                 <button
                   type="button"
-                  className="mfd-btn mfd-btn-gold"
+                  className="mfd-btn mfd-btn-gold mfd-hud-pending-crystal"
                   style={{ padding: '4px 7px', fontSize: 10 }}
                   disabled={snapshot.crystals >= snapshot.maxCrystals || snapshot.terminal !== null}
                   onClick={() => controller?.claimPendingCrystals()}
@@ -1157,17 +1163,23 @@ export function PlaytestHost() {
             </div>
 
             {/* 6 Base Defender Cards + Fusion Glove + Shovel */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+            <div className="mfd-hud-cards-group" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
               {baseCards.map(card => {
                 const selected = tool.kind === 'place' && tool.definitionId === card.id;
                 const isFree = placementMode === 'free';
                 const blockedByRules = !isFree && (!card.canAfford || card.onCooldown);
+                const statusText = isFree
+                  ? 'Free'
+                  : card.onCooldown
+                    ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s`
+                    : `${card.cost} EM`;
                 return (
                   <button
                     key={card.id}
                     type="button"
                     className="mfd-btn mfd-defender-card"
                     disabled={(!isFree && card.onCooldown) || snapshot?.terminal !== null}
+                    aria-label={`${card.name} (${statusText})`}
                     onPointerDown={e => {
                       if (isFree || (card.canAfford && !card.onCooldown)) {
                         startHudDrag(
@@ -1220,11 +1232,12 @@ export function PlaytestHost() {
                       draggable={false}
                       className="mfd-pixel"
                     />
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
+                    <div className="mfd-hud-card-meta" style={{ textAlign: 'left' }}>
+                      <div className="mfd-hud-card-name" style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
                         {card.name}
                       </div>
                       <div
+                        className="mfd-hud-card-cost"
                         style={{
                           fontSize: 9,
                           lineHeight: 1.15,
@@ -1251,8 +1264,13 @@ export function PlaytestHost() {
               {/* Fusion Glove */}
               <button
                 type="button"
-                className="mfd-btn mfd-defender-card"
+                className="mfd-btn mfd-defender-card mfd-hud-tool-btn"
                 disabled={gloveCooldown.onCooldown || snapshot?.terminal !== null}
+                aria-label={
+                  gloveCooldown.onCooldown
+                    ? `Fusion Glove (CD ${gloveCooldown.remainingSeconds.toFixed(1)}s)`
+                    : 'Fusion Glove'
+                }
                 onPointerDown={e => {
                   if (!gloveCooldown.onCooldown) {
                     startHudDrag(e, { kind: 'glove' }, '/assets/sprites/items/fusion_glove.png', 'Fusion Glove');
@@ -1288,9 +1306,14 @@ export function PlaytestHost() {
                   draggable={false}
                   className="mfd-pixel"
                 />
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Glove</div>
-                  <div style={{ fontSize: 9, lineHeight: 1.15, color: gloveCooldown.onCooldown ? '#FACC15' : '#38BDF8' }}>
+                <div className="mfd-hud-tool-text" style={{ textAlign: 'left' }}>
+                  <div className="mfd-hud-card-name" style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
+                    Glove
+                  </div>
+                  <div
+                    className="mfd-hud-card-cost"
+                    style={{ fontSize: 9, lineHeight: 1.15, color: gloveCooldown.onCooldown ? '#FACC15' : '#38BDF8' }}
+                  >
                     {gloveCooldown.onCooldown ? `CD ${gloveCooldown.remainingSeconds.toFixed(1)}s` : 'MOVE/FUSE'}
                   </div>
                 </div>
@@ -1299,8 +1322,9 @@ export function PlaytestHost() {
               {/* Shovel */}
               <button
                 type="button"
-                className="mfd-btn mfd-defender-card"
+                className="mfd-btn mfd-defender-card mfd-hud-tool-btn"
                 disabled={snapshot?.terminal !== null}
+                aria-label="Shovel"
                 onPointerDown={e =>
                   startHudDrag(e, { kind: 'shovel' }, '/assets/sprites/items/shovel.png', 'Shovel')
                 }
@@ -1326,16 +1350,21 @@ export function PlaytestHost() {
                   draggable={false}
                   className="mfd-pixel"
                 />
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>Shovel</div>
-                  <div style={{ fontSize: 9, lineHeight: 1.15, color: '#FCA5A5' }}>REMOVE</div>
+                <div className="mfd-hud-tool-text" style={{ textAlign: 'left' }}>
+                  <div className="mfd-hud-card-name" style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
+                    Shovel
+                  </div>
+                  <div className="mfd-hud-card-cost" style={{ fontSize: 9, lineHeight: 1.15, color: '#FCA5A5' }}>
+                    REMOVE
+                  </div>
                 </div>
               </button>
             </div>
 
             {/* Wave Status & Playback Controls */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div className="mfd-hud-controls-group" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <div
+                className="mfd-hud-wave-box"
                 style={{
                   background: '#0f172a',
                   border: '2px solid #334155',
@@ -1344,19 +1373,19 @@ export function PlaytestHost() {
                   textAlign: 'center',
                 }}
               >
-                <div style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, lineHeight: 1.15 }}>
+                <div className="mfd-hud-wave-main" style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, lineHeight: 1.15 }}>
                   {snapshot?.mode === 'sandbox'
                     ? `SANDBOX · ${(snapshot?.elapsedSeconds ?? 0).toFixed(0)}s`
                     : `WAVE ${waveNumber}/${snapshot?.totalWaves ?? 5}`}
                 </div>
-                <div style={{ fontSize: 10, color: '#CBD5E1', lineHeight: 1.15 }}>
+                <div className="mfd-hud-wave-sub" style={{ fontSize: 10, color: '#CBD5E1', lineHeight: 1.15 }}>
                   E: {snapshot?.enemies.length ?? 0} · K: {snapshot?.enemiesKilled ?? 0}
                 </div>
               </div>
 
               <button
                 type="button"
-                className="mfd-btn"
+                className="mfd-btn mfd-hud-icon-btn"
                 style={{ padding: '6px 9px', fontSize: 12 }}
                 onClick={cycleSpeed}
                 title="Cycle simulation speed (1x -> 2x -> 4x -> 0.5x)"
@@ -1366,7 +1395,18 @@ export function PlaytestHost() {
 
               <button
                 type="button"
-                className="mfd-btn mfd-btn-gold"
+                className="mfd-btn mfd-hud-icon-btn"
+                style={{ padding: '6px 9px', fontSize: 12 }}
+                onClick={() => void toggleLandscapeFullscreen()}
+                aria-label="Toggle Fullscreen Landscape"
+                title="Fullscreen & Xoay ngang (Mobile/Desktop)"
+              >
+                ⛶
+              </button>
+
+              <button
+                type="button"
+                className="mfd-btn mfd-btn-gold mfd-hud-pause-btn"
                 style={{ padding: '6px 9px', fontSize: 12 }}
                 disabled={snapshot?.terminal !== null}
                 onClick={() => controller?.setPaused(!(snapshot?.paused ?? false))}
@@ -1379,6 +1419,7 @@ export function PlaytestHost() {
 
           {/* Row 2: Compact Playtest Lab Strip (keeps canvas >= 600px at 1366x768) */}
           <div
+            className="mfd-playtest-strip"
             style={{
               display: 'flex',
               alignItems: 'center',
