@@ -9,7 +9,7 @@
     "accentColor": "#10b981",
     "summonEnergyCost": 50,
     "summonCooldownSeconds": 5,
-    "maxHp": 150,
+    "maxHp": 100,
     "damage": 0,
     "attackSpeed": 1,
     "attackRange": 0,
@@ -37,11 +37,15 @@
     "summonEnergyCost": 50,
     "summonCooldownSeconds": 10,
     "maxHp": 450,
-    "damage": 25,
+    "damage": 20,
     "attackSpeed": 0.6,
     "attackRange": 1.1,
     "targeting": "CLOSEST_TO_DEFENDER",
     "armor": 5,
+    "basicAttackStatus": {
+      "kind": "stun",
+      "durationSeconds": 0.5
+    },
     "abilityId": "earthquake",
     "abilityName": "Earthquake",
     "abilitySummary": "3x AD physical + 2s Stun (enemies ahead in lane)",
@@ -67,7 +71,7 @@
     "basicAttackStatus": {
       "kind": "slow",
       "slowPct": 0.35,
-      "durationSeconds": 2.5
+      "durationSeconds": 2
     },
     "abilityId": "blizzard",
     "abilityName": "Blizzard",

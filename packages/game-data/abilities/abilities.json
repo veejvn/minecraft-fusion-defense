@@ -12,9 +12,10 @@
         "scope": "same-lane-enemies",
         "damageMultiplier": 1,
         "damageType": "ice",
+        "armorPiercing": false,
         "applyStatus": {
           "kind": "slow",
-          "slowPct": 0.5,
+          "slowPct": 0.6,
           "durationSeconds": 5
         }
       }
@@ -33,6 +34,7 @@
         "scope": "same-lane-enemies-ahead",
         "damageMultiplier": 3,
         "damageType": "physical",
+        "armorPiercing": false,
         "applyStatus": {
           "kind": "stun",
           "durationSeconds": 2
@@ -469,8 +471,8 @@
     "effects": [
       {
         "kind": "resource-burst",
-        "amount": 150,
-        "itemCount": 6,
+        "amount": 200,
+        "itemCount": 4,
         "spawnAsItems": true
       }
     ]
