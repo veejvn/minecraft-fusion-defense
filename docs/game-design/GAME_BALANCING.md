@@ -26,7 +26,7 @@ Tài liệu này không thay thế các quy tắc gameplay đã xác nhận tron
 | Hạng mục | Giá trị / Quy tắc | Trạng thái |
 | --- | --- | --- |
 | Level MVP | 1 Grassland Level | Confirmed |
-| Grid | 5 Rows × 9 Columns | Confirmed |
+| Grid | 5 Rows × 10 Columns | Confirmed |
 | Số Waves | 5 | Confirmed |
 | Base Defenders | 5 | Confirmed |
 | Fusion Defenders | 7 | Confirmed |

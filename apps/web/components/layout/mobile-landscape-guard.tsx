@@ -190,7 +190,7 @@ export function MobileLandscapeGuard() {
             Xoay ngang màn hình để chơi
           </h2>
           <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: '#CBD5E1' }}>
-            Bàn cờ 5×9 được thiết kế tối ưu cho màn hình ngang (Landscape). Bấm nút bên dưới để mở toàn màn hình và xoay ngang tự động trên Android/Chrome.
+            Bàn cờ 5×10 được thiết kế tối ưu cho màn hình ngang (Landscape). Bấm nút bên dưới để mở toàn màn hình và xoay ngang tự động trên Android/Chrome.
           </p>
         </div>
 

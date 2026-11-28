@@ -82,13 +82,13 @@ Tài liệu này định nghĩa các cơ chế gameplay cốt lõi của Minecra
 
 ### 2.1. Battlefield Layout
 
-Chiến trường sử dụng góc nhìn Side-view, được chia thành Grid 5 hàng × 9 cột.
+Chiến trường sử dụng góc nhìn Side-view, được chia thành Grid 5 hàng × 10 cột.
 
 | Property | Value |
 | --- | --- |
 | Rows | 5 |
-| Columns | 9 |
-| Total Cells | 45 |
+| Columns | 10 |
+| Total Cells | 50 |
 | Perspective | Side-view |
 | Enemy Spawn Direction | Right |
 | Enemy Movement Direction | Right to Left |
@@ -1167,7 +1167,7 @@ Gameplay Mechanics được xem là triển khai đúng khi đáp ứng các đi
 
 ### Battlefield
 
-- [ ] Grid có đúng 5 hàng và 9 cột.
+- [ ] Grid có đúng 5 hàng và 10 cột.
 - [ ] Mỗi ô chỉ chứa tối đa một Defender.
 - [ ] Enemy di chuyển theo Lane.
 - [ ] Enemy xuất hiện từ phía bên phải và di chuyển sang trái.

@@ -29,7 +29,7 @@ const runtimeBundleSchema = gameDataBundleSchema.superRefine((bundle, ctx) => {
     issue(['abilities', index, 'effects'], `Executable Ability effect contract is not approved for ${item.id}`);
   });
   bundle.levels.forEach((item, index) => {
-    if (item.rows !== 5 || item.columns !== 9) issue(['levels', index], 'Grassland battlefield must be 5 rows × 9 columns');
+    if (item.rows !== 5 || item.columns !== 10) issue(['levels', index], 'Grassland battlefield must be 5 rows × 10 columns');
     if (item.waveIds.length !== 5) issue(['levels', index, 'waveIds'], 'Grassland must reference 5 Waves');
   });
   bundle.waves.forEach((item, index) => {

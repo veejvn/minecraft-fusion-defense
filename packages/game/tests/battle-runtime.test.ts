@@ -12,11 +12,11 @@ const enemy = (position = 0.5, lane = 0): BattleCommand => ({
 });
 
 describe('T-05 headless battlefield', () => {
-  it('maps every one of the 45 cells and rejects invalid coordinates', () => {
-    const valid = Array.from({ length: 45 }, (_, i) => cellIndex({ row: Math.floor(i / 9), column: i % 9 }));
-    expect(valid).toEqual(Array.from({ length: 45 }, (_, i) => i));
-    expect(runtime().snapshot().occupancy).toEqual(Array(45).fill(null));
-    for (const [row, column] of [[-1, 0], [5, 0], [0, -1], [0, 9], [0.5, 0], [0, NaN], [0, Infinity]]) {
+  it('maps every one of the 50 cells and rejects invalid coordinates', () => {
+    const valid = Array.from({ length: 50 }, (_, i) => cellIndex({ row: Math.floor(i / 10), column: i % 10 }));
+    expect(valid).toEqual(Array.from({ length: 50 }, (_, i) => i));
+    expect(runtime().snapshot().occupancy).toEqual(Array(50).fill(null));
+    for (const [row, column] of [[-1, 0], [5, 0], [0, -1], [0, 10], [0.5, 0], [0, NaN], [0, Infinity]]) {
       expect(() => cellIndex({ row, column })).toThrow(RangeError);
     }
   });
@@ -37,7 +37,7 @@ describe('T-05 headless battlefield', () => {
 
   it('removes both kinds and frees a Defender cell for reuse without reusing an ID', () => {
     const battle = runtime();
-    battle.enqueue(defender(4, 8), 1);
+    battle.enqueue(defender(4, 9), 1);
     battle.enqueue(enemy(), 1);
     battle.advance(100);
     const [defenderId, enemyId] = [...battle.snapshot().entities.keys()];
@@ -46,17 +46,17 @@ describe('T-05 headless battlefield', () => {
     battle.advance(100);
     expect(battle.snapshot().entities.size).toBe(0);
     expect(battle.snapshot().occupancy.every(id => id === null)).toBe(true);
-    battle.enqueue(defender(4, 8), 3);
+    battle.enqueue(defender(4, 9), 3);
     battle.advance(100);
     const snapshot = battle.snapshot();
     expect(snapshot.entities.size).toBe(1);
-    expect(snapshot.occupancy[44]).not.toBe(defenderId);
-    expect(snapshot.entities.get(snapshot.occupancy[44]!)).toMatchObject({ kind: 'defender', cell: { row: 4, column: 8 } });
+    expect(snapshot.occupancy[49]).not.toBe(defenderId);
+    expect(snapshot.entities.get(snapshot.occupancy[49]!)).toMatchObject({ kind: 'defender', cell: { row: 4, column: 9 } });
   });
 
   it.each([
     ['occupied cell', defender()],
-    ['invalid cell', defender(0, 9)],
+    ['invalid cell', defender(0, 10)],
     ['invalid lane', enemy(0.5, 5)],
     ['invalid position', enemy(Infinity)],
     ['unknown removal', { type: 'remove', id: 999n } as const],

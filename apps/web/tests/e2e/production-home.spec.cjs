@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-test('built homepage serves full MVP Menu, Collection (22 Defenders), Achievements, 5x9 Grassland Battle, and Save/Resume flow', async ({ page }) => {
+test('built homepage serves full MVP Menu, Collection (22 Defenders), Achievements, 5x10 Grassland Battle, and Save/Resume flow', async ({ page }) => {
   const browserErrors = [];
   const consoleErrors = [];
   page.on('pageerror', error => browserErrors.push(error.message));
@@ -32,7 +32,7 @@ test('built homepage serves full MVP Menu, Collection (22 Defenders), Achievemen
   await expect(page.getByRole('heading', { name: 'Achievements & Progression' })).toBeVisible();
   await page.getByRole('button', { name: 'Back to Menu' }).click();
 
-  // 4. Level Selection -> Start Grassland 5x9 Battle
+  // 4. Level Selection -> Start Grassland 5x10 Battle
   await page.getByRole('button', { name: 'Play Grassland Campaign' }).click();
   await expect(page.getByRole('heading', { name: 'Level Selection' })).toBeVisible();
   await page.getByRole('button', { name: /Play Grassland Campaign|Start New Battle/i }).click();
@@ -65,7 +65,7 @@ test('built homepage serves full MVP Menu, Collection (22 Defenders), Achievemen
   await golemCard.click();
   const canvasBox = await page.locator('canvas').boundingBox();
   await page.mouse.click(
-    canvasBox.x + (304 / 1280) * canvasBox.width,
+    canvasBox.x + (262 / 1280) * canvasBox.width,
     canvasBox.y + (220 / 720) * canvasBox.height,
   );
   await expect(golemCard).toContainText(/CD \d+\.\ds/);
@@ -157,7 +157,7 @@ test('1366x768 laptop viewport fits with 0 scroll, verifies all Collection PNG s
   const golemCard = page.getByRole('button', { name: /Iron Golem/i });
   const cardBox = await golemCard.boundingBox();
   const canvasBox = await page.locator('canvas').boundingBox();
-  const targetX = canvasBox.x + (304 / 1280) * canvasBox.width;
+  const targetX = canvasBox.x + (262 / 1280) * canvasBox.width;
   const targetY = canvasBox.y + (352 / 720) * canvasBox.height;
 
   await page.mouse.move(cardBox.x + cardBox.width / 2, cardBox.y + cardBox.height / 2);
@@ -342,7 +342,7 @@ test('/editor renders 5-Lane Wave Timeline, Starting Grid, Test Play modal, and 
   expect(consoleErrors).toEqual([]);
 });
 
-test('mobile portrait shows rotate-to-landscape guard and rotating to landscape fits 5x9 battlefield cleanly', async ({ page }) => {
+test('mobile portrait shows rotate-to-landscape guard and rotating to landscape fits 5x10 battlefield cleanly', async ({ page }) => {
   const browserErrors = [];
   const consoleErrors = [];
   page.on('pageerror', error => browserErrors.push(error.message));

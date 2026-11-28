@@ -469,7 +469,7 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5 / T-14)', () => {
     snowGolem.basicAttackStatus = { kind: 'slow', slowPct: 0.6, durationSeconds: 4 };
     controller.reset(tuned, 'sandbox');
 
-    expect(controller.placeDefender('snow_golem', { row: 0, column: 6 }, true)).toBe(true);
+    expect(controller.placeDefender('snow_golem', { row: 0, column: 7 }, true)).toBe(true);
     expect(controller.spawnEnemy('zombie', 0)).toBe(true);
     controller.stepMs(100);
 

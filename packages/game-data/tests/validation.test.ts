@@ -41,7 +41,7 @@ function syntheticBundle() {
       id: `ability_${index + 1}`, ownerDefenderId: defender.id,
       powerCrystalCost: 1, cooldownSeconds: 1,
     })),
-    levels: [{ id: 'test_grassland', rows: 5, columns: 9, waveIds: Array.from({ length: 5 }, (_, index) => `wave_${index + 1}`) }],
+    levels: [{ id: 'test_grassland', rows: 5, columns: 10, waveIds: Array.from({ length: 5 }, (_, index) => `wave_${index + 1}`) }],
     waves: Array.from({ length: 5 }, (_, index) => ({ id: `wave_${index + 1}`, spawns: [{ enemyId: 'enemy_1', count: 1, atSeconds: 1 }] })),
     resources: {
       initialEnergy: 0, passiveEnergyAmount: 1, passiveEnergyIntervalSeconds: 1,

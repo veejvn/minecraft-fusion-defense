@@ -33,7 +33,7 @@ export type CampaignGameHandle = {
 };
 
 /**
- * Mount the interactive 5x9 Grassland Campaign Phaser Scene into a DOM host using
+ * Mount the interactive 5x10 Grassland Campaign Phaser Scene into a DOM host using
  * the T-02 lifecycle cleanup adapter with pixelArt: true nearest-neighbor rendering.
  */
 export function createCampaignGame(

@@ -1,6 +1,7 @@
 // Test-only playtest presets for Owner balance evaluation backed by @mfd/game-data JSON definitions.
 
 import { MVP_GAME_DATA, parseHexColor, type MvpCampaignLevelData } from '@mfd/game-data';
+import { BATTLEFIELD_COLUMNS } from '../battlefield/grid';
 import type {
   AbilityDamageType,
   AbilityDefinition,
@@ -297,7 +298,7 @@ export function buildRuntimeInputsFromPreset(
   };
 
   const combatInput: CombatSessionInput = {
-    spawnX: 9,
+    spawnX: BATTLEFIELD_COLUMNS,
     defenders: preset.defenders.map(defender => ({
       id: defender.id,
       maxHp: defender.maxHp,

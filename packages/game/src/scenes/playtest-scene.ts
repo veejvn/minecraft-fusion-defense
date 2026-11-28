@@ -12,7 +12,7 @@ import {
   BasicAttackVisualTracker,
   renderBasicAttackEffects,
 } from '../assets/basic-attack-vfx';
-import type { Cell } from '../battlefield/grid';
+import { BATTLEFIELD_COLUMNS, BATTLEFIELD_ROWS, type Cell } from '../battlefield/grid';
 import type {
   PlaytestController,
   PlaytestDefenderView,
@@ -73,7 +73,7 @@ type DragState =
 
 const CANVAS_WIDTH = 1280;
 const CANVAS_HEIGHT = 720;
-const GRID_COLS = 9;
+const GRID_COLS = BATTLEFIELD_COLUMNS;
 const ITEM_HIT_RADIUS = 26;
 const EMERALD_HOVER_RADIUS = 34;
 const CHEST_HIT_RADIUS = 42;
@@ -82,27 +82,27 @@ const DRAG_THRESHOLD_PX = 14;
 function getGridGeometry(showAuxLanes: boolean): GridGeometry {
   if (!showAuxLanes) {
     return {
-      originX: 136,
+      originX: 100,
       originY: 250,
-      cellW: 112,
+      cellW: 108,
       cellH: 180,
       rows: 1,
       cols: GRID_COLS,
     };
   }
   return {
-    originX: 136,
+    originX: 100,
     originY: 22,
-    cellW: 112,
+    cellW: 108,
     cellH: 132,
-    rows: 5,
+    rows: BATTLEFIELD_ROWS,
     cols: GRID_COLS,
   };
 }
 
 /**
  * Interactive Playtest & Balance Phaser Scene mirroring GrasslandBattleScene:
- * 5x9 (or 1x9) pixel-art Grassland battlefield, all 49 PNG sprites, basic attack VFX,
+ * 5x10 (or 1x10) pixel-art Grassland battlefield, all 49 PNG sprites, basic attack VFX,
  * ability VFX, direct shop-card fusion, Fusion Glove Move/Fuse, Shovel, and Power Crystal.
  */
 export class PlaytestScene extends Phaser.Scene {

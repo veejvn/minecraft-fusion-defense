@@ -4,6 +4,7 @@ import {
   type MvpLevelDifficulty,
   type MvpLevelTheme,
 } from '@mfd/game-data';
+import { BATTLEFIELD_COLUMNS } from '../battlefield/grid';
 import type { AbilityDefinition, AbilitySessionInput } from '../abilities/ability-session';
 import {
   DEFENDER_SPRITE_ASSETS,
@@ -312,7 +313,7 @@ export function createCampaignInputs(
     : synced.resourceInput;
 
   const combatInput: CombatSessionInput = {
-    spawnX: 9,
+    spawnX: BATTLEFIELD_COLUMNS,
     defenders: baseDefenders.map(d => ({
       id: d.id,
       maxHp: d.maxHp,

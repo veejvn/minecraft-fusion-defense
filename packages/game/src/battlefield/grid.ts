@@ -1,5 +1,5 @@
 export const BATTLEFIELD_ROWS = 5;
-export const BATTLEFIELD_COLUMNS = 9;
+export const BATTLEFIELD_COLUMNS = 10;
 
 export interface Cell {
   readonly row: number;

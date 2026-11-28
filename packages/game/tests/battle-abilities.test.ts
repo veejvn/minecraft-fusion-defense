@@ -1218,7 +1218,7 @@ describe('AC-10 arrow_storm & wildfire_rush multihit cadences (FR3 pause, cancel
 });
 
 describe('AC-11 piercing_barrage projectile', () => {
-  it('fires 1 merged 600% AD arrow at 2x speed with unlimited same-lane pierce, hits each enemy at most once, persists after shooter death, and despawns at column 9', () => {
+  it('fires 1 merged 600% AD arrow at 2x speed with unlimited same-lane pierce, hits each enemy at most once, persists after shooter death, and despawns past column 10', () => {
     const game = createBattle({ ticksPerSecond: 10 });
     game.enqueue({ type: 'wave-reward', sourceId: 'wave_1' }, 1);
     // Use skeleton_sniper with attackRange 0? No, just check exact damage math: 30 * 6 = 180!
@@ -1247,9 +1247,13 @@ describe('AC-11 piercing_barrage projectile', () => {
     expect(game.snapshot().combat?.entities.get(2n)?.hp).toBe(1000 - 180);
     expect(game.snapshot().combat?.entities.get(4n)?.hp).toBe(1000); // different lane untouched
 
-    // Tick 6: arrow moves 8 -> 10, hits 3n (now at ~8.0) once and despawns after crossing column 9!
+    // Tick 6: arrow moves 8 -> 10, hits 3n (now at ~8.0) once and remains active at column 10 edge (x = 10 <= 10).
     step(game);
     expect(game.snapshot().combat?.entities.get(3n)?.hp).toBe(1000 - 180);
+    expect(game.snapshot().abilities?.projectiles).toHaveLength(1);
+
+    // Tick 7: arrow moves 10 -> 12 and despawns after crossing column 10!
+    step(game);
     expect(game.snapshot().abilities?.projectiles).toHaveLength(0);
   });
 });

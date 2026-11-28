@@ -326,7 +326,7 @@ export const mvpSandboxLevelSchema = z.strictObject({
 export const startingDefenderSchema = z.strictObject({
   definitionId: stableIdSchema,
   row: z.number().int().min(0).max(4),
-  column: z.number().int().min(0).max(8),
+  column: z.number().int().min(0).max(9),
 });
 
 export const levelUnlockRequirementSchema = z.discriminatedUnion('kind', [
@@ -510,11 +510,11 @@ export const mvpDatasetSchema = z.strictObject({
     seenPairs.add(unorderedKey);
   });
 
-  if (dataset.grasslandLevel.rows !== 5 || dataset.grasslandLevel.columns !== 9) {
+  if (dataset.grasslandLevel.rows !== 5 || dataset.grasslandLevel.columns !== 10) {
     ctx.addIssue({
       code: 'custom',
       path: ['grasslandLevel'],
-      message: 'Grassland level must be 5 rows x 9 columns',
+      message: 'Grassland level must be 5 rows x 10 columns',
     });
   }
   if (dataset.grasslandLevel.waves.length !== 5) {
@@ -553,11 +553,11 @@ export const mvpDatasetSchema = z.strictObject({
   }
 
   dataset.campaignLevels.forEach((level, levelIndex) => {
-    if (level.rows !== 5 || level.columns !== 9) {
+    if (level.rows !== 5 || level.columns !== 10) {
       ctx.addIssue({
         code: 'custom',
         path: ['campaignLevels', levelIndex],
-        message: `Campaign level "${level.id}" must be 5 rows x 9 columns`,
+        message: `Campaign level "${level.id}" must be 5 rows x 10 columns`,
       });
     }
     if (level.id === 'grassland' && level.waves.length !== 5) {

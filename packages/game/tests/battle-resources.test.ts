@@ -67,12 +67,12 @@ describe('T-06.2 summon', () => {
       ['fusion', 0, 0, 'defender-unavailable'],
       ['missing', 0, 0, 'defender-unavailable'],
       ['base', 0.5, 0, 'invalid-cell'],
-      ['base', 0, 9, 'invalid-cell'],
+      ['base', 0, 10, 'invalid-cell'],
       ['base', -1, 0, 'invalid-cell'],
     ] as const;
     summon(game, 1);
     summon(game, 1, 'base', 0, 0);
-    summon(game, 1, 'base', 4, 8);
+    summon(game, 1, 'base', 4, 9);
     step(game);
     const snapshot = game.snapshot();
     expect(snapshot.failure).toBeNull();
@@ -80,7 +80,7 @@ describe('T-06.2 summon', () => {
     expect(snapshot.entities.size).toBe(1);
     expect(snapshot.nextEntityId).toBe(1n);
     expect(snapshot.occupancy[0]).toBe(0n);
-    expect(snapshot.occupancy[44]).toBeNull();
+    expect(snapshot.occupancy[49]).toBeNull();
     for (const [id, row, column, reason] of [...attempts, ['base', 0, 0, 'occupied-cell']] as const) {
       const rejected = battle();
       summon(rejected, 1);
@@ -216,8 +216,8 @@ describe('T-06.5 random and reward hooks', () => {
     const first = game.snapshot().queue.events.find(e => e.payload.type === 'crystal-attempt')!.scheduledTick;
     expect(first).toBeGreaterThanOrEqual(30);
     expect(first).toBeLessThanOrEqual(60);
-    const cells = full ? 45 : 44;
-    for (let i = 0; i < cells; i++) summon(game, 1, 'free_fixture', Math.floor(i / 9), i % 9);
+    const cells = full ? 50 : 49;
+    for (let i = 0; i < cells; i++) summon(game, 1, 'free_fixture', Math.floor(i / 10), i % 10);
     step(game, first - 1);
     const seed = game.snapshot().rng!.seed;
     const rng = { seed };
@@ -228,7 +228,7 @@ describe('T-06.5 random and reward hooks', () => {
     expect(game.snapshot().queue.events.find(e => e.payload.type === 'crystal-attempt')?.scheduledTick).toBe(first + next);
     expect([...resources(game).items.values()]).toEqual(full ? [] : [
       { id: 0n, kind: 'crystal', amount: 1, source: 'crystal-timer',
-        position: { kind: 'cell', cell: { row: 4, column: 8 } }, expiresAt: first + 10 },
+        position: { kind: 'cell', cell: { row: 4, column: 9 } }, expiresAt: first + 10 },
     ]);
   });
 

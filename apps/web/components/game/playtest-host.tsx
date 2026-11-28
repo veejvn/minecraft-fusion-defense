@@ -1453,7 +1453,7 @@ export function PlaytestHost() {
                 type="button"
                 onClick={toggleLanes}
                 style={smallBtnStyle(Boolean(snapshot?.showAuxLanes ?? true), '#38bdf8')}
-                title="Toggle full 5x9 battlefield vs 1-Lane test mode"
+                title="Toggle full 5x10 battlefield vs 1-Lane test mode"
               >
                 {(snapshot?.showAuxLanes ?? true) ? '5 Lanes' : '1 Lane'}
               </button>
@@ -1565,7 +1565,7 @@ export function PlaytestHost() {
             </div>
           </div>
 
-          {/* Row 3: Flex-1 5x9 Grassland Phaser Canvas Stage (matches CampaignHost) */}
+          {/* Row 3: Flex-1 5x10 Grassland Phaser Canvas Stage (matches CampaignHost) */}
           <div
             className="mfd-battle-stage"
             style={{

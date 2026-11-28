@@ -1,7 +1,7 @@
 **Đường dẫn trong repository:** `docs/game-design/LEVEL_DESIGN.md`  
 **Dự án:** Minecraft Fusion Defense  
 **Phiên bản:** Draft v1.0  
-**Phạm vi:** MVP — 1 Level Grassland, 5 Waves, chiến trường 5 Rows × 9 Columns.
+**Phạm vi:** MVP — 1 Level Grassland, 5 Waves, chiến trường 5 Rows × 10 Columns.
 
 **Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
@@ -22,7 +22,7 @@ Tài liệu mô tả cấu trúc Level, bố cục chiến trường, tổ chứ
 | --- | --- | --- |
 | `levelId` | `grassland_01` | Draft ID |
 | Biome | Grassland | Confirmed |
-| Battlefield | 5 Rows × 9 Columns | Confirmed |
+| Battlefield | 5 Rows × 10 Columns | Confirmed |
 | Enemy Spawn Side | Right | Confirmed |
 | Base / Defense Side | Left | Confirmed |
 | Số Waves | 5 | Confirmed |
@@ -45,7 +45,7 @@ Grassland là Campaign duy nhất của Functional MVP: Local Desktop Web/intern
 
 ### 3.1. Hệ tọa độ
 
-- Grid có 5 Rows (Lane) và 9 Columns; dùng tọa độ logic `row = 0..4`, `col = 0..8` (quy ước index từ 0 là **Draft kỹ thuật**).
+- Grid có 5 Rows (Lane) và 10 Columns; dùng tọa độ logic `row = 0..4`, `col = 0..9` (quy ước index từ 0 là **Draft kỹ thuật**).
 - Defender chiếm một Cell hợp lệ; Enemy xuất hiện phía Right và di chuyển về phía Left theo Lane.
 - `baseBoundaryX` và `spawnOffsetX` phải được cấu hình theo đơn vị tọa độ của Game Engine; giá trị số là TBD.
 - Không tự thêm Base Health hoặc cơ chế mất mạng. Enemy vượt Base Boundary dẫn đến Defeat ngay.
@@ -53,15 +53,15 @@ Grassland là Campaign duy nhất của Functional MVP: Local Desktop Web/intern
 ### 3.2. Sơ đồ logic (không theo tỷ lệ)
 
 ```txt
-BASE / LEFT                                   RIGHT / SPAWN
-    |                                            |
-R0  [ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
-R1  [ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
-R2  [ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
-R3  [ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
-R4  [ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
-    |                                            |
-    +-- Base Boundary                            +-- Spawn Offset
+BASE / LEFT                                      RIGHT / SPAWN
+    |                                               |
+R0  [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
+R1  [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
+R2  [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
+R3  [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
+R4  [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]  <--- Enemy
+    |                                               |
+    +-- Base Boundary                               +-- Spawn Offset
 ```
 
 ### 3.3. Fusion và bố trí Defender
@@ -280,7 +280,7 @@ Khi terminal result được resolve: dừng Spawn/Combat, khóa gameplay, hiể
 
 ## 13. Acceptance Criteria
 
-- [ ] Grassland Level có đúng 5 Rows × 9 Columns.
+- [ ] Grassland Level có đúng 5 Rows × 10 Columns.
 - [ ] Enemy Spawn từ Right và tiến về Base ở Left.
 - [ ] Có đúng 5 Wave Definitions hợp lệ trong Level Config hoàn chỉnh.
 - [ ] Mỗi Spawn Group tạo đúng loại, số lượng và Lane Enemy theo cấu hình.

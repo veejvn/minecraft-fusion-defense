@@ -92,7 +92,7 @@ export function LevelSelectScreen({
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
                       <span className="mfd-badge">
-                        5×9 · {level.waveCount} {level.waveCount === 1 ? 'Wave' : 'Waves'} · {level.difficulty.toUpperCase()}
+                        5×10 · {level.waveCount} {level.waveCount === 1 ? 'Wave' : 'Waves'} · {level.difficulty.toUpperCase()}
                       </span>
                       <span className="mfd-badge">{level.initialEmeralds} EM</span>
                       {level.startingDefenderCount > 0 && (

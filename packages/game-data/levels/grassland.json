@@ -2,7 +2,7 @@
   "id": "grassland",
   "seed": 20261123,
   "rows": 5,
-  "columns": 9,
+  "columns": 10,
   "fusionGloveCooldownSeconds": 10,
   "initialEmeralds": 100,
   "enablePassiveEnergy": false,

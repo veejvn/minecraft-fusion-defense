@@ -13,7 +13,7 @@ import {
   BasicAttackVisualTracker,
   renderBasicAttackEffects,
 } from '../assets/basic-attack-vfx';
-import type { Cell } from '../battlefield/grid';
+import { BATTLEFIELD_COLUMNS, BATTLEFIELD_ROWS, type Cell } from '../battlefield/grid';
 import type { CampaignController, CampaignSnapshot } from '../campaign/campaign-controller';
 import type { PlaytestDefenderView, PlaytestEnemyView, PlaytestItemView } from '../playtest/playtest-controller';
 import { PLAYTEST_PIXEL_TEXTURE_KEYS } from '../playtest/procedural-pixel-art';
@@ -35,12 +35,12 @@ export type CampaignVisualStyle = 'pixel-art' | 'procedural';
 
 const CANVAS_WIDTH = 1280;
 const CANVAS_HEIGHT = 720;
-const GRID_ORIGIN_X = 136;
+const GRID_ORIGIN_X = 100;
 const GRID_ORIGIN_Y = 22;
-const CELL_W = 112;
+const CELL_W = 108;
 const CELL_H = 132;
-const GRID_ROWS = 5;
-const GRID_COLS = 9;
+const GRID_ROWS = BATTLEFIELD_ROWS;
+const GRID_COLS = BATTLEFIELD_COLUMNS;
 const ITEM_HIT_RADIUS = 26;
 const EMERALD_HOVER_RADIUS = 34;
 const CHEST_HIT_RADIUS = 42;
@@ -67,7 +67,7 @@ type DragState =
     };
 
 /**
- * Interactive 5x9 Grassland Campaign Battlefield Phaser Scene rendering all
+ * Interactive 5x10 Grassland Campaign Battlefield Phaser Scene rendering all
  * 47 pixel-art PNG assets, simple idle/VFX animations, item-priority clicks,
  * base summon placement, unlimited-distance fusion drag, and Power Crystal abilities.
  */

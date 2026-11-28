@@ -4,7 +4,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Minecraft Fusion Defense',
-  description: '2D Pixel-Art Fusion Tower Defense MVP (Grassland 5x9 Campaign)',
+  description: '2D Pixel-Art Fusion Tower Defense MVP (Grassland 5x10 Campaign)',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,

@@ -13,7 +13,7 @@
 
 ## 1. Scope and authoritative rules
 
-Desktop web, side-view 2D pixel art, 5 lanes × 9 columns. Defenders occupy one grid cell each; enemies spawn from the right and move left. Enemy behavior is configured per enemy; defender target selection is configured per defender. Enemy base breach generates Defeat; simultaneous terminal events follow Event Queue insertion order, with the first resolved terminal event deciding the result.
+Desktop web, side-view 2D pixel art, 5 lanes × 10 columns. Defenders occupy one grid cell each; enemies spawn from the right and move left. Enemy behavior is configured per enemy; defender target selection is configured per defender. Enemy base breach generates Defeat; simultaneous terminal events follow Event Queue insertion order, with the first resolved terminal event deciding the result.
 
 MVP: **5 Base Defenders, 15 Tier-2 Fusion Defenders, 4 Enemy types**, one Grassland level with five waves. Fusion is free, may cross lanes and any distance, and spawns its output at the target's original cell. Output HP/status/readiness follow the Confirmed 03/11/2026 rules in section 3. Power Crystal activates Special Abilities and is obtained from Wave Rewards and collectible Power Crystal Items.
 

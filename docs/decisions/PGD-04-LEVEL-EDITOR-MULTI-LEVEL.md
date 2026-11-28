@@ -26,7 +26,7 @@ Mở rộng hệ thống từ 1 màn Grassland cố định thành nền tảng 
 - Tạo Next.js App Router page riêng `apps/web/app/editor/page.tsx` tách biệt với `/playtest` (cân bằng chỉ số thực thể) và `/` (Campaign runtime).
 - Tích hợp:
   1. **Wave Timeline 5 Lane trực quan (`L1–L5`):** Trục thời gian `0s → cuối Wave`, hiển thị marker Enemy theo từng nhóm spawn (`fixed` / `sequential` / `random`), tổng số Enemy, tổng HP của Wave, và công cụ thêm / xóa / nhân bản / sắp xếp Wave linh hoạt (`1..20` Waves mỗi màn).
-  2. **Lưới 5×9 đặt đơn vị sẵn (`startingDefenders`)** & bộ lọc giới hạn Defender (`allowedBaseDefenderIds`).
+  2. **Lưới 5×10 đặt đơn vị sẵn (`startingDefenders`)** & bộ lọc giới hạn Defender (`allowedBaseDefenderIds`).
   3. **Form Kinh tế & Metadata màn chơi:** Emerald khởi đầu (`initialEmeralds`), Passive Energy toggle, Rương Tiếp Tế Làng (`villageChest`), hồi chiêu Fusion Glove, `waveCrystals[]`, `seed`, `difficulty`, `theme`, `unlockRequirement`.
   4. **Test Play tại chỗ:** Hỗ trợ chạy thử toàn màn hoặc **Start from Wave N** (kèm Emerald giả lập tùy chọn để kiểm tra thẳng các Wave cuối).
   5. **Bảo mật môi trường production:** API đọc/ghi màn chơi `/api/dev/levels` chỉ hoạt động khi `process.env.NODE_ENV === 'development'` và trả về HTTP `403` ở production build.
@@ -36,7 +36,7 @@ Mở rộng hệ thống từ 1 màn Grassland cố định thành nền tảng 
    - `id` (`^[a-z][a-z0-9_]*$`), `order` (số nguyên dương để sắp xếp hiển thị), `name`, `description`, `difficulty` (`'easy' | 'normal' | 'hard' | 'expert'`), `theme` (`'grassland'`, mở rộng dần cho tile biome tương lai), `seed`, `unlockRequirement` (`{ kind: 'always' }` hoặc `{ kind: 'clear-level'; levelId: string }`).
 2. **Wave linh hoạt (`1..20` Waves):** Không khóa cứng 5 Wave như bản Prototype ban đầu; `waveCrystals.length` phải khớp đúng `waves.length`.
 3. **Đơn vị đặt sẵn đầu màn (`startingDefenders`):**
-   - Mảng tùy chọn `{ definitionId: string; row: 0..4; column: 0..8 }[]`.
+   - Mảng tùy chọn `{ definitionId: string; row: 0..4; column: 0..9 }[]`.
    - Hỗ trợ cả Tier-1 Base Defender lẫn Tier-2 Fusion Defender; không trùng tọa độ `(row, column)`.
    - Khi trận đấu khởi tạo ở tick `0`, mọi `startingDefenders` được đặt miễn phí lên lưới (không tốn Emerald, không kích hoạt cooldown mua thẻ); nếu là đơn vị kinh tế (`villager` / `master_trader`) thì chu kỳ `defender-produce` được kích hoạt ngay từ tick `0`.
 4. **Giới hạn Defender được phép dùng (`allowedBaseDefenderIds`):**

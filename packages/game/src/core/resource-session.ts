@@ -1,3 +1,5 @@
+import { BATTLEFIELD_COLUMNS, BATTLEFIELD_ROWS } from '../battlefield/grid';
+
 export interface Point {
   readonly x: number;
   readonly y: number;
@@ -199,10 +201,10 @@ export function validateResourceSession(input: ResourceSessionInput, rate: numbe
         throw new TypeError(`Invalid startingDefender definitionId: ${String(starter?.definitionId)}`);
       }
       if (
-        !Number.isSafeInteger(starter.row) || starter.row < 0 || starter.row > 4 ||
-        !Number.isSafeInteger(starter.column) || starter.column < 0 || starter.column > 8
+        !Number.isSafeInteger(starter.row) || starter.row < 0 || starter.row >= BATTLEFIELD_ROWS ||
+        !Number.isSafeInteger(starter.column) || starter.column < 0 || starter.column >= BATTLEFIELD_COLUMNS
       ) {
-        throw new RangeError('startingDefender cell out of bounds (5x9)');
+        throw new RangeError('startingDefender cell out of bounds (5x10)');
       }
       const key = `${starter.row},${starter.column}`;
       if (startingCells.has(key)) {

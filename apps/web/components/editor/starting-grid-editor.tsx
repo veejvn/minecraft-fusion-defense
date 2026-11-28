@@ -83,7 +83,7 @@ export function StartingGridEditor({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Section 1: Starting Defenders 5x9 Grid */}
+      {/* Section 1: Starting Defenders 5x10 Grid */}
       <div className="mfd-card" style={{ padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
           <div>
@@ -168,11 +168,11 @@ export function StartingGridEditor({
           </div>
         </div>
 
-        {/* 5x9 Interactive Grid */}
+        {/* 5x10 Interactive Grid */}
         <div style={{ overflowX: 'auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '64px repeat(9, minmax(66px, 1fr))', gap: 6, minWidth: 680 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '64px repeat(10, minmax(62px, 1fr))', gap: 6, minWidth: 740 }}>
             <div />
-            {Array.from({ length: 9 }, (_, col) => (
+            {Array.from({ length: 10 }, (_, col) => (
               <div
                 key={`col-head-${col}`}
                 style={{ textAlign: 'center', fontSize: 11, color: '#94A3B8', fontWeight: 700 }}
@@ -198,7 +198,7 @@ export function StartingGridEditor({
                 >
                   Lane {row + 1}
                 </div>
-                {Array.from({ length: 9 }, (_, col) => {
+                {Array.from({ length: 10 }, (_, col) => {
                   const placed = cellMap.get(`${row},${col}`);
                   const def = placed ? DEFENDER_BY_ID.get(placed.definitionId) : undefined;
                   return (

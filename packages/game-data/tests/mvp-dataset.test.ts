@@ -291,7 +291,7 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     customStage.waveCrystals = [1, 1, 2];
     customStage.startingDefenders = [
       { definitionId: 'villager', row: 2, column: 0 },
-      { definitionId: 'steel_guardian', row: 2, column: 3 },
+      { definitionId: 'steel_guardian', row: 2, column: 9 },
     ];
     customStage.allowedBaseDefenderIds = ['villager', 'iron_golem', 'skeleton'];
     customStage.ignoreUnlockRestrictions = true;
@@ -299,6 +299,7 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     const merged = mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [grassland, customStage]);
     expect(merged.campaignLevels).toHaveLength(2);
     expect(merged.campaignLevels[1]?.startingDefenders).toHaveLength(2);
+    expect(merged.campaignLevels[1]?.startingDefenders?.[1]?.column).toBe(9);
     expect(merged.campaignLevels[1]?.allowedBaseDefenderIds).toEqual(['villager', 'iron_golem', 'skeleton']);
 
     // Reject duplicate stage IDs
@@ -315,10 +316,13 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     ];
     expect(() => mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [grassland, dupCell])).toThrow(/Duplicate startingDefender cell/);
 
-    // Reject out-of-bounds cell
+    // Reject out-of-bounds cell (row >= 5 or column >= 10)
     const oobCell = structuredClone(customStage);
     oobCell.startingDefenders = [{ definitionId: 'villager', row: 5, column: 0 }];
     expect(() => mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [grassland, oobCell])).toThrow();
+    const oobColCell = structuredClone(customStage);
+    oobColCell.startingDefenders = [{ definitionId: 'villager', row: 0, column: 10 }];
+    expect(() => mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [grassland, oobColCell])).toThrow();
 
     // Reject Tier-2 Defender in allowedBaseDefenderIds
     const badAllowed = structuredClone(customStage);

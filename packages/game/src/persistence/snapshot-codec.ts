@@ -493,7 +493,7 @@ function validateCellObject(cell: unknown, label: string): Cell {
   try {
     index = cellIndex(cell as unknown as Cell);
   } catch {
-    throw new SnapshotValidationError('SEMANTIC_VIOLATION', `${label} is outside the 5x9 battlefield`);
+    throw new SnapshotValidationError('SEMANTIC_VIOLATION', `${label} is outside the 5x10 battlefield`);
   }
   assertSemantic(index >= 0 && index < EXPECTED_OCCUPANCY_LENGTH, `${label} cell index out of range`);
   return cell as unknown as Cell;

@@ -45,7 +45,7 @@ export function MainMenuScreen({
       >
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span className="mfd-badge mfd-badge-unlocked">DESKTOP WEB MVP · GRASSLAND 5x9</span>
+            <span className="mfd-badge mfd-badge-unlocked">DESKTOP WEB MVP · GRASSLAND 5x10</span>
             <span className="mfd-badge">20 DEFENDERS · 15 FUSIONS</span>
           </div>
 
@@ -53,7 +53,7 @@ export function MainMenuScreen({
             Minecraft Fusion Defense
           </h1>
           <p style={{ margin: '0 0 20px', fontSize: 14, lineHeight: 1.55, color: '#CBD5E1' }}>
-            Tactical 2D pixel-art tower defense. Summon Base Defenders, fuse any two Tier-1 units at 0 Energy across the 5x9 Grassland battlefield, and unleash Power Crystal Special Abilities!
+            Tactical 2D pixel-art tower defense. Summon Base Defenders, fuse any two Tier-1 units at 0 Energy across the 5x10 Grassland battlefield, and unleash Power Crystal Special Abilities!
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 380 }}>

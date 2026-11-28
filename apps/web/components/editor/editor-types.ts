@@ -74,7 +74,7 @@ export function createBlankCampaignLevel(
       ? { kind: 'clear-level', levelId: template.id }
       : { kind: 'always' },
     rows: 5,
-    columns: 9,
+    columns: 10,
     seed: 20261128 + idx,
     initialEmeralds: 100,
     enablePassiveEnergy: false,

@@ -2,7 +2,7 @@
   "id": "playtest_sandbox",
   "seed": 101,
   "rows": 5,
-  "columns": 9,
+  "columns": 10,
   "initialEmeralds": 100,
   "enablePassiveEnergy": false,
   "villageChest": {
