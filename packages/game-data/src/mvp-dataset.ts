@@ -709,6 +709,8 @@ export const playtestPresetSyncSchema = z.strictObject({
   initialEmeralds: nonNegativeIntegerSchema.optional(),
   enablePassiveEnergy: z.boolean().optional(),
   villageChest: villageChestSchema.optional(),
+  startingDefenders: z.array(startingDefenderSchema).optional(),
+  allowedBaseDefenderIds: z.array(stableIdSchema).min(1).optional(),
   defenders: z.array(playtestDefenderSyncSchema),
   enemies: z.array(playtestEnemySyncSchema),
   abilities: z.array(mvpAbilitySchema),

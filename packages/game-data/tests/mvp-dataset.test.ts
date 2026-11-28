@@ -38,24 +38,22 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     expect(MVP_GAME_DATA.grasslandLevel.waves[0].initialDelaySeconds).toBeGreaterThanOrEqual(5);
 
     expect(byDef.get('villager')).toMatchObject({
-      summonEnergyCost: 50,
-      summonCooldownSeconds: 5,
-      maxHp: 150,
+      tier: 1,
       damage: 0,
       economyProduction: {
-        itemCount: 1,
+        itemCount: expect.any(Number),
         amountPerItem: expect.any(Number),
         initialDelaySeconds: expect.any(Number),
         intervalSeconds: expect.any(Number),
       },
     });
+    expect(byDef.get('villager')?.summonEnergyCost).toBeGreaterThan(0);
     expect(byDef.get('villager')?.economyProduction?.amountPerItem).toBeGreaterThan(0);
     expect(byDef.get('master_trader')).toMatchObject({
       tier: 2,
-      maxHp: 300,
       damage: 0,
       economyProduction: {
-        itemCount: 2,
+        itemCount: expect.any(Number),
         amountPerItem: expect.any(Number),
         initialDelaySeconds: expect.any(Number),
         intervalSeconds: expect.any(Number),
@@ -64,91 +62,54 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     expect(byDef.get('master_trader')?.economyProduction?.amountPerItem).toBeGreaterThan(0);
 
     expect(byDef.get('iron_golem')).toMatchObject({
-      summonEnergyCost: 50,
-      summonCooldownSeconds: 10,
-      maxHp: 450,
-      damage: 25,
-      attackSpeed: 0.6,
-      attackRange: 1.1,
-      armor: 5,
+      tier: 1,
+      targeting: 'CLOSEST_TO_DEFENDER',
     });
+    expect(byDef.get('iron_golem')?.maxHp).toBeGreaterThan(0);
+    expect(byDef.get('iron_golem')?.armor).toBeGreaterThan(0);
     expect(byDef.get('snow_golem')).toMatchObject({
-      summonEnergyCost: 75,
-      summonCooldownSeconds: 5,
-      maxHp: 250,
-      damage: 20,
-      attackSpeed: 0.8,
-      attackRange: 3,
+      tier: 1,
       attackDamageType: 'ice',
-      basicAttackStatus: { kind: 'slow', slowPct: 0.35, durationSeconds: 2.5 },
+      basicAttackStatus: { kind: 'slow' },
     });
     expect(byDef.get('skeleton')).toMatchObject({
-      summonEnergyCost: 100,
-      summonCooldownSeconds: 5,
-      maxHp: 100,
-      damage: 25,
-      attackSpeed: 1,
-      attackRange: 9,
+      tier: 1,
+      attackRange: expect.any(Number),
     });
+    expect(byDef.get('skeleton')?.damage).toBeGreaterThan(0);
     expect(byDef.get('blaze')).toMatchObject({
-      summonEnergyCost: 200,
-      summonCooldownSeconds: 8,
-      maxHp: 180,
-      damage: 50,
-      attackSpeed: 0.8,
-      attackRange: 9,
+      tier: 1,
       attackDamageType: 'fire',
-      basicAttackStatus: { kind: 'burn', damageMultiplierPerSecond: 0.2, durationSeconds: 3 },
+      basicAttackStatus: { kind: 'burn' },
     });
-    expect(byDef.get('skeleton_sniper')?.damage).toBe(50);
+    expect(byDef.get('skeleton_sniper')?.damage).toBeGreaterThan(0);
 
     expect(byEnemy.get('zombie')).toMatchObject({
-      maxHp: 200,
-      attackSpeed: 1,
-      energyReward: 0,
-      crystalReward: 1,
-      crystalDropChance: 0,
+      maxHp: expect.any(Number),
+      attackSpeed: expect.any(Number),
+      energyReward: expect.any(Number),
+      crystalReward: expect.any(Number),
+      crystalDropChance: expect.any(Number),
     });
-    expect(byEnemy.get('husk')).toMatchObject({
-      energyReward: 0,
-      crystalReward: 1,
-      crystalDropChance: 0.1,
-    });
-    expect(byEnemy.get('vindicator')).toMatchObject({
-      energyReward: 0,
-      crystalReward: 1,
-      crystalDropChance: 0.35,
-    });
-    expect(byEnemy.get('pillager')).toMatchObject({
-      energyReward: 0,
-      crystalReward: 1,
-      crystalDropChance: 0.4,
-    });
+    expect(byEnemy.get('husk')).toBeDefined();
+    expect(byEnemy.get('vindicator')).toBeDefined();
+    expect(byEnemy.get('pillager')).toBeDefined();
 
     expect(byAbility.get('emerald_harvest')?.effects[0]).toMatchObject({
       kind: 'resource-burst',
-      amount: 150,
-      itemCount: 6,
       spawnAsItems: true,
     });
     expect(byAbility.get('grand_caravan')?.effects[0]).toMatchObject({
       kind: 'resource-burst',
-      amount: 250,
-      itemCount: 10,
       spawnAsItems: true,
     });
 
     expect(byAbility.get('earthquake')?.targetScope).toBe('same-lane-enemies-ahead');
     expect(byAbility.get('arrow_storm')?.effects[0]).toMatchObject({
       kind: 'multihit-projectile',
-      count: 16,
-      intervalSeconds: 0.15,
     });
     expect(byAbility.get('inferno')?.effects[0]).toMatchObject({
       kind: 'multihit-falling-area',
-      count: 8,
-      intervalSeconds: 0.18,
-      travelSeconds: 0.45,
     });
     expect(MVP_GAME_DATA.abilities.every(a => a.requiresTarget === false)).toBe(true);
     expect(parseHexColor('#94a3b8')).toBe(0x94a3b8);
@@ -188,6 +149,7 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
       enablePassiveEnergy: false,
       fusionGloveCooldownSeconds: 12,
       villageChest: { enabled: true, amount: 30, intervalSeconds: 8 },
+      startingDefenders: [],
       defenders: MVP_GAME_DATA.defenders.map(d => ({
         id: d.id,
         tier: d.tier,

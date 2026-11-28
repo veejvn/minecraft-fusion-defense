@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MVP_GAME_DATA } from '@mfd/game-data';
+import { MVP_GAME_DATA, mergePlaytestPresetIntoDataset } from '@mfd/game-data';
 import {
   CAMPAIGN_BASE_COSTS,
   CAMPAIGN_BASE_COOLDOWNS,
@@ -203,9 +203,16 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5 / T-14)', () => {
     controller.spawnEnemy('husk', 0);
     controller.stepMs(50);
 
+    const preset = controller.getPreset();
+    const blizzardEff = preset.abilities.find(a => a.id === 'blizzard')?.effects[0];
+    const expectedBlizzardSlow =
+      blizzardEff?.kind === 'instant-damage' && blizzardEff.applyStatus?.kind === 'slow'
+        ? blizzardEff.applyStatus.slowPct
+        : 0.5;
+
     controller.activateAbility(byId('snow_golem').id);
     controller.stepMs(50);
-    expect(controller.getSnapshot().enemies[0].slowPct).toBeCloseTo(0.5);
+    expect(controller.getSnapshot().enemies[0].slowPct).toBeCloseTo(expectedBlizzardSlow);
 
     controller.activateAbility(byId('iron_golem').id);
     controller.stepMs(50);
@@ -219,8 +226,7 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5 / T-14)', () => {
     controller.stepMs(50);
     expect(controller.getSnapshot().projectiles.some(p => p.kind === 'falling')).toBe(true);
 
-    // Verify 16-arrow Arrow Storm and 8-fireball Inferno configuration
-    const preset = controller.getPreset();
+    // Verify Arrow Storm and Inferno configurations remain wired cleanly
     const arrowStorm = preset.abilities.find(a => a.id === 'arrow_storm');
     const inferno = preset.abilities.find(a => a.id === 'inferno');
     expect(arrowStorm?.effects[0]).toMatchObject({ kind: 'multihit-projectile', count: 16 });
@@ -469,5 +475,18 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5 / T-14)', () => {
 
     const enemy = controller.getSnapshot().enemies[0];
     expect(enemy?.slowPct).toBeCloseTo(0.6);
+  });
+
+  it('keeps createCampaignPlaytestPreset output compatible with mergePlaytestPresetIntoDataset sync schema', () => {
+    const campaignPreset = createCampaignPlaytestPreset();
+    const snowGolem = campaignPreset.defenders.find(d => d.id === 'snow_golem')!;
+    snowGolem.maxHp = 320;
+    snowGolem.basicAttackStatus = { kind: 'slow', slowPct: 0.45, durationSeconds: 3 };
+
+    const merged = mergePlaytestPresetIntoDataset(MVP_GAME_DATA, campaignPreset);
+    expect(merged.defenders.find(d => d.id === 'snow_golem')).toMatchObject({
+      maxHp: 320,
+      basicAttackStatus: { kind: 'slow', slowPct: 0.45, durationSeconds: 3 },
+    });
   });
 });
