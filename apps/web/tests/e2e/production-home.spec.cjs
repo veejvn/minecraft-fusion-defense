@@ -166,10 +166,26 @@ test('1366x768 laptop viewport fits with 0 scroll, verifies all Collection PNG s
   await page.mouse.up();
   await expect(golemCard).toContainText(/CD \d+\.\ds/);
 
-  // Verify Fusion Glove & Shovel controls, then remove placed Iron Golem with Shovel
-  await expect(page.getByRole('button', { name: /Glove/i })).toBeVisible();
+  // Verify Summon Bar on top, separated Fusion Glove & Shovel docked at top-right, then remove Iron Golem with Shovel
+  const desktopPauseBox = await page.getByRole('button', { name: /Pause/i }).boundingBox();
+  const desktopGloveBtn = page.getByRole('button', { name: /Fusion Glove/i });
   const shovelBtn = page.getByRole('button', { name: /Shovel/i });
+  await expect(desktopGloveBtn).toBeVisible();
   await expect(shovelBtn).toBeVisible();
+  const desktopGloveBox = await desktopGloveBtn.boundingBox();
+  const desktopShovelBox = await shovelBtn.boundingBox();
+  const desktopVillagerBox = await page.getByRole('button', { name: /Villager/i }).boundingBox();
+  expect(desktopVillagerBox.y + desktopVillagerBox.height).toBeLessThanOrEqual(canvasBox.y + 8);
+  expect(desktopGloveBox.x).toBeGreaterThan(desktopPauseBox.x);
+  expect(desktopShovelBox.x).toBeGreaterThan(desktopGloveBox.x);
+  expect(desktopShovelBox.x + desktopShovelBox.width).toBeLessThanOrEqual(1366);
+  expect(desktopGloveBox.y + desktopGloveBox.height).toBeLessThanOrEqual(canvasBox.y + 8);
+  const desktopScrollWidth = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(desktopScrollWidth.scrollWidth).toBeLessThanOrEqual(desktopScrollWidth.innerWidth);
+
   await shovelBtn.click();
   await expect(shovelBtn).toHaveCSS('border-color', 'rgb(248, 113, 113)');
   await page.mouse.click(targetX, targetY);
@@ -354,24 +370,47 @@ test('mobile portrait shows rotate-to-landscape guard and rotating to landscape 
   const landscapeMetrics = await page.evaluate(() => {
     const canvas = document.querySelector('canvas');
     const rect = canvas.getBoundingClientRect();
-    const hud = document.querySelector('.mfd-hud-bar');
+    const topRight = document.querySelector('.mfd-hud-top-right');
+    const summon = document.querySelector('.mfd-hud-summon-bar');
+    const stage = document.querySelector('.mfd-battle-stage');
     return {
       scrollHeight: document.documentElement.scrollHeight,
       innerHeight: window.innerHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
       canvasBottom: rect.bottom,
       canvasWidth: rect.width,
       canvasHeight: rect.height,
-      hudScrollWidth: hud ? hud.scrollWidth : 0,
-      hudClientWidth: hud ? hud.clientWidth : 0,
+      topRightScrollWidth: topRight ? topRight.scrollWidth : 0,
+      topRightClientWidth: topRight ? topRight.clientWidth : 0,
+      summonRect: summon ? summon.getBoundingClientRect().toJSON() : null,
+      summonScrollHeight: summon ? summon.scrollHeight : 0,
+      summonClientHeight: summon ? summon.clientHeight : 0,
+      topRightRect: topRight ? topRight.getBoundingClientRect().toJSON() : null,
+      stageRect: stage ? stage.getBoundingClientRect().toJSON() : null,
     };
   });
   expect(landscapeMetrics.scrollHeight).toBeLessThanOrEqual(landscapeMetrics.innerHeight);
+  expect(landscapeMetrics.scrollWidth).toBeLessThanOrEqual(landscapeMetrics.innerWidth);
   expect(landscapeMetrics.canvasBottom).toBeLessThanOrEqual(landscapeMetrics.innerHeight);
   expect(landscapeMetrics.canvasWidth).toBeGreaterThan(400);
   expect(landscapeMetrics.canvasHeight).toBeGreaterThan(220);
-  expect(landscapeMetrics.hudScrollWidth).toBeLessThanOrEqual(landscapeMetrics.hudClientWidth + 1);
+  expect(landscapeMetrics.topRightScrollWidth).toBeLessThanOrEqual(landscapeMetrics.topRightClientWidth + 1);
+  expect(landscapeMetrics.summonScrollHeight).toBeLessThanOrEqual(landscapeMetrics.summonClientHeight + 2);
+  expect(landscapeMetrics.summonRect.right).toBeLessThanOrEqual(landscapeMetrics.stageRect.left + 2);
+  expect(landscapeMetrics.summonRect.top).toBeGreaterThanOrEqual(landscapeMetrics.topRightRect.bottom - 2);
 
-  for (const label of ['Villager', 'Fusion Glove', 'Shovel', 'Toggle Fullscreen Landscape', 'Pause']) {
+  const villagerBox844 = await page.getByRole('button', { name: /Villager/i }).first().boundingBox();
+  const blazeBox844 = await page.getByRole('button', { name: /Blaze/i }).first().boundingBox();
+  const gloveBox844 = await page.getByRole('button', { name: /Fusion Glove/i }).first().boundingBox();
+  const shovelBox844 = await page.getByRole('button', { name: /Shovel/i }).first().boundingBox();
+  const pauseBox844 = await page.getByRole('button', { name: /Pause|Resume/i }).first().boundingBox();
+  expect(blazeBox844.y).toBeGreaterThan(villagerBox844.y);
+  expect(gloveBox844.x).toBeGreaterThan(pauseBox844.x);
+  expect(shovelBox844.x).toBeGreaterThan(gloveBox844.x);
+  expect(gloveBox844.y + gloveBox844.height).toBeLessThanOrEqual(landscapeMetrics.stageRect.top + 4);
+
+  for (const label of ['Villager', 'Blaze', 'Fusion Glove', 'Shovel', 'Toggle Fullscreen Landscape', 'Pause']) {
     const btn = page.getByRole('button', { name: new RegExp(label, 'i') }).first();
     await expect(btn).toBeVisible();
     const box = await btn.boundingBox();
@@ -381,29 +420,47 @@ test('mobile portrait shows rotate-to-landscape guard and rotating to landscape 
     expect(box.y + box.height).toBeLessThanOrEqual(390);
   }
 
-  // 3. Smaller Phone Landscape (667x375) -> HUD still fits cleanly with zero horizontal clipping
+  // 3. Smaller Phone Landscape (667x375) -> left summon bar + top-right tools still fit with zero overflow
   await page.setViewportSize({ width: 667, height: 375 });
   const smallLandscapeMetrics = await page.evaluate(() => {
-    const hud = document.querySelector('.mfd-hud-bar');
+    const topRight = document.querySelector('.mfd-hud-top-right');
+    const summon = document.querySelector('.mfd-hud-summon-bar');
+    const stage = document.querySelector('.mfd-battle-stage');
     const canvas = document.querySelector('canvas');
     const rect = canvas.getBoundingClientRect();
     return {
       scrollHeight: document.documentElement.scrollHeight,
       innerHeight: window.innerHeight,
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
       canvasBottom: rect.bottom,
-      hudScrollWidth: hud ? hud.scrollWidth : 0,
-      hudClientWidth: hud ? hud.clientWidth : 0,
+      topRightScrollWidth: topRight ? topRight.scrollWidth : 0,
+      topRightClientWidth: topRight ? topRight.clientWidth : 0,
+      summonRect: summon ? summon.getBoundingClientRect().toJSON() : null,
+      summonScrollHeight: summon ? summon.scrollHeight : 0,
+      summonClientHeight: summon ? summon.clientHeight : 0,
+      stageRect: stage ? stage.getBoundingClientRect().toJSON() : null,
     };
   });
   expect(smallLandscapeMetrics.scrollHeight).toBeLessThanOrEqual(smallLandscapeMetrics.innerHeight);
+  expect(smallLandscapeMetrics.scrollWidth).toBeLessThanOrEqual(smallLandscapeMetrics.innerWidth);
   expect(smallLandscapeMetrics.canvasBottom).toBeLessThanOrEqual(smallLandscapeMetrics.innerHeight);
-  expect(smallLandscapeMetrics.hudScrollWidth).toBeLessThanOrEqual(smallLandscapeMetrics.hudClientWidth + 1);
+  expect(smallLandscapeMetrics.topRightScrollWidth).toBeLessThanOrEqual(smallLandscapeMetrics.topRightClientWidth + 1);
+  expect(smallLandscapeMetrics.summonScrollHeight).toBeLessThanOrEqual(smallLandscapeMetrics.summonClientHeight + 2);
+  expect(smallLandscapeMetrics.summonRect.right).toBeLessThanOrEqual(smallLandscapeMetrics.stageRect.left + 2);
 
-  for (const label of ['Fusion Glove', 'Shovel', 'Toggle Fullscreen Landscape', 'Pause']) {
+  const gloveBox667 = await page.getByRole('button', { name: /Fusion Glove/i }).first().boundingBox();
+  const shovelBox667 = await page.getByRole('button', { name: /Shovel/i }).first().boundingBox();
+  const pauseBox667 = await page.getByRole('button', { name: /Pause|Resume/i }).first().boundingBox();
+  expect(gloveBox667.x).toBeGreaterThan(pauseBox667.x);
+  expect(shovelBox667.x).toBeGreaterThan(gloveBox667.x);
+
+  for (const label of ['Villager', 'Blaze', 'Fusion Glove', 'Shovel', 'Toggle Fullscreen Landscape', 'Pause']) {
     const btn = page.getByRole('button', { name: new RegExp(label, 'i') }).first();
     const box = await btn.boundingBox();
     expect(box).not.toBeNull();
     expect(box.x + box.width).toBeLessThanOrEqual(667);
+    expect(box.y + box.height).toBeLessThanOrEqual(375);
   }
 
   expect(browserErrors).toEqual([]);

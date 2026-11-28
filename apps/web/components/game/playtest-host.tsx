@@ -1077,21 +1077,9 @@ export function PlaytestHost() {
     <main className="mfd-shell mfd-shell-battle" style={{ position: 'relative' }}>
       <MobileLandscapeGuard />
       <div className="mfd-container">
-        <section className="mfd-battle-section">
-          {/* Row 1: Main Campaign-Identical Tactical HUD Bar */}
-          <div
-            className="mfd-card mfd-hud-bar"
-            style={{
-              padding: '5px 10px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 6,
-              flexWrap: 'wrap',
-              flexShrink: 0,
-            }}
-          >
-            {/* Resources: Emeralds & Power Crystal */}
+        <section className="mfd-battle-section mfd-playtest-battle-grid">
+          {/* Top-Left Resources: Emeralds & Power Crystal */}
+          <div className="mfd-card mfd-hud-panel mfd-hud-top-left">
             <div className="mfd-hud-resource-group" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <div
                 className="mfd-hud-resource"
@@ -1120,7 +1108,7 @@ export function PlaytestHost() {
               <button
                 type="button"
                 className={`mfd-btn mfd-hud-crystal ${tool.kind === 'crystal' ? 'mfd-btn-crystal' : ''}`}
-                style={{ padding: '3px 7px', touchAction: 'none', userSelect: 'none' }}
+                style={{ padding: '3px 6px', touchAction: 'none', userSelect: 'none' }}
                 disabled={!snapshot || snapshot.crystals < 1 || snapshot.terminal !== null}
                 aria-label={`Power Crystals (${snapshot?.crystals ?? 0} of ${snapshot?.maxCrystals ?? 5})`}
                 onPointerDown={e => {
@@ -1161,106 +1149,167 @@ export function PlaytestHost() {
                 </button>
               )}
             </div>
+          </div>
 
-            {/* 6 Base Defender Cards + Fusion Glove + Shovel */}
-            <div className="mfd-hud-cards-group" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-              {baseCards.map(card => {
-                const selected = tool.kind === 'place' && tool.definitionId === card.id;
-                const isFree = placementMode === 'free';
-                const blockedByRules = !isFree && (!card.canAfford || card.onCooldown);
-                const statusText = isFree
-                  ? 'Free'
-                  : card.onCooldown
-                    ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s`
-                    : `${card.cost} EM`;
-                return (
-                  <button
-                    key={card.id}
-                    type="button"
-                    className="mfd-btn mfd-defender-card"
-                    disabled={(!isFree && card.onCooldown) || snapshot?.terminal !== null}
-                    aria-label={`${card.name} (${statusText})`}
-                    onPointerDown={e => {
-                      if (isFree || (card.canAfford && !card.onCooldown)) {
-                        startHudDrag(
-                          e,
-                          { kind: 'place', definitionId: card.id, freeSandbox: isFree },
-                          card.spriteUrl,
-                          card.name,
-                        );
-                      }
-                    }}
-                    onClick={() => {
-                      if (suppressNextClickRef.current) {
-                        suppressNextClickRef.current = false;
-                        return;
-                      }
-                      if (!isFree && card.onCooldown) return;
-                      setTool(
-                        selected
-                          ? { kind: 'select' }
-                          : { kind: 'place', definitionId: card.id, freeSandbox: isFree },
+          {/* 6 Base Defender Summon Cards (Top-Center on Desktop, Left Vertical Dock on Mobile) */}
+          <div className="mfd-card mfd-hud-panel mfd-hud-summon-bar" aria-label="Defender Summon Bar">
+            {baseCards.map(card => {
+              const selected = tool.kind === 'place' && tool.definitionId === card.id;
+              const isFree = placementMode === 'free';
+              const blockedByRules = !isFree && (!card.canAfford || card.onCooldown);
+              const statusText = isFree
+                ? 'Free'
+                : card.onCooldown
+                  ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s`
+                  : `${card.cost} EM`;
+              return (
+                <button
+                  key={card.id}
+                  type="button"
+                  className="mfd-btn mfd-defender-card"
+                  disabled={(!isFree && card.onCooldown) || snapshot?.terminal !== null}
+                  aria-label={`${card.name} (${statusText})`}
+                  onPointerDown={e => {
+                    if (isFree || (card.canAfford && !card.onCooldown)) {
+                      startHudDrag(
+                        e,
+                        { kind: 'place', definitionId: card.id, freeSandbox: isFree },
+                        card.spriteUrl,
+                        card.name,
                       );
-                    }}
-                    style={{
-                      padding: '3px 6px',
-                      borderColor: selected
-                        ? '#facc15'
-                        : isFree || (card.canAfford && !card.onCooldown)
-                          ? '#4ade80'
-                          : '#475569',
-                      background: selected ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
-                      opacity: blockedByRules && !selected ? 0.78 : 1,
-                    }}
-                    title={
-                      isFree
-                        ? `${card.name} (FREE Sandbox) — ${card.abilityName}`
-                        : `${card.name} (${card.cost} EM, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto empty cell or compatible Defender to Fuse.`
                     }
-                  >
-                    {!isFree && card.onCooldown && (
-                      <>
-                        <div className="mfd-cd-curtain" style={{ height: `${card.cooldownProgressPct}%` }} />
-                        <div className="mfd-cd-badge">{card.cooldownRemainingSeconds.toFixed(1)}s</div>
-                      </>
-                    )}
-                    <img
-                      src={card.spriteUrl}
-                      alt={card.name}
-                      width={22}
-                      height={22}
-                      draggable={false}
-                      className="mfd-pixel"
-                    />
-                    <div className="mfd-hud-card-meta" style={{ textAlign: 'left' }}>
-                      <div className="mfd-hud-card-name" style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
-                        {card.name}
-                      </div>
-                      <div
-                        className="mfd-hud-card-cost"
-                        style={{
-                          fontSize: 9,
-                          lineHeight: 1.15,
-                          color: isFree
-                            ? '#38BDF8'
-                            : card.onCooldown
-                              ? '#FACC15'
-                              : card.canAfford
-                                ? '#4ADE80'
-                                : '#F87171',
-                        }}
-                      >
-                        {isFree
-                          ? 'FREE'
-                          : card.onCooldown
-                            ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s`
-                            : `${card.cost} EM`}
-                      </div>
+                  }}
+                  onClick={() => {
+                    if (suppressNextClickRef.current) {
+                      suppressNextClickRef.current = false;
+                      return;
+                    }
+                    if (!isFree && card.onCooldown) return;
+                    setTool(
+                      selected
+                        ? { kind: 'select' }
+                        : { kind: 'place', definitionId: card.id, freeSandbox: isFree },
+                    );
+                  }}
+                  style={{
+                    padding: '3px 5px',
+                    borderColor: selected
+                      ? '#facc15'
+                      : isFree || (card.canAfford && !card.onCooldown)
+                        ? '#4ade80'
+                        : '#475569',
+                    background: selected ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
+                    opacity: blockedByRules && !selected ? 0.78 : 1,
+                  }}
+                  title={
+                    isFree
+                      ? `${card.name} (FREE Sandbox) — ${card.abilityName}`
+                      : `${card.name} (${card.cost} EM, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto empty cell or compatible Defender to Fuse.`
+                  }
+                >
+                  {!isFree && card.onCooldown && (
+                    <>
+                      <div className="mfd-cd-curtain" style={{ height: `${card.cooldownProgressPct}%` }} />
+                      <div className="mfd-cd-badge">{card.cooldownRemainingSeconds.toFixed(1)}s</div>
+                    </>
+                  )}
+                  <img
+                    src={card.spriteUrl}
+                    alt={card.name}
+                    width={22}
+                    height={22}
+                    draggable={false}
+                    className="mfd-pixel"
+                  />
+                  <div className="mfd-hud-card-meta" style={{ textAlign: 'left' }}>
+                    <div className="mfd-hud-card-name" style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
+                      {card.name}
                     </div>
-                  </button>
-                );
-              })}
+                    <div
+                      className="mfd-hud-card-cost"
+                      style={{
+                        fontSize: 9,
+                        lineHeight: 1.15,
+                        color: isFree
+                          ? '#38BDF8'
+                          : card.onCooldown
+                            ? '#FACC15'
+                            : card.canAfford
+                              ? '#4ADE80'
+                              : '#F87171',
+                      }}
+                    >
+                      {isFree
+                        ? 'FREE'
+                        : card.onCooldown
+                          ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s`
+                          : `${card.cost} EM`}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
+          {/* Top-Right Cluster: Wave Status, Playback Controls & Separated Tactical Tools (Glove & Shovel) */}
+          <div className="mfd-card mfd-hud-panel mfd-hud-top-right">
+            <div className="mfd-hud-controls-group" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div
+                className="mfd-hud-wave-box"
+                style={{
+                  background: '#0f172a',
+                  border: '2px solid #334155',
+                  borderRadius: 8,
+                  padding: '3px 7px',
+                  textAlign: 'center',
+                }}
+              >
+                <div className="mfd-hud-wave-main" style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, lineHeight: 1.15 }}>
+                  {snapshot?.mode === 'sandbox'
+                    ? `SANDBOX · ${(snapshot?.elapsedSeconds ?? 0).toFixed(0)}s`
+                    : `WAVE ${waveNumber}/${snapshot?.totalWaves ?? 5}`}
+                </div>
+                <div className="mfd-hud-wave-sub" style={{ fontSize: 10, color: '#CBD5E1', lineHeight: 1.15 }}>
+                  E: {snapshot?.enemies.length ?? 0} · K: {snapshot?.enemiesKilled ?? 0}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="mfd-btn mfd-hud-icon-btn"
+                style={{ padding: '5px 8px', fontSize: 11 }}
+                onClick={cycleSpeed}
+                title="Cycle simulation speed (1x -> 2x -> 4x -> 0.5x)"
+              >
+                {snapshot?.speedMultiplier ?? 1}x
+              </button>
+
+              <button
+                type="button"
+                className="mfd-btn mfd-hud-icon-btn"
+                style={{ padding: '5px 8px', fontSize: 11 }}
+                onClick={() => void toggleLandscapeFullscreen()}
+                aria-label="Toggle Fullscreen Landscape"
+                title="Fullscreen & Xoay ngang (Mobile/Desktop)"
+              >
+                ⛶
+              </button>
+
+              <button
+                type="button"
+                className="mfd-btn mfd-btn-gold mfd-hud-pause-btn"
+                style={{ padding: '5px 8px', fontSize: 11 }}
+                disabled={snapshot?.terminal !== null}
+                onClick={() => controller?.setPaused(!(snapshot?.paused ?? false))}
+                title="Pause / Resume [P]"
+              >
+                {snapshot?.paused ? 'Resume' : 'Pause'}
+              </button>
+            </div>
+
+            <span className="mfd-hud-divider" aria-hidden="true" />
+
+            <div className="mfd-hud-tools-dock" aria-label="Tactical Tools">
               {/* Fusion Glove */}
               <button
                 type="button"
@@ -1285,7 +1334,7 @@ export function PlaytestHost() {
                   setTool(tool.kind === 'glove' ? { kind: 'select' } : { kind: 'glove' });
                 }}
                 style={{
-                  padding: '3px 6px',
+                  padding: '3px 5px',
                   borderColor: tool.kind === 'glove' ? '#facc15' : gloveCooldown.onCooldown ? '#475569' : '#38bdf8',
                   background: tool.kind === 'glove' ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
                   opacity: gloveCooldown.onCooldown && tool.kind !== 'glove' ? 0.78 : 1,
@@ -1312,7 +1361,7 @@ export function PlaytestHost() {
                   </div>
                   <div
                     className="mfd-hud-card-cost"
-                    style={{ fontSize: 9, lineHeight: 1.15, color: gloveCooldown.onCooldown ? '#FACC15' : '#38BDF8' }}
+                    style={{ fontSize: 8.5, lineHeight: 1.15, color: gloveCooldown.onCooldown ? '#FACC15' : '#38BDF8' }}
                   >
                     {gloveCooldown.onCooldown ? `CD ${gloveCooldown.remainingSeconds.toFixed(1)}s` : 'MOVE/FUSE'}
                   </div>
@@ -1336,7 +1385,7 @@ export function PlaytestHost() {
                   setTool(tool.kind === 'shovel' ? { kind: 'select' } : { kind: 'shovel' });
                 }}
                 style={{
-                  padding: '3px 6px',
+                  padding: '3px 5px',
                   borderColor: tool.kind === 'shovel' ? '#f87171' : '#64748b',
                   background: tool.kind === 'shovel' ? 'rgba(185, 28, 28, 0.35)' : '#0f172a',
                 }}
@@ -1354,65 +1403,10 @@ export function PlaytestHost() {
                   <div className="mfd-hud-card-name" style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
                     Shovel
                   </div>
-                  <div className="mfd-hud-card-cost" style={{ fontSize: 9, lineHeight: 1.15, color: '#FCA5A5' }}>
+                  <div className="mfd-hud-card-cost" style={{ fontSize: 8.5, lineHeight: 1.15, color: '#FCA5A5' }}>
                     REMOVE
                   </div>
                 </div>
-              </button>
-            </div>
-
-            {/* Wave Status & Playback Controls */}
-            <div className="mfd-hud-controls-group" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <div
-                className="mfd-hud-wave-box"
-                style={{
-                  background: '#0f172a',
-                  border: '2px solid #334155',
-                  borderRadius: 8,
-                  padding: '3px 8px',
-                  textAlign: 'center',
-                }}
-              >
-                <div className="mfd-hud-wave-main" style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, lineHeight: 1.15 }}>
-                  {snapshot?.mode === 'sandbox'
-                    ? `SANDBOX · ${(snapshot?.elapsedSeconds ?? 0).toFixed(0)}s`
-                    : `WAVE ${waveNumber}/${snapshot?.totalWaves ?? 5}`}
-                </div>
-                <div className="mfd-hud-wave-sub" style={{ fontSize: 10, color: '#CBD5E1', lineHeight: 1.15 }}>
-                  E: {snapshot?.enemies.length ?? 0} · K: {snapshot?.enemiesKilled ?? 0}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="mfd-btn mfd-hud-icon-btn"
-                style={{ padding: '6px 9px', fontSize: 12 }}
-                onClick={cycleSpeed}
-                title="Cycle simulation speed (1x -> 2x -> 4x -> 0.5x)"
-              >
-                {snapshot?.speedMultiplier ?? 1}x
-              </button>
-
-              <button
-                type="button"
-                className="mfd-btn mfd-hud-icon-btn"
-                style={{ padding: '6px 9px', fontSize: 12 }}
-                onClick={() => void toggleLandscapeFullscreen()}
-                aria-label="Toggle Fullscreen Landscape"
-                title="Fullscreen & Xoay ngang (Mobile/Desktop)"
-              >
-                ⛶
-              </button>
-
-              <button
-                type="button"
-                className="mfd-btn mfd-btn-gold mfd-hud-pause-btn"
-                style={{ padding: '6px 9px', fontSize: 12 }}
-                disabled={snapshot?.terminal !== null}
-                onClick={() => controller?.setPaused(!(snapshot?.paused ?? false))}
-                title="Pause / Resume [P]"
-              >
-                {snapshot?.paused ? 'Resume' : 'Pause'}
               </button>
             </div>
           </div>
@@ -1573,10 +1567,13 @@ export function PlaytestHost() {
 
           {/* Row 3: Flex-1 5x9 Grassland Phaser Canvas Stage (matches CampaignHost) */}
           <div
+            className="mfd-battle-stage"
             style={{
               flex: 1,
               minHeight: 0,
+              minWidth: 0,
               width: '100%',
+              height: '100%',
               maxWidth: 1280,
               marginInline: 'auto',
               position: 'relative',

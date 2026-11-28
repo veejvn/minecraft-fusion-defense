@@ -271,6 +271,96 @@ body {
   animation: mfd-rotate-phone 2.4s ease-in-out infinite;
 }
 
+.mfd-campaign-battle-grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'res summon right'
+    'stage stage stage';
+  column-gap: 5px;
+  row-gap: 8px;
+}
+
+.mfd-playtest-battle-grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    'res summon right'
+    'strip strip strip'
+    'stage stage stage';
+  column-gap: 5px;
+  row-gap: 6px;
+}
+
+.mfd-hud-panel {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px;
+  border-width: 2px;
+  min-width: 0;
+}
+
+.mfd-hud-panel .mfd-btn {
+  gap: 4px;
+}
+
+.mfd-hud-top-left {
+  grid-area: res;
+  gap: 6px;
+}
+
+.mfd-hud-summon-bar {
+  grid-area: summon;
+  justify-content: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mfd-hud-summon-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.mfd-hud-top-right {
+  grid-area: right;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.mfd-hud-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 1px;
+  background: #475569;
+  flex-shrink: 0;
+}
+
+.mfd-hud-tools-dock {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid #475569;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+.mfd-playtest-strip {
+  grid-area: strip;
+  min-width: 0;
+}
+
+.mfd-battle-stage {
+  grid-area: stage;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
 @media (max-width: 900px), (max-height: 540px) {
   .mfd-modal-backdrop {
     padding: 8px;
@@ -298,6 +388,25 @@ body {
   }
 
   .mfd-battle-section {
+    gap: 4px;
+  }
+
+  .mfd-campaign-battle-grid {
+    grid-template-columns: 62px auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'res res right'
+      'summon stage stage';
+    gap: 4px;
+  }
+
+  .mfd-playtest-battle-grid {
+    grid-template-columns: 62px auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'res res right'
+      'strip strip strip'
+      'summon stage stage';
     gap: 3px;
   }
 
@@ -306,24 +415,52 @@ body {
     border-radius: 6px !important;
   }
 
-  .mfd-hud-bar {
+  .mfd-hud-top-left {
+    padding: 2px 4px !important;
+    gap: 4px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .mfd-hud-top-right {
+    padding: 2px 4px !important;
+    gap: 4px !important;
+    justify-content: space-between !important;
     flex-wrap: nowrap !important;
     overflow-x: auto;
-    padding: 2px 4px !important;
-    gap: 3px !important;
     scrollbar-width: none;
   }
 
-  .mfd-hud-bar::-webkit-scrollbar {
+  .mfd-hud-top-right::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mfd-hud-summon-bar {
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    align-items: stretch !important;
+    padding: 3px !important;
+    gap: 3px !important;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+
+  .mfd-hud-summon-bar::-webkit-scrollbar {
     display: none;
   }
 
   .mfd-hud-resource-group,
-  .mfd-hud-cards-group,
-  .mfd-hud-controls-group {
+  .mfd-hud-controls-group,
+  .mfd-hud-tools-dock {
     flex-wrap: nowrap !important;
     gap: 3px !important;
     flex-shrink: 0;
+  }
+
+  .mfd-hud-tools-dock {
+    padding: 1px 3px !important;
+    border-radius: 6px !important;
   }
 
   .mfd-hud-resource {
@@ -342,7 +479,7 @@ body {
     font-size: 12px !important;
   }
 
-  .mfd-hud-bar .mfd-btn {
+  .mfd-hud-panel .mfd-btn {
     padding: 2px 4px !important;
     font-size: 10px !important;
     white-space: nowrap;
@@ -350,11 +487,22 @@ body {
     border-radius: 5px !important;
   }
 
-  .mfd-hud-bar .mfd-defender-card {
+  .mfd-hud-summon-bar .mfd-defender-card {
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
     flex-direction: column;
+    justify-content: center;
+    gap: 1px !important;
+    padding: 2px !important;
+  }
+
+  .mfd-hud-tools-dock .mfd-hud-tool-btn {
+    flex-direction: column;
+    justify-content: center;
     gap: 1px !important;
     padding: 2px 4px !important;
-    min-width: 34px;
+    min-width: 40px;
   }
 
   .mfd-hud-card-meta,
@@ -367,10 +515,19 @@ body {
     line-height: 1.05 !important;
   }
 
-  .mfd-hud-bar img.mfd-pixel,
-  .mfd-hud-bar svg {
+  .mfd-hud-tools-dock .mfd-hud-card-cost {
+    font-size: 7.5px !important;
+  }
+
+  .mfd-hud-panel img.mfd-pixel,
+  .mfd-hud-panel svg {
     width: 18px !important;
     height: 18px !important;
+  }
+
+  .mfd-hud-summon-bar img.mfd-pixel {
+    width: 20px !important;
+    height: 20px !important;
   }
 
   .mfd-hud-wave-box {

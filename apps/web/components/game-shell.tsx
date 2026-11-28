@@ -220,7 +220,7 @@ export function GameShell() {
             )}
 
             {screen === 'BATTLE' && snapshot && (
-              <section aria-label="Grassland Campaign Battle" className="mfd-battle-section">
+              <section aria-label="Grassland Campaign Battle" className="mfd-battle-section mfd-campaign-battle-grid">
                 <BattleHudOverlay
                   snapshot={snapshot}
                   activeTool={activeTool}

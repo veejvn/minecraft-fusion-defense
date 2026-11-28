@@ -199,31 +199,20 @@ export function BattleHudOverlay({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-      {/* Top Tactical HUD Bar */}
-      <div
-        className="mfd-card mfd-hud-bar"
-        style={{
-          padding: '6px 10px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
-          flexWrap: 'wrap',
-        }}
-      >
-        {/* Resources: Energy & Power Crystal */}
-        <div className="mfd-hud-resource-group" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <>
+      {/* Top-Left Resources: Emeralds & Power Crystal */}
+      <div className="mfd-card mfd-hud-panel mfd-hud-top-left">
+        <div className="mfd-hud-resource-group" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div
             className="mfd-hud-resource"
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 5,
               background: '#0f172a',
               border: '2px solid #ca8a04',
               borderRadius: 8,
-              padding: '4px 8px',
+              padding: '3px 7px',
             }}
             title="Emeralds used to summon Base Defenders"
           >
@@ -232,7 +221,7 @@ export function BattleHudOverlay({
               <div className="mfd-hud-label" style={{ fontSize: 9, color: '#6EE7B7', fontWeight: 700, lineHeight: 1.1 }}>
                 EMERALDS
               </div>
-              <div className="mfd-hud-value" style={{ fontSize: 14, fontWeight: 700, color: '#A7F3D0', lineHeight: 1.1 }}>
+              <div className="mfd-hud-value" style={{ fontSize: 13, fontWeight: 700, color: '#A7F3D0', lineHeight: 1.1 }}>
                 {snapshot.energy}
               </div>
             </div>
@@ -241,7 +230,7 @@ export function BattleHudOverlay({
           <button
             type="button"
             className={`mfd-btn mfd-hud-crystal ${activeTool.kind === 'crystal' ? 'mfd-btn-crystal' : ''}`}
-            style={{ padding: '3px 7px', touchAction: 'none', userSelect: 'none' }}
+            style={{ padding: '3px 6px', touchAction: 'none', userSelect: 'none' }}
             disabled={snapshot.crystals < 1 || snapshot.status !== 'playing'}
             aria-label={`Power Crystals (${snapshot.crystals} of ${snapshot.maxCrystals})`}
             onPointerDown={e => {
@@ -258,12 +247,12 @@ export function BattleHudOverlay({
             }}
             title="Click or drag onto a Defender to cast its Special Ability (1 Crystal, 0s cooldown)"
           >
-            <img src="/assets/sprites/items/power_crystal.png" alt="Crystal" width={24} height={24} className="mfd-pixel" />
+            <img src="/assets/sprites/items/power_crystal.png" alt="Crystal" width={22} height={22} className="mfd-pixel" />
             <div style={{ textAlign: 'left' }}>
               <div className="mfd-hud-label" style={{ fontSize: 9, color: '#BAE6FD', lineHeight: 1.1 }}>
                 CRYSTALS
               </div>
-              <div className="mfd-hud-value" style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.1 }}>
+              <div className="mfd-hud-value" style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.1 }}>
                 {snapshot.crystals} / {snapshot.maxCrystals}
               </div>
             </div>
@@ -273,7 +262,7 @@ export function BattleHudOverlay({
             <button
               type="button"
               className="mfd-btn mfd-btn-gold mfd-hud-pending-crystal"
-              style={{ padding: '5px 8px', fontSize: 12 }}
+              style={{ padding: '4px 7px', fontSize: 11 }}
               disabled={snapshot.crystals >= snapshot.maxCrystals || snapshot.status !== 'playing'}
               onClick={onClaimPending}
               aria-label={`Claim ${snapshot.pendingWaveCrystals} pending Crystal`}
@@ -283,101 +272,175 @@ export function BattleHudOverlay({
             </button>
           )}
         </div>
+      </div>
 
-        {/* Base Defender Selection & Drag Bar + Glove & Shovel */}
-        <div className="mfd-hud-cards-group" style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-          {snapshot.baseDefenderCards.map(card => {
-            const selected = activeTool.kind === 'place' && activeTool.definitionId === card.id;
-            const unavailable = !card.unlocked || !card.canAfford || card.onCooldown || snapshot.status !== 'playing';
-            const statusText = !card.unlocked
-              ? card.requirement === 'Restricted in this stage'
-                ? 'Banned'
-                : 'Locked'
-              : card.onCooldown
-                ? `Cooldown ${card.cooldownRemainingSeconds.toFixed(1)}s`
-                : `${card.cost} EM`;
-            return (
-              <button
-                key={card.id}
-                type="button"
-                className="mfd-btn mfd-defender-card"
-                disabled={!card.unlocked || card.onCooldown || snapshot.status !== 'playing'}
-                aria-label={`${card.name} (${statusText})`}
-                onPointerDown={e => {
-                  if (card.unlocked && card.canAfford && !card.onCooldown) {
-                    startHudDrag(e, { kind: 'place', definitionId: card.id }, card.spriteUrl, card.name);
-                  }
-                }}
-                onClick={() => {
-                  if (suppressNextClickRef.current) {
-                    suppressNextClickRef.current = false;
-                    return;
-                  }
-                  if (!card.unlocked || card.onCooldown) return;
-                  onSelectTool(selected ? { kind: 'select' } : { kind: 'place', definitionId: card.id });
-                }}
-                style={{
-                  padding: '3px 6px',
-                  borderColor: selected
-                    ? '#facc15'
-                    : card.unlocked && card.canAfford && !card.onCooldown
-                      ? '#4ade80'
-                      : '#475569',
-                  background: selected ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
-                  opacity: card.unlocked ? (unavailable && !selected ? 0.78 : 1) : 0.45,
-                }}
-                title={
-                  card.unlocked
-                    ? `${card.name} (${card.cost} EM, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto empty cell or compatible Defender to Fuse.`
-                    : `Locked: ${card.requirement}`
+      {/* Defender Summon Bar (Top-Center on Desktop, Left Vertical Dock on Mobile) */}
+      <div className="mfd-card mfd-hud-panel mfd-hud-summon-bar" aria-label="Defender Summon Bar">
+        {snapshot.baseDefenderCards.map(card => {
+          const selected = activeTool.kind === 'place' && activeTool.definitionId === card.id;
+          const unavailable = !card.unlocked || !card.canAfford || card.onCooldown || snapshot.status !== 'playing';
+          const statusText = !card.unlocked
+            ? card.requirement === 'Restricted in this stage'
+              ? 'Banned'
+              : 'Locked'
+            : card.onCooldown
+              ? `Cooldown ${card.cooldownRemainingSeconds.toFixed(1)}s`
+              : `${card.cost} EM`;
+          return (
+            <button
+              key={card.id}
+              type="button"
+              className="mfd-btn mfd-defender-card"
+              disabled={!card.unlocked || card.onCooldown || snapshot.status !== 'playing'}
+              aria-label={`${card.name} (${statusText})`}
+              onPointerDown={e => {
+                if (card.unlocked && card.canAfford && !card.onCooldown) {
+                  startHudDrag(e, { kind: 'place', definitionId: card.id }, card.spriteUrl, card.name);
                 }
-              >
-                {card.onCooldown && (
-                  <>
-                    <div className="mfd-cd-curtain" style={{ height: `${card.cooldownProgressPct}%` }} />
-                    <div className="mfd-cd-badge">{card.cooldownRemainingSeconds.toFixed(1)}s</div>
-                  </>
-                )}
-                <img
-                  src={card.spriteUrl}
-                  alt={card.name}
-                  width={28}
-                  height={28}
-                  draggable={false}
-                  className="mfd-pixel"
-                  style={{ filter: card.unlocked ? 'none' : 'grayscale(100%)' }}
-                />
-                <div className="mfd-hud-card-meta" style={{ textAlign: 'left' }}>
-                  <div className="mfd-hud-card-name" style={{ fontSize: 11, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
-                    {card.name}
-                  </div>
-                  <div
-                    className="mfd-hud-card-cost"
-                    style={{
-                      fontSize: 10,
-                      lineHeight: 1.15,
-                      color: !card.unlocked
-                        ? '#94A3B8'
-                        : card.onCooldown
-                          ? '#FACC15'
-                          : card.canAfford
-                            ? '#4ADE80'
-                            : '#F87171',
-                    }}
-                  >
-                    {!card.unlocked
-                      ? card.requirement === 'Restricted in this stage'
-                        ? 'BANNED'
-                        : 'LOCKED'
-                      : card.onCooldown
-                        ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s`
-                        : `${card.cost} EM`}
-                  </div>
+              }}
+              onClick={() => {
+                if (suppressNextClickRef.current) {
+                  suppressNextClickRef.current = false;
+                  return;
+                }
+                if (!card.unlocked || card.onCooldown) return;
+                onSelectTool(selected ? { kind: 'select' } : { kind: 'place', definitionId: card.id });
+              }}
+              style={{
+                padding: '3px 5px',
+                borderColor: selected
+                  ? '#facc15'
+                  : card.unlocked && card.canAfford && !card.onCooldown
+                    ? '#4ade80'
+                    : '#475569',
+                background: selected ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
+                opacity: card.unlocked ? (unavailable && !selected ? 0.78 : 1) : 0.45,
+              }}
+              title={
+                card.unlocked
+                  ? `${card.name} (${card.cost} EM, ${card.cooldownTotalSeconds}s CD) — ${card.abilityName}. Click or drag onto empty cell or compatible Defender to Fuse.`
+                  : `Locked: ${card.requirement}`
+              }
+            >
+              {card.onCooldown && (
+                <>
+                  <div className="mfd-cd-curtain" style={{ height: `${card.cooldownProgressPct}%` }} />
+                  <div className="mfd-cd-badge">{card.cooldownRemainingSeconds.toFixed(1)}s</div>
+                </>
+              )}
+              <img
+                src={card.spriteUrl}
+                alt={card.name}
+                width={24}
+                height={24}
+                draggable={false}
+                className="mfd-pixel"
+                style={{ filter: card.unlocked ? 'none' : 'grayscale(100%)' }}
+              />
+              <div className="mfd-hud-card-meta" style={{ textAlign: 'left' }}>
+                <div className="mfd-hud-card-name" style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
+                  {card.name}
                 </div>
-              </button>
-            );
-          })}
+                <div
+                  className="mfd-hud-card-cost"
+                  style={{
+                    fontSize: 9,
+                    lineHeight: 1.15,
+                    color: !card.unlocked
+                      ? '#94A3B8'
+                      : card.onCooldown
+                        ? '#FACC15'
+                        : card.canAfford
+                          ? '#4ADE80'
+                          : '#F87171',
+                  }}
+                >
+                  {!card.unlocked
+                    ? card.requirement === 'Restricted in this stage'
+                      ? 'BANNED'
+                      : 'LOCKED'
+                    : card.onCooldown
+                      ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s`
+                      : `${card.cost} EM`}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
 
+      {/* Top-Right Cluster: Wave Status & Match Controls + Separated Tactical Tools (Glove & Shovel) */}
+      <div className="mfd-card mfd-hud-panel mfd-hud-top-right">
+        <div className="mfd-hud-controls-group" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div
+            className="mfd-hud-wave-box"
+            style={{
+              background: '#0f172a',
+              border: '2px solid #334155',
+              borderRadius: 8,
+              padding: '3px 7px',
+              textAlign: 'center',
+            }}
+            title={snapshot.activeLevelName}
+          >
+            <div className="mfd-hud-wave-main" style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, lineHeight: 1.15 }}>
+              {snapshot.activeLevelId && snapshot.activeLevelId !== 'grassland' ? (
+                <span className="mfd-hud-wave-prefix">{snapshot.activeLevelName} · </span>
+              ) : null}
+              WAVE {snapshot.waveNumber}/{snapshot.totalWaves}
+            </div>
+            <div className="mfd-hud-wave-sub" style={{ fontSize: 10, color: '#CBD5E1', lineHeight: 1.15 }}>
+              E: {snapshot.enemiesRemaining} · K: {snapshot.enemiesKilled}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="mfd-btn mfd-hud-icon-btn"
+            style={{ padding: '5px 8px', fontSize: 11 }}
+            onClick={() => onSetSpeed(snapshot.speedMultiplier === 1 ? 2 : 1)}
+            title="Toggle simulation speed (1x / 2x)"
+          >
+            {snapshot.speedMultiplier}x
+          </button>
+
+          <button
+            type="button"
+            className="mfd-btn mfd-hud-icon-btn"
+            style={{ padding: '5px 8px', fontSize: 11 }}
+            onClick={onOpenHowToPlay}
+            aria-label="How to Play"
+            title="How to Play"
+          >
+            ?
+          </button>
+
+          <button
+            type="button"
+            className="mfd-btn mfd-hud-icon-btn"
+            style={{ padding: '5px 8px', fontSize: 11 }}
+            onClick={() => void toggleLandscapeFullscreen()}
+            aria-label="Toggle Fullscreen Landscape"
+            title="Fullscreen & Xoay ngang (Mobile/Desktop)"
+          >
+            ⛶
+          </button>
+
+          <button
+            type="button"
+            className="mfd-btn mfd-btn-gold mfd-hud-pause-btn"
+            style={{ padding: '5px 8px', fontSize: 11 }}
+            disabled={snapshot.terminal !== null}
+            onClick={onTogglePause}
+          >
+            {snapshot.status === 'paused' ? 'Resume' : 'Pause'}
+          </button>
+        </div>
+
+        <span className="mfd-hud-divider" aria-hidden="true" />
+
+        {/* Tactical Tools Dock (always top-right on both Desktop and Mobile) */}
+        <div className="mfd-hud-tools-dock" aria-label="Tactical Tools">
           {/* Fusion Glove (Move or Fuse placed Defenders, 0 EM, cooldown) */}
           <button
             type="button"
@@ -402,7 +465,7 @@ export function BattleHudOverlay({
               onSelectTool(activeTool.kind === 'glove' ? { kind: 'select' } : { kind: 'glove' });
             }}
             style={{
-              padding: '3px 6px',
+              padding: '3px 5px',
               borderColor: activeTool.kind === 'glove' ? '#facc15' : snapshot.gloveCooldown.onCooldown ? '#475569' : '#38bdf8',
               background: activeTool.kind === 'glove' ? 'rgba(202, 138, 4, 0.25)' : '#0f172a',
               opacity: snapshot.gloveCooldown.onCooldown && activeTool.kind !== 'glove' ? 0.78 : 1,
@@ -415,7 +478,7 @@ export function BattleHudOverlay({
                 <div className="mfd-cd-badge">{snapshot.gloveCooldown.remainingSeconds.toFixed(1)}s</div>
               </>
             )}
-            <PixelToolIcon kind="glove" size={24} />
+            <PixelToolIcon kind="glove" size={22} />
             <div className="mfd-hud-tool-text" style={{ textAlign: 'left' }}>
               <div className="mfd-hud-card-name" style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
                 Glove
@@ -423,7 +486,7 @@ export function BattleHudOverlay({
               <div
                 className="mfd-hud-card-cost"
                 style={{
-                  fontSize: 9,
+                  fontSize: 8.5,
                   lineHeight: 1.15,
                   color: snapshot.gloveCooldown.onCooldown ? '#FACC15' : '#38BDF8',
                 }}
@@ -450,88 +513,21 @@ export function BattleHudOverlay({
               onSelectTool(activeTool.kind === 'shovel' ? { kind: 'select' } : { kind: 'shovel' });
             }}
             style={{
-              padding: '3px 6px',
+              padding: '3px 5px',
               borderColor: activeTool.kind === 'shovel' ? '#f87171' : '#64748b',
               background: activeTool.kind === 'shovel' ? 'rgba(185, 28, 28, 0.35)' : '#0f172a',
             }}
             title="Shovel: Click or drag onto any Defender to remove it (0% refund)"
           >
-            <PixelToolIcon kind="shovel" size={24} />
+            <PixelToolIcon kind="shovel" size={22} />
             <div className="mfd-hud-tool-text" style={{ textAlign: 'left' }}>
               <div className="mfd-hud-card-name" style={{ fontSize: 10, fontWeight: 700, color: '#F8FAFC', lineHeight: 1.15 }}>
                 Shovel
               </div>
-              <div className="mfd-hud-card-cost" style={{ fontSize: 9, lineHeight: 1.15, color: '#FCA5A5' }}>
+              <div className="mfd-hud-card-cost" style={{ fontSize: 8.5, lineHeight: 1.15, color: '#FCA5A5' }}>
                 REMOVE
               </div>
             </div>
-          </button>
-        </div>
-
-        {/* Wave Status & Match Controls */}
-        <div className="mfd-hud-controls-group" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div
-            className="mfd-hud-wave-box"
-            style={{
-              background: '#0f172a',
-              border: '2px solid #334155',
-              borderRadius: 8,
-              padding: '3px 8px',
-              textAlign: 'center',
-            }}
-            title={snapshot.activeLevelName}
-          >
-            <div className="mfd-hud-wave-main" style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, lineHeight: 1.15 }}>
-              {snapshot.activeLevelId && snapshot.activeLevelId !== 'grassland' ? (
-                <span className="mfd-hud-wave-prefix">{snapshot.activeLevelName} · </span>
-              ) : null}
-              WAVE {snapshot.waveNumber}/{snapshot.totalWaves}
-            </div>
-            <div className="mfd-hud-wave-sub" style={{ fontSize: 10, color: '#CBD5E1', lineHeight: 1.15 }}>
-              E: {snapshot.enemiesRemaining} · K: {snapshot.enemiesKilled}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="mfd-btn mfd-hud-icon-btn"
-            style={{ padding: '6px 10px', fontSize: 12 }}
-            onClick={() => onSetSpeed(snapshot.speedMultiplier === 1 ? 2 : 1)}
-            title="Toggle simulation speed (1x / 2x)"
-          >
-            {snapshot.speedMultiplier}x
-          </button>
-
-          <button
-            type="button"
-            className="mfd-btn mfd-hud-icon-btn"
-            style={{ padding: '6px 10px', fontSize: 12 }}
-            onClick={onOpenHowToPlay}
-            aria-label="How to Play"
-            title="How to Play"
-          >
-            ?
-          </button>
-
-          <button
-            type="button"
-            className="mfd-btn mfd-hud-icon-btn"
-            style={{ padding: '6px 10px', fontSize: 12 }}
-            onClick={() => void toggleLandscapeFullscreen()}
-            aria-label="Toggle Fullscreen Landscape"
-            title="Fullscreen & Xoay ngang (Mobile/Desktop)"
-          >
-            ⛶
-          </button>
-
-          <button
-            type="button"
-            className="mfd-btn mfd-btn-gold mfd-hud-pause-btn"
-            style={{ padding: '6px 10px', fontSize: 12 }}
-            disabled={snapshot.terminal !== null}
-            onClick={onTogglePause}
-          >
-            {snapshot.status === 'paused' ? 'Resume' : 'Pause'}
           </button>
         </div>
       </div>
@@ -682,6 +678,6 @@ export function BattleHudOverlay({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
