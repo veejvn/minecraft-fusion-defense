@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   MVP_GAME_DATA,
+  mergeCampaignLevelsIntoDataset,
   mergePlaytestPresetIntoDataset,
   parseHexColor,
   validateMvpDataset,
@@ -286,5 +287,67 @@ describe('MVP JSON Game Dataset (@mfd/game-data)', () => {
     const badDropChance = structuredClone(preset);
     badDropChance.enemies[0].crystalDropChance = 1.5;
     expect(() => mergePlaytestPresetIntoDataset(MVP_GAME_DATA, badDropChance)).toThrow();
+  });
+
+  it('validates multi-level campaignLevels, startingDefenders, roster restrictions, and unlock cycles (T-15)', () => {
+    expect(MVP_GAME_DATA.campaignLevels.length).toBeGreaterThanOrEqual(1);
+    const grassland = MVP_GAME_DATA.campaignLevels.find(l => l.id === 'grassland')!;
+    expect(grassland).toBeDefined();
+    expect(grassland.waves).toEqual(MVP_GAME_DATA.grasslandLevel.waves);
+    expect(grassland.initialEmeralds).toBe(MVP_GAME_DATA.grasslandLevel.initialEmeralds);
+
+    const customStage = structuredClone(grassland);
+    customStage.id = 'stage_2';
+    customStage.order = 2;
+    customStage.name = 'Custom Horde Trial';
+    customStage.unlockRequirement = { kind: 'clear-level', levelId: 'grassland' };
+    customStage.waves = customStage.waves.slice(0, 3).map((w, idx) => ({ ...w, id: `wave_${idx + 1}` }));
+    customStage.waveCrystals = [1, 1, 2];
+    customStage.startingDefenders = [
+      { definitionId: 'villager', row: 2, column: 0 },
+      { definitionId: 'steel_guardian', row: 2, column: 3 },
+    ];
+    customStage.allowedBaseDefenderIds = ['villager', 'iron_golem', 'skeleton'];
+    customStage.ignoreUnlockRestrictions = true;
+
+    const merged = mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [grassland, customStage]);
+    expect(merged.campaignLevels).toHaveLength(2);
+    expect(merged.campaignLevels[1]?.startingDefenders).toHaveLength(2);
+    expect(merged.campaignLevels[1]?.allowedBaseDefenderIds).toEqual(['villager', 'iron_golem', 'skeleton']);
+
+    // Reject duplicate stage IDs
+    expect(() => mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [grassland, { ...customStage, id: 'grassland' }])).toThrow();
+
+    // Reject removing mandatory grassland stage
+    expect(() => mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [customStage])).toThrow();
+
+    // Reject duplicate cell in startingDefenders
+    const dupCell = structuredClone(customStage);
+    dupCell.startingDefenders = [
+      { definitionId: 'villager', row: 1, column: 2 },
+      { definitionId: 'skeleton', row: 1, column: 2 },
+    ];
+    expect(() => mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [grassland, dupCell])).toThrow(/Duplicate startingDefender cell/);
+
+    // Reject out-of-bounds cell
+    const oobCell = structuredClone(customStage);
+    oobCell.startingDefenders = [{ definitionId: 'villager', row: 5, column: 0 }];
+    expect(() => mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [grassland, oobCell])).toThrow();
+
+    // Reject Tier-2 Defender in allowedBaseDefenderIds
+    const badAllowed = structuredClone(customStage);
+    badAllowed.allowedBaseDefenderIds = ['iron_golem', 'steel_guardian'];
+    expect(() => mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [grassland, badAllowed])).toThrow(/valid Tier-1 Base Defenders/);
+
+    // Reject circular unlockRequirement graph
+    const stageA = structuredClone(customStage);
+    stageA.id = 'stage_a';
+    stageA.order = 2;
+    stageA.unlockRequirement = { kind: 'clear-level', levelId: 'stage_b' };
+    const stageB = structuredClone(customStage);
+    stageB.id = 'stage_b';
+    stageB.order = 3;
+    stageB.unlockRequirement = { kind: 'clear-level', levelId: 'stage_a' };
+    expect(() => mergeCampaignLevelsIntoDataset(MVP_GAME_DATA, [grassland, stageA, stageB])).toThrow(/Circular unlockRequirement/);
   });
 });

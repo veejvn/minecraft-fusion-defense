@@ -5,6 +5,11 @@
 
 **Current authority:** [Repository Documentation Policy](../DOCUMENTATION_POLICY.md). The 2026-11-03 Notion baseline is archival; confirmed decisions preserved in current repository documents remain valid. Draft/Proposed/Prototype/TBD remain unapproved.
 
+> [!NOTE]
+> **Cập nhật sau MVP (`2026-11-27` – `2026-11-28`):**
+> - **PGD-03 (Implemented — T-14):** Hệ thống kinh tế đã chuyển từ `+50 Energy / 3s` và thưởng khi hạ Enemy sang **Emerald (`EM`)**, **Villager** / **Master Trader** sản sinh Emerald item và **Village Supply Chest** tại rìa Base trái. Xem [PGD-03](../decisions/PGD-03-EMERALD-VILLAGER-ECONOMY.md).
+> - **PGD-04 (Confirmed — Planned T-15):** Mở rộng từ 1 màn Grassland cố định sang **Multi-Level Campaign** hướng dữ liệu (`campaign-levels.json`), số lượng Wave linh hoạt, hỗ trợ **đơn vị đặt sẵn đầu màn (`startingDefenders`)**, **giới hạn Defender (`allowedBaseDefenderIds`)** và trang biên soạn **Dev Stage Studio (`/editor`)**. Xem [PGD-04](../decisions/PGD-04-LEVEL-EDITOR-MULTI-LEVEL.md) và [T-15 Plan](../development/T-15-LEVEL-EDITOR-AND-MULTI-LEVEL-PLAN.md). Các mục bên dưới giữ nguyên bối cảnh thiết kế gốc của Grassland Stage 1.
+
 ## 1. Mục đích và phạm vi
 
 Tài liệu mô tả cấu trúc Level, bố cục chiến trường, tổ chức Waves, Enemy Spawning, tài nguyên, tiến trình độ khó, điều kiện Victory/Defeat, cấu hình dữ liệu và Acceptance Criteria. Đây là tài liệu thiết kế để AI Agent triển khai sau khi các thông số chưa chốt được xác nhận.

@@ -53,6 +53,7 @@ type BattleEvent = BattleCommand | ResourceEvent | CombatCommand | FusionCommand
 
 export interface BattlePersistenceOptions {
   readonly battleId?: string;
+  readonly levelId?: string;
   readonly storage?: PersistenceStorageAdapter;
   readonly storageKey?: string;
   readonly progressionStore?: ProgressionStore;
@@ -146,6 +147,7 @@ export class BattleRuntime {
   private readonly hasWaves: boolean;
   private readonly hasAbilities: boolean;
   private readonly battleId: string;
+  private readonly levelId?: string;
   private battleGeneration = 1;
   private recovering = false;
   private checkpointCounter = 0;
@@ -245,6 +247,7 @@ export class BattleRuntime {
     this.battleId = _initialCheckpoint
       ? _initialCheckpoint.battleId
       : (persistenceOptions?.battleId ?? 'battle_default');
+    this.levelId = _initialCheckpoint?.levelId ?? persistenceOptions?.levelId;
     this.battleGeneration = _initialCheckpoint ? _initialCheckpoint.battleGeneration : 1;
     this.progressionStore = persistenceOptions?.progressionStore;
     if (persistenceOptions !== undefined) {
@@ -460,6 +463,20 @@ export class BattleRuntime {
     if (session || waveSession) {
       if (session) {
         this.engine.enqueue({ payload: { type: 'initialize' }, scheduledTick: 0, causalDepth: 0 }, 0);
+        for (const starter of session.startingDefenders) {
+          this.engine.enqueue({
+            payload: {
+              type: 'add',
+              entity: {
+                kind: 'defender',
+                definitionId: starter.definitionId,
+                cell: { row: starter.row, column: starter.column },
+              },
+            },
+            scheduledTick: 0,
+            causalDepth: 0,
+          }, 0);
+        }
       }
       if (waveSession) {
         this.engine.enqueue({
@@ -504,6 +521,7 @@ export class BattleRuntime {
       paused: this.paused,
       accumulatorMs: this.clock.accumulator,
       reason,
+      ...(this.levelId !== undefined ? { levelId: this.levelId } : {}),
       state,
       queue,
       rng,
@@ -558,6 +576,7 @@ export class BattleRuntime {
       battleId: this.battleId,
       result,
       enemiesKilled: state.matchKills ?? 0,
+      ...(this.levelId !== undefined ? { levelId: this.levelId } : {}),
     });
   }
 

@@ -52,14 +52,21 @@ export {
   CAMPAIGN_ENEMY_CATALOG,
   CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
   CAMPAIGN_ITEM_URLS,
+  CAMPAIGN_LEVELS,
   CAMPAIGN_RECIPE_CATALOG,
   GRASSLAND_CAMPAIGN_WAVES,
   GRASSLAND_WAVE_CRYSTALS,
+  createCampaignInputs,
   createCampaignPlaytestPreset,
   createGrasslandCampaignInputs,
+  evaluateCampaignLevelUnlock,
+  getCampaignLevelById,
+  tryGetCampaignLevelById,
   type CampaignDefenderCatalogItem,
   type CampaignEnemyCatalogItem,
+  type CampaignLevelCardView,
   type CampaignRecipeCatalogItem,
+  type GrasslandCampaignRuntimeInputs,
 } from './campaign/grassland-campaign-config';
 
 export { PlaytestController } from './playtest/playtest-controller';
@@ -84,6 +91,7 @@ export {
   PLAYTEST_FUSION_RECIPES_META,
   clonePlaytestPreset,
   createDefaultPlaytestPreset,
+  createPlaytestPresetFromLevel,
 } from './playtest/playtest-presets';
 export type {
   PlaytestDefenderConfig,
@@ -104,6 +112,7 @@ export {
 export {
   SAVE_SCHEMA_VERSION,
   SnapshotValidationError,
+  peekCheckpointLevelId,
   type BattleCheckpointEnvelope,
   type CheckpointSemanticContext,
   type CheckpointTriggerReason,
@@ -141,6 +150,7 @@ export {
   type RecordBattleOutcomeResult,
 } from './persistence/progression-store';
 
+export type { StartingDefenderPlacement } from './core/resource-session';
 export type {
   BattlePersistenceMeta,
   BattlePersistenceOptions,

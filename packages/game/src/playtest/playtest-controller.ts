@@ -554,6 +554,18 @@ export class PlaytestController {
       return false;
     }
 
+    if (
+      this.preset.allowedBaseDefenderIds &&
+      this.preset.allowedBaseDefenderIds.length > 0 &&
+      !this.preset.allowedBaseDefenderIds.includes(definitionId)
+    ) {
+      const msg = `${label} is restricted in this stage`;
+      this.pushLog('summon', 'rejected', msg);
+      this.pushToast('error', msg);
+      this.refreshAndEmit();
+      return false;
+    }
+
     const res = this.runtime.enqueue({ type: 'summon', definitionId, cell }, targetTick);
     if (res.status === 'REJECTED' || res.status === 'FAILED') {
       const msg = formatPlaytestRejection('summon', 'reason' in res ? res.reason : undefined);
@@ -1464,6 +1476,12 @@ export class PlaytestController {
 
     const energy = resources?.energy ?? 0;
     const presetDefById = new Map(this.preset.defenders.map(d => [d.id, d]));
+    const allowedSet =
+      this.mode !== 'sandbox' &&
+      this.preset.allowedBaseDefenderIds &&
+      this.preset.allowedBaseDefenderIds.length > 0
+        ? new Set(this.preset.allowedBaseDefenderIds)
+        : null;
 
     const baseDefenderCards: BaseDefenderCardView[] = BASE_DEFENDER_META.map(meta => {
       const cfg = presetDefById.get(meta.id);
@@ -1480,20 +1498,21 @@ export class PlaytestController {
         onCooldown && totalCooldownTicks > 0
           ? Math.min(100, Math.max(0, Math.round((remainingTicks / totalCooldownTicks) * 100)))
           : 0;
+      const unlocked = !allowedSet || allowedSet.has(meta.id);
       return {
         id: meta.id,
         name: meta.name,
         spriteUrl: DEFENDER_SPRITE_ASSETS[meta.id]?.url ?? `/assets/sprites/defenders/${meta.id}.png`,
         cost,
-        unlocked: true,
-        canAfford: energy >= cost,
+        unlocked,
+        canAfford: unlocked && energy >= cost,
         cooldownTotalSeconds,
         cooldownRemainingSeconds,
         cooldownProgressPct,
         onCooldown,
         role: meta.abilityName,
         abilityName: meta.abilityName,
-        requirement: 'Unlocked',
+        requirement: unlocked ? 'Unlocked' : 'Restricted in this stage',
       };
     });
 

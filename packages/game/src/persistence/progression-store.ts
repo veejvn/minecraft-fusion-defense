@@ -26,6 +26,7 @@ export interface ProgressionProfile {
   unlockedDefenderIds: string[];
   unlockedRecipeIds: string[];
   recordedBattleIds: string[];
+  clearedLevelIds?: string[];
 }
 
 export interface ProgressionEnvelope {
@@ -58,6 +59,7 @@ export interface BattleOutcomeInput {
   readonly battleId: string;
   readonly result: 'victory' | 'defeat';
   readonly enemiesKilled: number;
+  readonly levelId?: string;
 }
 
 export interface RecordBattleOutcomeResult {
@@ -341,6 +343,9 @@ function cloneProfile(profile: ProgressionProfile): ProgressionProfile {
     unlockedDefenderIds: [...profile.unlockedDefenderIds],
     unlockedRecipeIds: [...profile.unlockedRecipeIds],
     recordedBattleIds: [...profile.recordedBattleIds],
+    ...(profile.clearedLevelIds && profile.clearedLevelIds.length > 0
+      ? { clearedLevelIds: [...profile.clearedLevelIds] }
+      : {}),
   };
 }
 
@@ -349,6 +354,9 @@ function computeProgressionChecksum(schemaVersion: number, profile: ProgressionP
     JSON.stringify({
       schemaVersion,
       profile: {
+        ...(profile.clearedLevelIds && profile.clearedLevelIds.length > 0
+          ? { clearedLevelIds: profile.clearedLevelIds }
+          : {}),
         recordedBattleIds: profile.recordedBattleIds,
         totalVictories: profile.totalVictories,
         totalVictoryKills: profile.totalVictoryKills,
@@ -382,7 +390,7 @@ function validateProgressionProfile(rawProfile: unknown): ProgressionProfile {
     throw new ProgressionValidationError('INVALID_PROFILE', 'Profile must be an object');
   }
   assertSafeKeys(rawProfile);
-  const { totalVictories, totalVictoryKills, unlockedDefenderIds, unlockedRecipeIds, recordedBattleIds } =
+  const { totalVictories, totalVictoryKills, unlockedDefenderIds, unlockedRecipeIds, recordedBattleIds, clearedLevelIds } =
     rawProfile;
   if (typeof totalVictories !== 'number' || !Number.isSafeInteger(totalVictories) || totalVictories < 0) {
     throw new ProgressionValidationError('INVALID_PROFILE', 'totalVictories must be a nonnegative safe integer');
@@ -397,12 +405,19 @@ function validateProgressionProfile(rawProfile: unknown): ProgressionProfile {
       'totalVictoryKills must be a nonnegative safe integer',
     );
   }
+  const validatedClearedLevels =
+    clearedLevelIds === undefined
+      ? undefined
+      : validateStringArray(clearedLevelIds, 'clearedLevelIds');
   return {
     totalVictories,
     totalVictoryKills,
     unlockedDefenderIds: validateStringArray(unlockedDefenderIds, 'unlockedDefenderIds'),
     unlockedRecipeIds: validateStringArray(unlockedRecipeIds, 'unlockedRecipeIds'),
     recordedBattleIds: validateStringArray(recordedBattleIds, 'recordedBattleIds'),
+    ...(validatedClearedLevels && validatedClearedLevels.length > 0
+      ? { clearedLevelIds: validatedClearedLevels }
+      : {}),
   };
 }
 
@@ -614,6 +629,9 @@ export class ProgressionStore {
     ) {
       throw new RangeError('enemiesKilled must be a nonnegative safe integer');
     }
+    if (input.levelId !== undefined && (typeof input.levelId !== 'string' || !input.levelId.trim())) {
+      throw new TypeError('levelId must be a non-empty string when provided');
+    }
 
     if (input.result === 'defeat') {
       return {
@@ -639,6 +657,13 @@ export class ProgressionStore {
     nextProfile.recordedBattleIds.push(input.battleId);
     if (nextProfile.recordedBattleIds.length > MAX_RECORDED_BATTLE_IDS) {
       nextProfile.recordedBattleIds = nextProfile.recordedBattleIds.slice(-MAX_RECORDED_BATTLE_IDS);
+    }
+    if (input.levelId !== undefined) {
+      const nextCleared = [...(nextProfile.clearedLevelIds ?? [])];
+      if (!nextCleared.includes(input.levelId)) {
+        nextCleared.push(input.levelId);
+      }
+      nextProfile.clearedLevelIds = nextCleared;
     }
 
     const newlyUnlocked = evaluateMonotonicUnlocks(nextProfile);

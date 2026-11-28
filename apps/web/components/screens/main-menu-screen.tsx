@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import type { CampaignDefenderCatalogItem, DefenderCollectionEntry, ProgressionProfile, SavedBattleSummary } from '@mfd/game';
 
 interface MainMenuScreenProps {
@@ -96,6 +97,25 @@ export function MainMenuScreen({
                 Settings
               </button>
             </div>
+
+            {process.env.NODE_ENV === 'development' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <Link
+                  href="/editor"
+                  className="mfd-btn mfd-btn-crystal"
+                  style={{ textDecoration: 'none', textAlign: 'center', fontSize: 12 }}
+                >
+                  Dev Stage Studio (/editor)
+                </Link>
+                <Link
+                  href="/playtest"
+                  className="mfd-btn"
+                  style={{ textDecoration: 'none', textAlign: 'center', fontSize: 12 }}
+                >
+                  Balance Lab (/playtest)
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 

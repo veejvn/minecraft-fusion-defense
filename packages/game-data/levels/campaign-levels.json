@@ -1,0 +1,260 @@
+[
+  {
+    "id": "grassland",
+    "order": 1,
+    "name": "Grassland — Stage 1",
+    "description": "Hold the Grassland defense line across 5 escalating waves. Summon Villagers for Emeralds, open the Village Supply Chest, and fuse Tier-2 defenders.",
+    "difficulty": "easy",
+    "theme": "grassland",
+    "unlockRequirement": {
+      "kind": "always"
+    },
+    "seed": 20261123,
+    "rows": 5,
+    "columns": 9,
+    "fusionGloveCooldownSeconds": 10,
+    "initialEmeralds": 100,
+    "enablePassiveEnergy": false,
+    "villageChest": {
+      "enabled": true,
+      "amount": 50,
+      "intervalSeconds": 10
+    },
+    "waveCrystals": [
+      0,
+      0,
+      0,
+      1,
+      1
+    ],
+    "energyItems": {
+      "amount": 25,
+      "intervalSeconds": 5,
+      "region": {
+        "min": {
+          "x": 0.12,
+          "y": 0.12
+        },
+        "max": {
+          "x": 0.88,
+          "y": 0.88
+        }
+      },
+      "positions": [
+        {
+          "x": 0.25,
+          "y": 0.22
+        },
+        {
+          "x": 0.5,
+          "y": 0.5
+        },
+        {
+          "x": 0.72,
+          "y": 0.78
+        },
+        {
+          "x": 0.35,
+          "y": 0.72
+        },
+        {
+          "x": 0.65,
+          "y": 0.28
+        }
+      ]
+    },
+    "waves": [
+      {
+        "id": "wave_1",
+        "initialDelaySeconds": 10,
+        "delayBeforeNextWaveSeconds": 5,
+        "spawnGroups": [
+          {
+            "enemyId": "zombie",
+            "count": 5,
+            "allowedLanes": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 0,
+            "intervalSeconds": 5
+          }
+        ]
+      },
+      {
+        "id": "wave_2",
+        "initialDelaySeconds": 0,
+        "delayBeforeNextWaveSeconds": 5,
+        "spawnGroups": [
+          {
+            "enemyId": "zombie",
+            "count": 4,
+            "allowedLanes": [
+              0,
+              2,
+              4,
+              1
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 0,
+            "intervalSeconds": 2.5
+          },
+          {
+            "enemyId": "husk",
+            "count": 2,
+            "allowedLanes": [
+              1,
+              3
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 3,
+            "intervalSeconds": 4
+          }
+        ]
+      },
+      {
+        "id": "wave_3",
+        "initialDelaySeconds": 0,
+        "delayBeforeNextWaveSeconds": 5,
+        "spawnGroups": [
+          {
+            "enemyId": "zombie",
+            "count": 3,
+            "allowedLanes": [
+              0,
+              2,
+              4
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 0,
+            "intervalSeconds": 2.2
+          },
+          {
+            "enemyId": "husk",
+            "count": 2,
+            "allowedLanes": [
+              1,
+              3
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 2,
+            "intervalSeconds": 3.5
+          },
+          {
+            "enemyId": "pillager",
+            "count": 2,
+            "allowedLanes": [
+              0,
+              4
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 4,
+            "intervalSeconds": 4
+          }
+        ]
+      },
+      {
+        "id": "wave_4",
+        "initialDelaySeconds": 0,
+        "delayBeforeNextWaveSeconds": 5,
+        "spawnGroups": [
+          {
+            "enemyId": "husk",
+            "count": 3,
+            "allowedLanes": [
+              0,
+              2,
+              4
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 0,
+            "intervalSeconds": 2.8
+          },
+          {
+            "enemyId": "vindicator",
+            "count": 2,
+            "allowedLanes": [
+              1,
+              3
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 2.5,
+            "intervalSeconds": 3.5
+          },
+          {
+            "enemyId": "pillager",
+            "count": 2,
+            "allowedLanes": [
+              0,
+              3
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 4.5,
+            "intervalSeconds": 3.5
+          }
+        ]
+      },
+      {
+        "id": "wave_5",
+        "initialDelaySeconds": 0,
+        "delayBeforeNextWaveSeconds": 4,
+        "spawnGroups": [
+          {
+            "enemyId": "zombie",
+            "count": 5,
+            "allowedLanes": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 0,
+            "intervalSeconds": 1.5
+          },
+          {
+            "enemyId": "husk",
+            "count": 3,
+            "allowedLanes": [
+              1,
+              2,
+              3
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 2,
+            "intervalSeconds": 3
+          },
+          {
+            "enemyId": "vindicator",
+            "count": 3,
+            "allowedLanes": [
+              0,
+              2,
+              4
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 4,
+            "intervalSeconds": 3
+          },
+          {
+            "enemyId": "pillager",
+            "count": 2,
+            "allowedLanes": [
+              1,
+              3
+            ],
+            "laneMode": "sequential",
+            "startOffsetSeconds": 5,
+            "intervalSeconds": 3.5
+          }
+        ]
+      }
+    ],
+    "startingDefenders": []
+  }
+]

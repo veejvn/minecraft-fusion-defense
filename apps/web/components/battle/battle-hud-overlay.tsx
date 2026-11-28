@@ -344,7 +344,13 @@ export function BattleHudOverlay({
                             : '#F87171',
                     }}
                   >
-                    {!card.unlocked ? 'LOCKED' : card.onCooldown ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s` : `${card.cost} EM`}
+                    {!card.unlocked
+                      ? card.requirement === 'Restricted in this stage'
+                        ? 'BANNED'
+                        : 'LOCKED'
+                      : card.onCooldown
+                        ? `CD ${card.cooldownRemainingSeconds.toFixed(1)}s`
+                        : `${card.cost} EM`}
                   </div>
                 </div>
               </button>
@@ -438,8 +444,12 @@ export function BattleHudOverlay({
               padding: '3px 8px',
               textAlign: 'center',
             }}
+            title={snapshot.activeLevelName}
           >
             <div style={{ fontSize: 10, color: '#38BDF8', fontWeight: 700, lineHeight: 1.15 }}>
+              {snapshot.activeLevelId && snapshot.activeLevelId !== 'grassland'
+                ? `${snapshot.activeLevelName} · `
+                : ''}
               WAVE {snapshot.waveNumber}/{snapshot.totalWaves}
             </div>
             <div style={{ fontSize: 10, color: '#CBD5E1', lineHeight: 1.15 }}>
@@ -545,7 +555,7 @@ export function BattleHudOverlay({
                 How to Play
               </button>
               <button type="button" className="mfd-btn" onClick={onRestartBattle}>
-                Restart Grassland Battle
+                Restart Battle
               </button>
               <button type="button" className="mfd-btn mfd-btn-gold" onClick={onSaveAndExit}>
                 Save & Return to Menu
@@ -559,9 +569,9 @@ export function BattleHudOverlay({
       {snapshot.status === 'victory' && (
         <div className="mfd-modal-backdrop" role="dialog" aria-modal="true" aria-label="Victory">
           <div className="mfd-modal" style={{ maxWidth: 560, textAlign: 'center', borderColor: '#4ade80' }}>
-            <h2 style={{ margin: '0 0 8px', fontSize: 30, color: '#4ADE80' }}>Grassland Victory!</h2>
+            <h2 style={{ margin: '0 0 8px', fontSize: 30, color: '#4ADE80' }}>{snapshot.activeLevelName} Victory!</h2>
             <p style={{ margin: '0 0 16px', fontSize: 14, color: '#E2E8F0' }}>
-              You defended all 5 Waves and defeated <strong>{snapshot.enemiesKilled}</strong> Enemies!
+              You defended all {snapshot.totalWaves} Waves and defeated <strong>{snapshot.enemiesKilled}</strong> Enemies!
             </p>
 
             {(snapshot.newlyUnlocked.defenders.length > 0 || snapshot.newlyUnlocked.recipes.length > 0) ? (
@@ -642,7 +652,7 @@ export function BattleHudOverlay({
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button type="button" className="mfd-btn mfd-btn-primary" onClick={onRestartBattle}>
-                Retry Grassland
+                Retry Stage
               </button>
               <button type="button" className="mfd-btn" onClick={onReturnToMenuTerminal}>
                 Main Menu

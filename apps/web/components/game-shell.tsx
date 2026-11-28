@@ -7,6 +7,7 @@ import type {
   CampaignDefenderCatalogItem,
   CampaignEnemyCatalogItem,
   CampaignGameHandle,
+  CampaignLevelCardView,
   CampaignRecipeCatalogItem,
   CampaignSnapshot,
   CampaignTool,
@@ -49,6 +50,8 @@ export function GameShell() {
   const [catalog, setCatalog] = useState<CatalogData | null>(null);
   const [snapshot, setSnapshot] = useState<CampaignSnapshot | null>(null);
   const [savedBattle, setSavedBattle] = useState<SavedBattleSummary | null>(null);
+  const [levels, setLevels] = useState<readonly CampaignLevelCardView[]>([]);
+  const [selectedLevelId, setSelectedLevelId] = useState<string>('grassland');
   const [collection, setCollection] = useState<readonly DefenderCollectionEntry[]>([]);
   const [achievements, setAchievements] = useState<readonly AchievementView[]>([]);
   const [profile, setProfile] = useState<ProgressionProfile>({
@@ -63,6 +66,7 @@ export function GameShell() {
 
   const syncMetaFromController = useCallback((ctrl: CampaignController) => {
     setProfile(ctrl.getProgressionProfile());
+    setLevels(ctrl.getCampaignLevelsView());
     setCollection(ctrl.getDefenderCollection());
     setAchievements(ctrl.getAchievements());
     setSavedBattle(ctrl.getSavedBattleSummary());
@@ -92,6 +96,7 @@ export function GameShell() {
       setSnapshot(next);
       setProfile(next.progressionProfile);
       if (controller) {
+        setLevels(controller.getCampaignLevelsView());
         setCollection(controller.getDefenderCollection());
         setAchievements(controller.getAchievements());
         if (next.status === 'victory' || next.status === 'defeat') {
@@ -102,12 +107,19 @@ export function GameShell() {
     [controller],
   );
 
-  const handleStartNewBattle = () => {
+  const handleStartNewBattle = (levelId?: string) => {
     if (!controller) return;
+    const targetLevelId = levelId ?? snapshot?.activeLevelId ?? selectedLevelId;
+    setSelectedLevelId(targetLevelId);
     setActiveTool({ kind: 'select' });
-    controller.startNewBattle({ unlockAll: settings.unlockAllForTesting });
+    controller.startNewBattle({
+      levelId: targetLevelId,
+      unlockAll: settings.unlockAllForTesting,
+    });
     syncMetaFromController(controller);
-    setScreen('BATTLE');
+    if (controller.getSnapshot().status === 'playing') {
+      setScreen('BATTLE');
+    }
   };
 
   const handleContinueSaved = () => {
@@ -177,10 +189,11 @@ export function GameShell() {
 
             {screen === 'LEVEL_SELECT' && (
               <LevelSelectScreen
+                levels={levels}
                 enemyCatalog={catalog.enemies}
                 profile={profile}
                 savedBattle={savedBattle}
-                onStartNew={handleStartNewBattle}
+                onStartNew={levelId => handleStartNewBattle(levelId)}
                 onContinueSaved={handleContinueSaved}
                 onBack={() => setScreen('MAIN_MENU')}
               />
@@ -216,7 +229,7 @@ export function GameShell() {
                   onTogglePause={() => controller.togglePause()}
                   onSetSpeed={speed => controller.setSpeed(speed)}
                   onOpenHowToPlay={() => setHowToPlayOpen(true)}
-                  onRestartBattle={handleStartNewBattle}
+                  onRestartBattle={() => handleStartNewBattle(snapshot.activeLevelId ?? selectedLevelId)}
                   onSaveAndExit={handleSaveAndExit}
                   onReturnToMenuTerminal={handleReturnFromTerminal}
                 />
@@ -244,6 +257,7 @@ export function GameShell() {
         onUpdateSettings={next => {
           setSettings(next);
           controller?.setUnlockAllMode(next.unlockAllForTesting);
+          if (controller) syncMetaFromController(controller);
         }}
         onClearSavedBattle={() => {
           controller?.clearSavedBattle();

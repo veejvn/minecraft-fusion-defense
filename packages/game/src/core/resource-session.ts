@@ -16,6 +16,12 @@ export interface VillageChestConfig {
   readonly intervalSeconds: number;
 }
 
+export interface StartingDefenderPlacement {
+  readonly definitionId: string;
+  readonly row: number;
+  readonly column: number;
+}
+
 export interface ResourceSessionInput {
   readonly seed: number;
   readonly defenders: readonly {
@@ -46,6 +52,7 @@ export interface ResourceSessionInput {
   readonly enableRandomEnergyItems?: boolean;
   readonly enableRandomCrystalItems?: boolean;
   readonly fusionGloveCooldownSeconds?: number;
+  readonly startingDefenders?: readonly StartingDefenderPlacement[];
 }
 
 export function count(value: number): number {
@@ -180,11 +187,42 @@ export function validateResourceSession(input: ResourceSessionInput, rate: numbe
     }
     deadline(chest.intervalSeconds, rate);
   }
+  const defenderIds = new Set(config.defenders.map(d => d.id));
+  const startingCells = new Set<string>();
+  const startingDefenders: StartingDefenderPlacement[] = [];
+  if (config.startingDefenders !== undefined) {
+    if (!Array.isArray(config.startingDefenders)) {
+      throw new TypeError('startingDefenders must be an array');
+    }
+    for (const starter of config.startingDefenders) {
+      if (!starter || typeof starter !== 'object' || !defenderIds.has(starter.definitionId)) {
+        throw new TypeError(`Invalid startingDefender definitionId: ${String(starter?.definitionId)}`);
+      }
+      if (
+        !Number.isSafeInteger(starter.row) || starter.row < 0 || starter.row > 4 ||
+        !Number.isSafeInteger(starter.column) || starter.column < 0 || starter.column > 8
+      ) {
+        throw new RangeError('startingDefender cell out of bounds (5x9)');
+      }
+      const key = `${starter.row},${starter.column}`;
+      if (startingCells.has(key)) {
+        throw new RangeError(`Duplicate startingDefender cell (${starter.row}, ${starter.column})`);
+      }
+      startingCells.add(key);
+      startingDefenders.push({
+        definitionId: starter.definitionId,
+        row: starter.row,
+        column: starter.column,
+      });
+    }
+  }
+
   const minInterval = count(Math.ceil(30 * rate));
   const maxInterval = count(Math.floor(60 * rate));
   if (minInterval < 1 || minInterval > maxInterval) throw new RangeError('No eligible Crystal interval');
   return freezeData({
     ...config,
+    startingDefenders,
     enemies: config.enemies.map(enemy => ({
       ...enemy,
       crystalDropChance: enemy.crystalDropChance ?? 1,

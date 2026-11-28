@@ -254,3 +254,46 @@ test('/playtest persists tuned balance preset in localStorage across reload and 
   expect(browserErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);
 });
+
+test('/editor renders 5-Lane Wave Timeline, Starting Grid, Test Play modal, and keeps dev levels API 403 in production', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+
+  const browserErrors = [];
+  const consoleErrors = [];
+  page.on('pageerror', error => browserErrors.push(error.message));
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+
+  const resp = await page.goto('/editor');
+  expect(resp.status()).toBe(200);
+  await expect(page.getByRole('heading', { name: /Dev Stage Studio \(\/editor\)/i })).toBeVisible();
+  await expect(page.getByText(/5-Lane Wave 1 Timeline/i)).toBeVisible();
+
+  // Create new stage, open Starting Grid & Roster tab, place 1 starter unit, return to Timeline & launch Test Play
+  await page.getByRole('button', { name: '+ New Stage' }).click();
+  await expect(page.getByRole('button', { name: /Starting Grid & Roster \(0\)/i })).toBeVisible();
+  await page.getByRole('button', { name: /Starting Grid & Roster \(0\)/i }).click();
+  await expect(page.getByRole('heading', { name: /Starting Defenders on Grid/i })).toBeVisible();
+  await page.getByTitle('L1 C1: Empty').click();
+  await expect(page.getByRole('button', { name: /Starting Grid & Roster \(1\)/i })).toBeVisible();
+
+  await page.getByRole('button', { name: /Test Play Stage/i }).click();
+  const modal = page.getByRole('dialog', { name: 'Stage Test Play' });
+  await expect(modal).toBeVisible();
+  await expect(page.locator('canvas')).toHaveCount(1);
+  await expect(page.getByText('Loading Test Play arena...')).toHaveCount(0);
+  await modal.getByRole('button', { name: /Back to Editor/i }).click();
+  await expect(page.locator('canvas')).toHaveCount(0);
+
+  // Dev-only /api/dev/levels endpoints must reject with 403 in production
+  const getResp = await page.request.get('/api/dev/levels');
+  const postResp = await page.request.post('/api/dev/levels', { data: {} });
+  const delResp = await page.request.delete('/api/dev/levels?id=stage_2');
+  expect(getResp.status()).toBe(403);
+  expect(postResp.status()).toBe(403);
+  expect(delResp.status()).toBe(403);
+
+  expect(browserErrors).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});

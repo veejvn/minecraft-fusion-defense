@@ -69,6 +69,7 @@ export interface BattleCheckpointEnvelope {
   readonly paused: boolean;
   readonly accumulatorMs: number;
   readonly reason: CheckpointTriggerReason;
+  readonly levelId?: string;
   readonly checksum: string;
   readonly payload: unknown;
 }
@@ -81,6 +82,7 @@ export interface SerializeBattleCheckpointInput {
   readonly paused: boolean;
   readonly accumulatorMs: number;
   readonly reason: CheckpointTriggerReason;
+  readonly levelId?: string;
   readonly state: BattleStateWithMatchKills;
   readonly queue: QueueSnapshot<unknown>;
   readonly rng: ResourceRng | null;
@@ -109,6 +111,7 @@ export interface DecodedBattleCheckpoint {
   readonly paused: boolean;
   readonly accumulatorMs: number;
   readonly reason: CheckpointTriggerReason;
+  readonly levelId?: string;
   readonly state: BattleStateWithMatchKills;
   readonly queue: QueueSnapshot<unknown>;
   readonly rng: ResourceRng | null;
@@ -337,6 +340,7 @@ function buildChecksumInput(
     paused: header.paused,
     accumulatorMs: header.accumulatorMs,
     reason: header.reason,
+    ...(header.levelId !== undefined ? { levelId: header.levelId } : {}),
     payload,
   });
 }
@@ -372,6 +376,7 @@ function validateHeaderFields(
     readonly paused: unknown;
     readonly accumulatorMs: unknown;
     readonly reason: unknown;
+    readonly levelId?: unknown;
   },
   tickDurationMs?: number,
   errorCode: SnapshotValidationErrorCode = 'SEMANTIC_VIOLATION',
@@ -400,6 +405,9 @@ function validateHeaderFields(
   ) {
     fail(`Invalid checkpoint reason: ${String(header.reason)}`);
   }
+  if (header.levelId !== undefined && !isNonEmptyString(header.levelId)) {
+    fail('Invalid levelId');
+  }
 }
 
 /** Serialize deterministic BattleRuntime state into a versioned, checksummed JSON envelope. */
@@ -425,6 +433,7 @@ export function serializeBattleCheckpoint(
     paused: input.paused,
     accumulatorMs: Object.is(input.accumulatorMs, -0) ? 0 : input.accumulatorMs,
     reason: input.reason,
+    ...(input.levelId !== undefined ? { levelId: input.levelId } : {}),
   };
   const checksum = computeFnv1aHex(buildChecksumInput(header, encodedPayload));
   const envelope: BattleCheckpointEnvelope = {
@@ -1094,6 +1103,7 @@ export function deserializeBattleCheckpoint(
   }
 
   const migrated = migrateBattleCheckpoint(parsed);
+  const levelId = migrated.levelId;
   validateHeaderFields(
     {
       checkpointId: migrated.checkpointId,
@@ -1103,6 +1113,7 @@ export function deserializeBattleCheckpoint(
       paused: migrated.paused,
       accumulatorMs: migrated.accumulatorMs,
       reason: migrated.reason,
+      ...(levelId !== undefined ? { levelId } : {}),
     },
     undefined,
     'INVALID_ENVELOPE',
@@ -1119,6 +1130,7 @@ export function deserializeBattleCheckpoint(
         paused: migrated.paused as boolean,
         accumulatorMs: migrated.accumulatorMs as number,
         reason: migrated.reason as CheckpointTriggerReason,
+        ...(typeof levelId === 'string' ? { levelId } : {}),
       },
       migrated.payload,
     ),
@@ -1146,6 +1158,7 @@ export function deserializeBattleCheckpoint(
     paused: migrated.paused as boolean,
     accumulatorMs: migrated.accumulatorMs as number,
     reason: migrated.reason as CheckpointTriggerReason,
+    ...(typeof levelId === 'string' ? { levelId } : {}),
     state: decodedPayload.state as BattleStateWithMatchKills,
     queue: decodedPayload.queue as QueueSnapshot<unknown>,
     rng: decodedPayload.rng as ResourceRng | null,
@@ -1153,4 +1166,17 @@ export function deserializeBattleCheckpoint(
 
   validateBattleCheckpointSemantics(decoded, ctx);
   return decoded;
+}
+
+/** Peek the target campaign levelId from a serialized checkpoint envelope without full validation. */
+export function peekCheckpointLevelId(rawJson: string): string {
+  try {
+    const parsed = JSON.parse(rawJson);
+    if (isPlainRecord(parsed) && isNonEmptyString(parsed.levelId)) {
+      return parsed.levelId;
+    }
+  } catch {
+    // Ignore malformed JSON; full deserialization handles validation errors.
+  }
+  return 'grassland';
 }

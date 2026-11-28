@@ -2,6 +2,7 @@ import { z } from 'zod';
 import abilitiesJson from '../abilities/abilities.json';
 import defendersJson from '../entities/defenders.json';
 import enemiesJson from '../entities/enemies.json';
+import campaignLevelsJson from '../levels/campaign-levels.json';
 import grasslandJson from '../levels/grassland.json';
 import playtestSandboxJson from '../levels/playtest-sandbox.json';
 import fusionRecipesJson from '../recipes/fusion-recipes.json';
@@ -322,6 +323,45 @@ export const mvpSandboxLevelSchema = z.strictObject({
   waves: z.array(mvpWaveSchema).min(1),
 });
 
+export const startingDefenderSchema = z.strictObject({
+  definitionId: stableIdSchema,
+  row: z.number().int().min(0).max(4),
+  column: z.number().int().min(0).max(8),
+});
+
+export const levelUnlockRequirementSchema = z.discriminatedUnion('kind', [
+  z.strictObject({ kind: z.literal('always') }),
+  z.strictObject({ kind: z.literal('clear-level'), levelId: stableIdSchema }),
+]);
+
+export const levelDifficultySchema = z.enum(['easy', 'normal', 'hard', 'expert']);
+export const levelThemeSchema = z.enum(['grassland']);
+
+export const mvpCampaignLevelSchema = z.strictObject({
+  id: stableIdSchema,
+  order: positiveIntegerSchema,
+  name: z.string().min(1),
+  description: z.string().min(1),
+  difficulty: levelDifficultySchema,
+  theme: levelThemeSchema,
+  unlockRequirement: levelUnlockRequirementSchema,
+  seed: z.number().int(),
+  rows: positiveIntegerSchema,
+  columns: positiveIntegerSchema,
+  fusionGloveCooldownSeconds: nonNegativeNumberSchema,
+  initialEmeralds: nonNegativeIntegerSchema,
+  enablePassiveEnergy: z.boolean(),
+  villageChest: villageChestSchema,
+  waveCrystals: z.array(nonNegativeIntegerSchema).min(1),
+  energyItems: energyItemsSchema,
+  waves: z.array(mvpWaveSchema).min(1).max(20),
+  startingDefenders: z.array(startingDefenderSchema).optional(),
+  allowedBaseDefenderIds: z.array(stableIdSchema).min(1).optional(),
+  ignoreUnlockRestrictions: z.boolean().optional(),
+});
+
+export const campaignLevelsSchema = z.array(mvpCampaignLevelSchema).min(1);
+
 function checkUniqueIds(items: readonly { id: string }[], path: string[], label: string, ctx: z.RefinementCtx): void {
   const seen = new Set<string>();
   items.forEach((item, index) => {
@@ -377,6 +417,7 @@ export const mvpDatasetSchema = z.strictObject({
   abilities: z.array(mvpAbilitySchema),
   grasslandLevel: mvpGrasslandLevelSchema,
   sandboxLevel: mvpSandboxLevelSchema,
+  campaignLevels: campaignLevelsSchema,
 }).superRefine((dataset, ctx) => {
   checkUniqueIds(dataset.defenders, ['defenders'], 'defender', ctx);
   checkUniqueIds(dataset.enemies, ['enemies'], 'enemy', ctx);
@@ -500,6 +541,117 @@ export const mvpDatasetSchema = z.strictObject({
     ['sandboxLevel'],
     ctx,
   );
+
+  checkUniqueIds(dataset.campaignLevels, ['campaignLevels'], 'campaign level', ctx);
+  const campaignById = new Map(dataset.campaignLevels.map(lvl => [lvl.id, lvl]));
+  if (!campaignById.has('grassland')) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['campaignLevels'],
+      message: 'Campaign levels must include the baseline "grassland" stage',
+    });
+  }
+
+  dataset.campaignLevels.forEach((level, levelIndex) => {
+    if (level.rows !== 5 || level.columns !== 9) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['campaignLevels', levelIndex],
+        message: `Campaign level "${level.id}" must be 5 rows x 9 columns`,
+      });
+    }
+    if (level.id === 'grassland' && level.waves.length !== 5) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['campaignLevels', levelIndex, 'waves'],
+        message: `Grassland stage must have 5 waves; found ${level.waves.length}`,
+      });
+    }
+    validateLevelWaves(
+      level.waves,
+      level.waveCrystals,
+      level.rows,
+      enemyIds,
+      ['campaignLevels', `${levelIndex}`],
+      ctx,
+    );
+
+    const occupied = new Set<string>();
+    level.startingDefenders?.forEach((sd, sdIdx) => {
+      if (!defendersById.has(sd.definitionId)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['campaignLevels', levelIndex, 'startingDefenders', sdIdx, 'definitionId'],
+          message: `Unknown startingDefender ID: ${sd.definitionId}`,
+        });
+      }
+      const key = `${sd.row}:${sd.column}`;
+      if (occupied.has(key)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['campaignLevels', levelIndex, 'startingDefenders', sdIdx],
+          message: `Duplicate startingDefender cell (${sd.row}, ${sd.column})`,
+        });
+      }
+      occupied.add(key);
+    });
+
+    const seenAllowed = new Set<string>();
+    level.allowedBaseDefenderIds?.forEach((defId, idx) => {
+      const def = defendersById.get(defId);
+      if (!def || def.tier !== 1) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['campaignLevels', levelIndex, 'allowedBaseDefenderIds', idx],
+          message: `allowedBaseDefenderIds must contain valid Tier-1 Base Defenders; invalid "${defId}"`,
+        });
+      }
+      if (seenAllowed.has(defId)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['campaignLevels', levelIndex, 'allowedBaseDefenderIds', idx],
+          message: `Duplicate allowedBaseDefenderIds entry "${defId}"`,
+        });
+      }
+      seenAllowed.add(defId);
+    });
+
+    if (level.unlockRequirement.kind === 'clear-level') {
+      const reqId = level.unlockRequirement.levelId;
+      if (reqId === level.id) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['campaignLevels', levelIndex, 'unlockRequirement', 'levelId'],
+          message: `Level "${level.id}" cannot require clearing itself`,
+        });
+      } else if (!campaignById.has(reqId)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['campaignLevels', levelIndex, 'unlockRequirement', 'levelId'],
+          message: `Unknown unlockRequirement levelId "${reqId}"`,
+        });
+      } else {
+        // Detect dependency cycle via DFS
+        const visited = new Set<string>([level.id]);
+        let cursor = campaignById.get(reqId);
+        while (cursor) {
+          if (visited.has(cursor.id)) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['campaignLevels', levelIndex, 'unlockRequirement', 'levelId'],
+              message: `Circular unlockRequirement detected involving "${cursor.id}"`,
+            });
+            break;
+          }
+          visited.add(cursor.id);
+          cursor =
+            cursor.unlockRequirement.kind === 'clear-level'
+              ? campaignById.get(cursor.unlockRequirement.levelId)
+              : undefined;
+        }
+      }
+    }
+  });
 });
 
 export type MvpDefenderData = z.infer<typeof mvpDefenderSchema>;
@@ -511,6 +663,11 @@ export type MvpEconomyProductionData = z.infer<typeof economyProductionSchema>;
 export type MvpVillageChestData = z.infer<typeof villageChestSchema>;
 export type MvpGrasslandLevelData = z.infer<typeof mvpGrasslandLevelSchema>;
 export type MvpSandboxLevelData = z.infer<typeof mvpSandboxLevelSchema>;
+export type MvpStartingDefenderData = z.infer<typeof startingDefenderSchema>;
+export type MvpLevelUnlockRequirement = z.infer<typeof levelUnlockRequirementSchema>;
+export type MvpLevelDifficulty = z.infer<typeof levelDifficultySchema>;
+export type MvpLevelTheme = z.infer<typeof levelThemeSchema>;
+export type MvpCampaignLevelData = z.infer<typeof mvpCampaignLevelSchema>;
 export type MvpDataset = z.infer<typeof mvpDatasetSchema>;
 
 export const playtestDefenderSyncSchema = z.strictObject({
@@ -676,32 +833,85 @@ export function mergePlaytestPresetIntoDataset(
     };
   });
 
+  const nextGrasslandLevel: MvpGrasslandLevelData = {
+    ...structuredClone(baseDataset.grasslandLevel),
+    seed: preset.seed,
+    fusionGloveCooldownSeconds:
+      preset.fusionGloveCooldownSeconds ?? baseDataset.grasslandLevel.fusionGloveCooldownSeconds,
+    initialEmeralds: preset.initialEmeralds ?? baseDataset.grasslandLevel.initialEmeralds,
+    enablePassiveEnergy:
+      preset.enablePassiveEnergy ?? baseDataset.grasslandLevel.enablePassiveEnergy,
+    villageChest: preset.villageChest
+      ? structuredClone(preset.villageChest)
+      : structuredClone(baseDataset.grasslandLevel.villageChest),
+    waveCrystals: [...preset.waveCrystals],
+    waves: structuredClone(preset.waves),
+  };
+
   const merged: MvpDataset = {
     defenders: mergedDefenders,
     enemies: mergedEnemies,
     fusionRecipes: structuredClone(baseDataset.fusionRecipes),
     abilities: structuredClone(preset.abilities),
-    grasslandLevel: {
-      ...structuredClone(baseDataset.grasslandLevel),
-      seed: preset.seed,
-      fusionGloveCooldownSeconds:
-        preset.fusionGloveCooldownSeconds ?? baseDataset.grasslandLevel.fusionGloveCooldownSeconds,
-      initialEmeralds: preset.initialEmeralds ?? baseDataset.grasslandLevel.initialEmeralds,
-      enablePassiveEnergy:
-        preset.enablePassiveEnergy ?? baseDataset.grasslandLevel.enablePassiveEnergy,
-      villageChest: preset.villageChest
-        ? structuredClone(preset.villageChest)
-        : structuredClone(baseDataset.grasslandLevel.villageChest),
-      waveCrystals: [...preset.waveCrystals],
-      waves: structuredClone(preset.waves),
-    },
+    grasslandLevel: nextGrasslandLevel,
     sandboxLevel: structuredClone(baseDataset.sandboxLevel),
+    campaignLevels: baseDataset.campaignLevels.map(level =>
+      level.id === 'grassland'
+        ? {
+            ...structuredClone(level),
+            seed: nextGrasslandLevel.seed,
+            fusionGloveCooldownSeconds: nextGrasslandLevel.fusionGloveCooldownSeconds,
+            initialEmeralds: nextGrasslandLevel.initialEmeralds,
+            enablePassiveEnergy: nextGrasslandLevel.enablePassiveEnergy,
+            villageChest: structuredClone(nextGrasslandLevel.villageChest),
+            waveCrystals: [...nextGrasslandLevel.waveCrystals],
+            waves: structuredClone(nextGrasslandLevel.waves),
+          }
+        : structuredClone(level),
+    ),
   };
 
   return validateMvpDataset(merged);
 }
 
-/** Validated singleton JSON dataset powering both Campaign (/) and Playtest (/playtest). */
+/** Validate an updated Campaign levels array and sync `grasslandLevel` with its `grassland` entry. */
+export function mergeCampaignLevelsIntoDataset(
+  baseDataset: MvpDataset,
+  rawLevels: unknown,
+): MvpDataset {
+  const parsedLevels = campaignLevelsSchema.parse(rawLevels);
+  const sortedLevels = [...parsedLevels].sort((a, b) => a.order - b.order);
+  const grasslandEntry = sortedLevels.find(level => level.id === 'grassland');
+  if (!grasslandEntry) {
+    throw new Error('Campaign levels must keep the baseline "grassland" level');
+  }
+
+  const syncedGrasslandLevel: MvpGrasslandLevelData = {
+    id: grasslandEntry.id,
+    seed: grasslandEntry.seed,
+    rows: grasslandEntry.rows,
+    columns: grasslandEntry.columns,
+    fusionGloveCooldownSeconds: grasslandEntry.fusionGloveCooldownSeconds,
+    initialEmeralds: grasslandEntry.initialEmeralds,
+    enablePassiveEnergy: grasslandEntry.enablePassiveEnergy,
+    villageChest: structuredClone(grasslandEntry.villageChest),
+    waveCrystals: [...grasslandEntry.waveCrystals],
+    energyItems: structuredClone(grasslandEntry.energyItems),
+    waves: structuredClone(grasslandEntry.waves),
+  };
+
+  return validateMvpDataset({
+    defenders: structuredClone(baseDataset.defenders),
+    enemies: structuredClone(baseDataset.enemies),
+    fusionRecipes: structuredClone(baseDataset.fusionRecipes),
+    abilities: structuredClone(baseDataset.abilities),
+    grasslandLevel: syncedGrasslandLevel,
+    sandboxLevel: structuredClone(baseDataset.sandboxLevel),
+    campaignLevels: structuredClone(sortedLevels),
+  });
+}
+
+/** Validated singleton JSON dataset powering both Campaign (/), /editor, and Playtest (/playtest). */
 export const MVP_GAME_DATA: MvpDataset = validateMvpDataset({
   defenders: defendersJson,
   enemies: enemiesJson,
@@ -709,4 +919,5 @@ export const MVP_GAME_DATA: MvpDataset = validateMvpDataset({
   abilities: abilitiesJson,
   grasslandLevel: grasslandJson,
   sandboxLevel: playtestSandboxJson,
+  campaignLevels: campaignLevelsJson,
 });

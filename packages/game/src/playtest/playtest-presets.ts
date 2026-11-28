@@ -1,6 +1,6 @@
 // Test-only playtest presets for Owner balance evaluation backed by @mfd/game-data JSON definitions.
 
-import { MVP_GAME_DATA, parseHexColor } from '@mfd/game-data';
+import { MVP_GAME_DATA, parseHexColor, type MvpCampaignLevelData } from '@mfd/game-data';
 import type {
   AbilityDamageType,
   AbilityDefinition,
@@ -8,7 +8,7 @@ import type {
   AttachedStatusSpec,
 } from '../abilities/ability-session';
 import type { CombatSessionInput, EnemyBehavior, TargetingStrategy } from '../combat/combat-session';
-import type { ResourceSessionInput } from '../core/resource-session';
+import type { ResourceSessionInput, StartingDefenderPlacement } from '../core/resource-session';
 import type { FusionSessionInput } from '../fusion/fusion-session';
 import type { WaveConfigDefinition, WaveSessionInput } from '../waves/wave-session';
 
@@ -97,6 +97,8 @@ export interface PlaytestPresetConfig {
     amount: number;
     intervalSeconds: number;
   };
+  startingDefenders?: StartingDefenderPlacement[];
+  allowedBaseDefenderIds?: string[];
   defenders: PlaytestDefenderConfig[];
   enemies: PlaytestEnemyConfig[];
   abilities: AbilityDefinition[];
@@ -141,6 +143,38 @@ const SANDBOX_CRYSTAL_GRANT_COUNT = 50;
 /** Deep-clone a playtest preset so live UI edits never mutate shared defaults. */
 export function clonePlaytestPreset(preset: PlaytestPresetConfig): PlaytestPresetConfig {
   return structuredClone(preset);
+}
+
+/** Build a PlaytestPresetConfig from any Campaign level JSON, optionally jumping to Wave N. */
+export function createPlaytestPresetFromLevel(
+  level: MvpCampaignLevelData,
+  options: {
+    readonly startWaveIndex?: number;
+    readonly overrideInitialEmeralds?: number;
+  } = {},
+): PlaytestPresetConfig {
+  const base = createDefaultPlaytestPreset();
+  const safeStartWaveIndex = Math.max(
+    0,
+    Math.min(Math.max(0, level.waves.length - 1), options.startWaveIndex ?? 0),
+  );
+  const slicedWaves = level.waves.slice(safeStartWaveIndex);
+  const slicedCrystals = level.waveCrystals.slice(safeStartWaveIndex);
+
+  return {
+    ...base,
+    seed: level.seed,
+    initialEmeralds: options.overrideInitialEmeralds ?? level.initialEmeralds,
+    enablePassiveEnergy: level.enablePassiveEnergy,
+    fusionGloveCooldownSeconds: level.fusionGloveCooldownSeconds,
+    villageChest: structuredClone(level.villageChest),
+    startingDefenders: structuredClone(level.startingDefenders ?? []),
+    ...(level.allowedBaseDefenderIds && level.allowedBaseDefenderIds.length > 0
+      ? { allowedBaseDefenderIds: [...level.allowedBaseDefenderIds] }
+      : {}),
+    waves: structuredClone(slicedWaves),
+    waveCrystals: [...slicedCrystals],
+  };
 }
 
 /** Build the default 1-lane playtest preset from @mfd/game-data JSON definitions. */
@@ -207,6 +241,11 @@ export function buildRuntimeInputsFromPreset(
     crystals: 5,
   }));
 
+  const allowedSet =
+    mode !== 'sandbox' && preset.allowedBaseDefenderIds && preset.allowedBaseDefenderIds.length > 0
+      ? new Set(preset.allowedBaseDefenderIds)
+      : null;
+
   const resourceInput: ResourceSessionInput = {
     seed: preset.seed,
     initialEnergy: preset.initialEmeralds ?? MVP_GAME_DATA.sandboxLevel.initialEmeralds,
@@ -215,12 +254,13 @@ export function buildRuntimeInputsFromPreset(
     villageChest: structuredClone(
       preset.villageChest ?? MVP_GAME_DATA.sandboxLevel.villageChest,
     ),
+    ...(preset.startingDefenders ? { startingDefenders: structuredClone(preset.startingDefenders) } : {}),
     defenders: preset.defenders.map(defender => ({
       id: defender.id,
       classification: defender.tier === 1 ? 'base' : 'fusion',
       summonEnergyCost: defender.summonEnergyCost,
       summonCooldownSeconds: defender.summonCooldownSeconds ?? 0,
-      unlocked: true,
+      unlocked: defender.tier !== 1 || !allowedSet || allowedSet.has(defender.id),
       ...(defender.economyProduction
         ? { economyProduction: structuredClone(defender.economyProduction) }
         : {}),

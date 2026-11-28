@@ -12,7 +12,7 @@ import {
   type DefenderCollectionEntry,
   type ProgressionProfile,
 } from '../persistence/progression-store';
-import type { CheckpointTriggerReason } from '../persistence/snapshot-codec';
+import { peekCheckpointLevelId, type CheckpointTriggerReason } from '../persistence/snapshot-codec';
 import {
   BrowserLocalStorageAdapter,
   InMemoryStorageAdapter,
@@ -41,9 +41,14 @@ import type { WavePhaseStatus } from '../waves/wave-state';
 import {
   CAMPAIGN_DEFENDER_CATALOG,
   CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
+  CAMPAIGN_LEVELS,
   GRASSLAND_CAMPAIGN_WAVES,
   GRASSLAND_VILLAGE_CHEST,
+  createCampaignInputs,
   createGrasslandCampaignInputs,
+  evaluateCampaignLevelUnlock,
+  tryGetCampaignLevelById,
+  type CampaignLevelCardView,
   type GrasslandCampaignRuntimeInputs,
 } from './grassland-campaign-config';
 
@@ -78,6 +83,8 @@ export interface CampaignToast {
 }
 
 export interface SavedBattleSummary {
+  readonly levelId: string;
+  readonly levelName: string;
   readonly battleId: string;
   readonly tick: number;
   readonly waveNumber: number;
@@ -103,6 +110,9 @@ export interface VillageChestView {
 
 export interface CampaignSnapshot {
   readonly status: CampaignBattleStatus;
+  readonly activeLevelId: string | null;
+  readonly activeLevelName: string;
+  readonly allowedBaseDefenderIds: readonly string[] | null;
   readonly battleId: string | null;
   readonly tick: number;
   readonly elapsedSeconds: number;
@@ -268,6 +278,7 @@ export class CampaignController {
   private readonly seed: number;
   private runtime: BattleRuntime | null = null;
   private runtimeInputs: GrasslandCampaignRuntimeInputs | null = null;
+  private activeLevelId: string | null = null;
   private battleId: string | null = null;
   private battleSeq = 0;
   private claimCounter = 0;
@@ -315,13 +326,52 @@ export class CampaignController {
     return getAchievementsView(this.progressionStore.getProfile());
   }
 
+  getCampaignLevelsView(): readonly CampaignLevelCardView[] {
+    const profile = this.progressionStore.getProfile();
+    return CAMPAIGN_LEVELS.map(level => {
+      const unlockState = evaluateCampaignLevelUnlock(level, profile, this.unlockAllMode);
+      return {
+        id: level.id,
+        order: level.order,
+        name: level.name,
+        description: level.description,
+        difficulty: level.difficulty,
+        theme: level.theme,
+        waveCount: level.waves.length,
+        initialEmeralds: level.initialEmeralds,
+        startingDefenderCount: level.startingDefenders?.length ?? 0,
+        allowedBaseDefenderIds: level.allowedBaseDefenderIds
+          ? [...level.allowedBaseDefenderIds]
+          : null,
+        unlocked: unlockState.unlocked,
+        cleared: unlockState.cleared,
+        requirementText: unlockState.requirementText,
+      };
+    });
+  }
+
   hasSavedBattle(): boolean {
     return this.getSavedBattleSummary() !== null;
   }
 
+  private resolveSavedLevelId(): string {
+    const primary = this.storage.getItem(ACTIVE_BATTLE_STORAGE_KEY);
+    const backup = this.storage.getItem(backupKey(ACTIVE_BATTLE_STORAGE_KEY));
+    for (const raw of [primary, backup]) {
+      if (typeof raw === 'string' && raw.length > 0) {
+        const peekId = peekCheckpointLevelId(raw);
+        if (tryGetCampaignLevelById(peekId)) {
+          return peekId;
+        }
+      }
+    }
+    return 'grassland';
+  }
+
   getSavedBattleSummary(): SavedBattleSummary | null {
     const profile = this.progressionStore.getProfile();
-    const probeInputs = createGrasslandCampaignInputs(profile, { unlockAll: true, seed: this.seed });
+    const levelId = this.resolveSavedLevelId();
+    const probeInputs = createCampaignInputs(levelId, profile, { unlockAll: true, seed: this.seed });
     try {
       const runtime = this.tryLoadSavedRuntime(probeInputs);
       if (!runtime) return null;
@@ -330,10 +380,12 @@ export class CampaignController {
       if (terminal !== null) return null;
       const waveIdx = snap.waves?.currentWaveIndex ?? 0;
       return {
+        levelId: probeInputs.levelId,
+        levelName: probeInputs.levelName,
         battleId: runtime.getPersistenceMeta().battleId,
         tick: snap.tick,
-        waveNumber: Math.min(GRASSLAND_CAMPAIGN_WAVES.length, waveIdx + 1),
-        totalWaves: GRASSLAND_CAMPAIGN_WAVES.length,
+        waveNumber: Math.min(probeInputs.totalWaves, waveIdx + 1),
+        totalWaves: probeInputs.totalWaves,
         energy: snap.resources?.energy ?? 0,
         crystals: snap.resources?.crystals ?? 0,
       };
@@ -361,17 +413,34 @@ export class CampaignController {
     this.refreshAndEmit();
   }
 
-  startNewBattle(options: { readonly unlockAll?: boolean; readonly battleId?: string } = {}): void {
+  startNewBattle(
+    options: { readonly levelId?: string; readonly unlockAll?: boolean; readonly battleId?: string } = {},
+  ): void {
+    const levelId = options.levelId ?? 'grassland';
+    const level = tryGetCampaignLevelById(levelId);
+    if (!level) {
+      this.pushToast('error', `Unknown stage: ${levelId}`);
+      this.refreshAndEmit();
+      return;
+    }
+    const unlockAll = options.unlockAll ?? this.unlockAllMode;
+    const profile = this.progressionStore.getProfile();
+    const unlockState = evaluateCampaignLevelUnlock(level, profile, unlockAll);
+    if (!unlockState.unlocked) {
+      this.pushToast('error', unlockState.requirementText);
+      this.refreshAndEmit();
+      return;
+    }
+
     this.checkpointManager.clearPersistentSave();
     this.checkpointManager.clearRamCheckpoints();
-    const unlockAll = options.unlockAll ?? this.unlockAllMode;
     this.unlockAllMode = unlockAll;
+    this.activeLevelId = level.id;
 
-    const profile = this.progressionStore.getProfile();
     this.profileBeforeBattle = profile;
     this.newlyUnlocked = { defenders: [], recipes: [] };
     this.battleSeq += 1;
-    this.battleId = options.battleId ?? `grassland_${Date.now()}_${this.battleSeq}`;
+    this.battleId = options.battleId ?? `${level.id}_${Date.now()}_${this.battleSeq}`;
     this.claimCounter = 0;
     this.paused = false;
     this.speedMultiplier = 1;
@@ -382,7 +451,7 @@ export class CampaignController {
     this.lastAbilityOutcomeEventId = null;
     this.lastTerminal = null;
 
-    const inputs = createGrasslandCampaignInputs(profile, { unlockAll, seed: this.seed });
+    const inputs = createCampaignInputs(level.id, profile, { unlockAll, seed: this.seed });
     this.runtimeInputs = inputs;
     this.runtime = new BattleRuntime(
       { ticksPerSecond: TICKS_PER_SECOND, maxCatchUpTicks: MAX_CATCH_UP_TICKS },
@@ -393,20 +462,22 @@ export class CampaignController {
       inputs.abilityInput,
       {
         battleId: this.battleId,
+        levelId: level.id,
         storage: this.storage,
         progressionStore: this.progressionStore,
         autoCheckpoint: true,
         checkpointManager: this.checkpointManager,
       },
     );
-    this.pushToast('info', 'Grassland Campaign started — Defend all 5 Waves!');
+    this.pushToast('info', `${inputs.levelName} started — Defend all ${inputs.totalWaves} Waves!`);
     this.refreshAndEmit();
   }
 
   resumeSavedBattle(options: { readonly unlockAll?: boolean } = {}): boolean {
     const unlockAll = options.unlockAll ?? this.unlockAllMode;
     const profile = this.progressionStore.getProfile();
-    const inputs = createGrasslandCampaignInputs(profile, { unlockAll: true, seed: this.seed });
+    const levelId = this.resolveSavedLevelId();
+    const inputs = createCampaignInputs(levelId, profile, { unlockAll: true, seed: this.seed });
     const restored = this.tryLoadSavedRuntime(inputs, true);
     if (!restored) {
       this.pushToast('error', 'No valid saved battle found');
@@ -415,6 +486,7 @@ export class CampaignController {
     }
 
     this.unlockAllMode = unlockAll;
+    this.activeLevelId = inputs.levelId;
     this.profileBeforeBattle = profile;
     this.newlyUnlocked = { defenders: [], recipes: [] };
     this.runtimeInputs = inputs;
@@ -440,6 +512,7 @@ export class CampaignController {
     }
     this.runtime = null;
     this.runtimeInputs = null;
+    this.activeLevelId = null;
     this.paused = false;
     this.flashes = [];
     this.refreshAndEmit();
@@ -517,7 +590,8 @@ export class CampaignController {
     }
     const recipe = RECIPE_BY_PAIR.get(normalizePairKey(src.definitionId, tgt.definitionId));
     if (!recipe) return null;
-    if (!this.unlockAllMode && !this.snapshotCache.unlockedRecipeIds.includes(recipe.id)) {
+    const effectiveUnlockAll = this.unlockAllMode || Boolean(this.runtimeInputs?.ignoreUnlockRestrictions);
+    if (!effectiveUnlockAll && !this.snapshotCache.unlockedRecipeIds.includes(recipe.id)) {
       return null;
     }
     return recipe.output;
@@ -531,7 +605,8 @@ export class CampaignController {
     }
     const recipe = RECIPE_BY_PAIR.get(normalizePairKey(definitionId, tgt.definitionId));
     if (!recipe) return null;
-    if (!this.unlockAllMode && !this.snapshotCache.unlockedRecipeIds.includes(recipe.id)) {
+    const effectiveUnlockAll = this.unlockAllMode || Boolean(this.runtimeInputs?.ignoreUnlockRestrictions);
+    if (!effectiveUnlockAll && !this.snapshotCache.unlockedRecipeIds.includes(recipe.id)) {
       return null;
     }
     return recipe.output;
@@ -851,6 +926,7 @@ export class CampaignController {
           inputs.abilityInput,
           withPersistence
             ? {
+                levelId: inputs.levelId,
                 storage: this.storage,
                 progressionStore: this.progressionStore,
                 autoCheckpoint: true,
@@ -940,7 +1016,8 @@ export class CampaignController {
       if (terminal === 'victory') {
         const afterProfile = this.progressionStore.getProfile();
         this.newlyUnlocked = diffNewlyUnlocked(this.profileBeforeBattle, afterProfile);
-        this.pushToast('success', 'Victory! Grassland Cleared!');
+        const levelName = this.runtimeInputs?.levelName ?? 'Grassland';
+        this.pushToast('success', `Victory! ${levelName} Cleared!`);
       } else {
         this.newlyUnlocked = { defenders: [], recipes: [] };
         this.pushToast('error', 'Defeat! An Enemy breached your base!');
@@ -964,13 +1041,18 @@ export class CampaignController {
   private buildSnapshot(): CampaignSnapshot {
     const profile = this.progressionStore.getProfile();
     const unlockedSet = new Set(profile.unlockedDefenderIds);
-    const unlockedRecipes = this.unlockAllMode
+    const effectiveUnlockAll =
+      this.unlockAllMode || Boolean(this.runtimeInputs?.ignoreUnlockRestrictions);
+    const unlockedRecipes = effectiveUnlockAll
       ? PLAYTEST_FUSION_RECIPES_META.map(r => r.id)
       : [...profile.unlockedRecipeIds];
 
     if (!this.runtime || !this.runtimeInputs) {
       return {
         status: 'idle',
+        activeLevelId: null,
+        activeLevelName: 'Grassland',
+        allowedBaseDefenderIds: null,
         battleId: null,
         tick: 0,
         elapsedSeconds: 0,
@@ -1253,10 +1335,14 @@ export class CampaignController {
     const collection = this.getDefenderCollection();
     const collectionById = new Map(collection.map(c => [c.id, c]));
     const resourceDefById = new Map(this.runtimeInputs.resourceInput.defenders.map(d => [d.id, d]));
+    const allowedSet = this.runtimeInputs.allowedBaseDefenderIds
+      ? new Set(this.runtimeInputs.allowedBaseDefenderIds)
+      : null;
 
     const baseDefenderCards: BaseDefenderCardView[] = BASE_CATALOG.map(d => {
       const resourceDef = resourceDefById.get(d.id);
-      const unlocked = resourceDef?.unlocked ?? false;
+      const isAllowed = !allowedSet || allowedSet.has(d.id);
+      const unlocked = isAllowed && (resourceDef?.unlocked ?? false);
       const cost = this.runtimeInputs!.defenderCosts[d.id] ?? d.summonEnergyCost;
       const cooldownTotalSeconds = resourceDef?.summonCooldownSeconds ?? d.summonCooldownSeconds;
       const readyTick = resources?.summonCooldownUntilTick?.get(d.id) ?? 0;
@@ -1283,7 +1369,9 @@ export class CampaignController {
         onCooldown,
         role: d.role,
         abilityName: d.abilityName,
-        requirement: collectionById.get(d.id)?.requirement ?? 'Unlocked',
+        requirement: !isAllowed
+          ? 'Restricted in this stage'
+          : (collectionById.get(d.id)?.requirement ?? 'Unlocked'),
       };
     });
 
@@ -1291,7 +1379,7 @@ export class CampaignController {
     const status: CampaignBattleStatus =
       terminal !== null ? terminal : this.paused ? 'paused' : 'playing';
 
-    const gloveTotalSeconds = CAMPAIGN_GLOVE_COOLDOWN_SECONDS;
+    const gloveTotalSeconds = this.runtimeInputs.fusionGloveCooldownSeconds;
     const gloveReadyTick = resources?.gloveCooldownUntilTick ?? 0;
     const gloveRemainingTicks = Math.max(0, gloveReadyTick - raw.tick);
     const gloveOnCooldown = gloveRemainingTicks > 0;
@@ -1307,8 +1395,8 @@ export class CampaignController {
     const chestCfg = this.runtimeInputs.resourceInput.villageChest;
     const chestEnabled = Boolean(chestCfg?.enabled);
     const chestReady = chestEnabled && Boolean(resources?.villageChestReady);
-    const chestTotalSeconds = chestCfg?.intervalSeconds ?? GRASSLAND_VILLAGE_CHEST.intervalSeconds;
-    const chestAmount = chestCfg?.amount ?? GRASSLAND_VILLAGE_CHEST.amount;
+    const chestTotalSeconds = chestCfg?.intervalSeconds ?? this.runtimeInputs.villageChest.intervalSeconds;
+    const chestAmount = chestCfg?.amount ?? this.runtimeInputs.villageChest.amount;
     const chestRemainingTicks =
       chestEnabled && !chestReady && resources?.villageChestNextTick !== undefined && resources.villageChestNextTick !== null
         ? Math.max(0, resources.villageChestNextTick - raw.tick)
@@ -1318,6 +1406,9 @@ export class CampaignController {
 
     return {
       status,
+      activeLevelId: this.activeLevelId ?? this.runtimeInputs.levelId,
+      activeLevelName: this.runtimeInputs.levelName,
+      allowedBaseDefenderIds: this.runtimeInputs.allowedBaseDefenderIds,
       battleId: this.battleId,
       tick: raw.tick,
       elapsedSeconds: Number((raw.tick / TICKS_PER_SECOND).toFixed(2)),
@@ -1329,8 +1420,8 @@ export class CampaignController {
       maxCrystals: MAX_CRYSTALS,
       pendingWaveCrystals: resources?.pending ?? 0,
       waveIndex,
-      waveNumber: waveIndex !== null ? Math.min(GRASSLAND_CAMPAIGN_WAVES.length, waveIndex + 1) : 1,
-      totalWaves: GRASSLAND_CAMPAIGN_WAVES.length,
+      waveNumber: waveIndex !== null ? Math.min(this.runtimeInputs.totalWaves, waveIndex + 1) : 1,
+      totalWaves: this.runtimeInputs.totalWaves,
       wavePhase: raw.waves?.status ?? 'pending',
       enemiesRemaining: enemies.length,
       enemiesKilled: this.runtime.getPersistenceMeta().matchKills,

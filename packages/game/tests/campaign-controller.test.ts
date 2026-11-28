@@ -4,7 +4,9 @@ import {
   CAMPAIGN_DEFENDER_CATALOG,
   CAMPAIGN_ENEMY_CATALOG,
   CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
+  CAMPAIGN_LEVELS,
   CAMPAIGN_RECIPE_CATALOG,
+  evaluateCampaignLevelUnlock,
 } from '../src/campaign/grassland-campaign-config';
 import { ProgressionStore } from '../src/persistence/progression-store';
 import { InMemoryStorageAdapter } from '../src/persistence/storage-adapter';
@@ -307,5 +309,52 @@ describe('T-14 CampaignController & Grassland Campaign Integration', () => {
     expect(afterShovel.defenders).toHaveLength(0);
     expect(afterShovel.energy).toBe(energyBeforeShovel);
     expect(afterShovel.lastToast?.message).toBe('Removed Steel Guardian with Shovel');
+  });
+
+  it('exposes multi-level catalog views, active stage checkpoint metadata, and unlock evaluations (T-15)', () => {
+    const storage = new InMemoryStorageAdapter();
+    const controller = new CampaignController({ storage });
+    const levels = controller.getCampaignLevelsView();
+    expect(levels.length).toBeGreaterThanOrEqual(1);
+    expect(levels[0]).toMatchObject({
+      id: 'grassland',
+      unlocked: true,
+      cleared: false,
+      waveCount: 5,
+    });
+
+    controller.startNewBattle({ levelId: 'grassland', battleId: 'camp_multi_1' });
+    const snap = controller.getSnapshot();
+    expect(snap.activeLevelId).toBe('grassland');
+    expect(snap.activeLevelName).toBe(CAMPAIGN_LEVELS[0]!.name);
+
+    const summary = controller.getSavedBattleSummary();
+    expect(summary).toMatchObject({
+      levelId: 'grassland',
+      levelName: CAMPAIGN_LEVELS[0]!.name,
+      totalWaves: 5,
+    });
+
+    // Verify clear-level unlock evaluation locks before clearing and unlocks after clearing
+    const syntheticStage2 = {
+      ...structuredClone(CAMPAIGN_LEVELS[0]!),
+      id: 'stage_2',
+      order: 2,
+      name: 'Stage 2',
+      unlockRequirement: { kind: 'clear-level' as const, levelId: 'grassland' },
+    };
+    const store = new ProgressionStore();
+    expect(evaluateCampaignLevelUnlock(syntheticStage2, store.getProfile()).unlocked).toBe(false);
+    expect(evaluateCampaignLevelUnlock(syntheticStage2, store.getProfile(), true).unlocked).toBe(true);
+
+    store.recordBattleOutcome({
+      battleId: 'clear_grassland',
+      result: 'victory',
+      enemiesKilled: 20,
+      levelId: 'grassland',
+    });
+    const afterClear = evaluateCampaignLevelUnlock(syntheticStage2, store.getProfile());
+    expect(afterClear.unlocked).toBe(true);
+    expect(afterClear.requirementText).toContain('Cleared');
   });
 });

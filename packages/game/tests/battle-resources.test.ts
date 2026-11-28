@@ -448,4 +448,64 @@ describe('T-06.5 random and reward hooks', () => {
     step(g, 100);
     expect(resources(g).villageChestReady).toBe(true);
   });
+
+  it('spawns startingDefenders free at tick 0 with active economy production and rejects invalid cells/duplicates (T-15)', () => {
+    const baseInput = fixture();
+    const g = battle({
+      ...baseInput,
+      initialEnergy: 100,
+      enablePassiveEnergy: false,
+      enableRandomEnergyItems: false,
+      enableRandomCrystalItems: false,
+      defenders: [
+        {
+          id: 'villager',
+          classification: 'base',
+          summonEnergyCost: 50,
+          unlocked: true,
+          economyProduction: { itemCount: 1, amountPerItem: 25, initialDelaySeconds: 4, intervalSeconds: 8 },
+        },
+        {
+          id: 'steel_guardian',
+          classification: 'fusion',
+          summonEnergyCost: 0,
+          unlocked: true,
+        },
+      ],
+      startingDefenders: [
+        { definitionId: 'villager', row: 0, column: 0 },
+        { definitionId: 'steel_guardian', row: 2, column: 3 },
+      ],
+    }, 10);
+
+    // Placed at tick 0 without spending Emeralds
+    expect(resources(g).energy).toBe(100);
+    const placed = [...g.snapshot().entities.values()];
+    expect(placed).toHaveLength(2);
+    expect(placed.some(e => e.definitionId === 'villager' && e.kind === 'defender' && e.cell.row === 0 && e.cell.column === 0)).toBe(true);
+    expect(placed.some(e => e.definitionId === 'steel_guardian' && e.kind === 'defender' && e.cell.row === 2 && e.cell.column === 3)).toBe(true);
+
+    // Villager producer runs automatically after 4s (40 ticks @ 10tps)
+    step(g, 41);
+    const drops = [...resources(g).items.values()].filter(i => i.kind === 'energy');
+    expect(drops).toHaveLength(1);
+    expect(drops[0]).toMatchObject({ amount: 25 });
+
+    // Validation rejects out-of-bounds and duplicate cells
+    expect(() =>
+      battle({
+        ...baseInput,
+        startingDefenders: [{ definitionId: 'base', row: 5, column: 0 }],
+      }),
+    ).toThrow(/out of bounds/);
+    expect(() =>
+      battle({
+        ...baseInput,
+        startingDefenders: [
+          { definitionId: 'base', row: 1, column: 1 },
+          { definitionId: 'fusion', row: 1, column: 1 },
+        ],
+      }),
+    ).toThrow(/Duplicate startingDefender/);
+  });
 });

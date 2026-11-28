@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MVP_GAME_DATA } from '@mfd/game-data';
 import {
   CAMPAIGN_BASE_COSTS,
   CAMPAIGN_BASE_COOLDOWNS,
@@ -11,6 +12,7 @@ import {
   PLAYTEST_ENEMY_META,
   PLAYTEST_FUSION_RECIPES_META,
   createDefaultPlaytestPreset,
+  createPlaytestPresetFromLevel,
 } from '../src/playtest/playtest-presets';
 
 describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5 / T-14)', () => {
@@ -378,5 +380,40 @@ describe('PlaytestController (T-10B.1 / T-10B.2 / T-10B.5 / T-14)', () => {
     expect(snap.items.some(i => i.id === itemId)).toBe(false);
     expect(snap.eventLog.some(e => e.message.includes('item-unavailable'))).toBe(false);
     expect(snap.lastToast?.kind === 'error').toBe(false);
+  });
+
+  it('builds editor Test Play presets with Jump-to-Wave, startingDefenders, and allowedBaseDefenderIds enforcement (T-15)', () => {
+    const baseLevel = structuredClone(MVP_GAME_DATA.campaignLevels[0]!);
+    baseLevel.startingDefenders = [
+      { definitionId: 'villager', row: 1, column: 0 },
+      { definitionId: 'steel_guardian', row: 2, column: 4 },
+    ];
+    baseLevel.allowedBaseDefenderIds = ['villager', 'iron_golem'];
+
+    const preset = createPlaytestPresetFromLevel(baseLevel, {
+      startWaveIndex: 2,
+      overrideInitialEmeralds: 500,
+    });
+    expect(preset.waves).toHaveLength(3);
+    expect(preset.waveCrystals).toHaveLength(3);
+    expect(preset.initialEmeralds).toBe(500);
+
+    const controller = new PlaytestController({
+      preset,
+      mode: 'five-waves',
+      showAuxLanes: true,
+      allowMultiLaneWaves: true,
+    });
+    const snap = controller.getSnapshot();
+    expect(snap.energy).toBe(500);
+    expect(snap.totalWaves).toBe(3);
+    expect(snap.defenders).toHaveLength(2);
+    expect(snap.baseDefenderCards.find(c => c.id === 'iron_golem')?.unlocked).toBe(true);
+    expect(snap.baseDefenderCards.find(c => c.id === 'skeleton')?.unlocked).toBe(false);
+
+    // Allowed card summons cleanly; banned base defender is rejected
+    expect(controller.placeDefender('skeleton', { row: 0, column: 0 }, false)).toBe(false);
+    expect(controller.getSnapshot().lastToast?.message).toContain('restricted in this stage');
+    expect(controller.placeDefender('iron_golem', { row: 0, column: 0 }, false)).toBe(true);
   });
 });

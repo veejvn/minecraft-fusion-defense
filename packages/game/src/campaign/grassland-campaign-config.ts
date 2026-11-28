@@ -1,4 +1,9 @@
-import { MVP_GAME_DATA } from '@mfd/game-data';
+import {
+  MVP_GAME_DATA,
+  type MvpCampaignLevelData,
+  type MvpLevelDifficulty,
+  type MvpLevelTheme,
+} from '@mfd/game-data';
 import type { AbilityDefinition, AbilitySessionInput } from '../abilities/ability-session';
 import {
   DEFENDER_SPRITE_ASSETS,
@@ -6,7 +11,7 @@ import {
   ITEM_SPRITE_ASSETS,
 } from '../assets/asset-manifest';
 import type { CombatSessionInput } from '../combat/combat-session';
-import type { ResourceSessionInput } from '../core/resource-session';
+import type { ResourceSessionInput, VillageChestConfig } from '../core/resource-session';
 import type { FusionSessionInput } from '../fusion/fusion-session';
 import {
   applyProgressionUnlocks,
@@ -17,6 +22,7 @@ import {
   PLAYTEST_ENEMY_META,
   PLAYTEST_FUSION_RECIPES_META,
   createDefaultPlaytestPreset,
+  createPlaytestPresetFromLevel,
   type PlaytestDefenderConfig,
   type PlaytestPresetConfig,
 } from '../playtest/playtest-presets';
@@ -75,6 +81,21 @@ export const CAMPAIGN_BASE_COSTS: Readonly<Record<string, number>> = Object.from
 export const CAMPAIGN_BASE_COOLDOWNS: Readonly<Record<string, number>> = Object.fromEntries(
   MVP_GAME_DATA.defenders.filter(d => d.tier === 1).map(d => [d.id, d.summonCooldownSeconds]),
 );
+
+export const CAMPAIGN_LEVELS: readonly MvpCampaignLevelData[] =
+  [...MVP_GAME_DATA.campaignLevels].sort((a, b) => a.order - b.order);
+
+export function tryGetCampaignLevelById(levelId: string): MvpCampaignLevelData | undefined {
+  return CAMPAIGN_LEVELS.find(level => level.id === levelId);
+}
+
+export function getCampaignLevelById(levelId: string): MvpCampaignLevelData {
+  const found = tryGetCampaignLevelById(levelId);
+  if (!found) {
+    throw new RangeError(`Unknown campaign level: ${levelId}`);
+  }
+  return found;
+}
 
 export const CAMPAIGN_GLOVE_COOLDOWN_SECONDS =
   MVP_GAME_DATA.grasslandLevel.fusionGloveCooldownSeconds;
@@ -157,7 +178,51 @@ export const CAMPAIGN_ITEM_URLS = {
   powerCrystal: ITEM_SPRITE_ASSETS.power_crystal.url,
 } as const;
 
+export interface CampaignLevelCardView {
+  readonly id: string;
+  readonly order: number;
+  readonly name: string;
+  readonly description: string;
+  readonly difficulty: MvpLevelDifficulty;
+  readonly theme: MvpLevelTheme;
+  readonly waveCount: number;
+  readonly initialEmeralds: number;
+  readonly startingDefenderCount: number;
+  readonly allowedBaseDefenderIds: readonly string[] | null;
+  readonly unlocked: boolean;
+  readonly cleared: boolean;
+  readonly requirementText: string;
+}
+
+export function evaluateCampaignLevelUnlock(
+  level: MvpCampaignLevelData,
+  profile: ProgressionProfile,
+  unlockAll = false,
+): { readonly unlocked: boolean; readonly cleared: boolean; readonly requirementText: string } {
+  const clearedSet = new Set(profile.clearedLevelIds ?? []);
+  const cleared = clearedSet.has(level.id);
+  if (unlockAll || level.ignoreUnlockRestrictions || level.unlockRequirement.kind === 'always') {
+    return { unlocked: true, cleared, requirementText: 'Unlocked' };
+  }
+  const reqId = level.unlockRequirement.levelId;
+  const reqLevel = tryGetCampaignLevelById(reqId);
+  const reqLabel = reqLevel?.name ?? reqId;
+  const ok = clearedSet.has(reqId);
+  return {
+    unlocked: ok,
+    cleared,
+    requirementText: ok ? `Cleared ${reqLabel}` : `Clear "${reqLabel}" to unlock`,
+  };
+}
+
 export interface GrasslandCampaignRuntimeInputs {
+  readonly levelId: string;
+  readonly levelName: string;
+  readonly totalWaves: number;
+  readonly fusionGloveCooldownSeconds: number;
+  readonly villageChest: VillageChestConfig;
+  readonly allowedBaseDefenderIds: readonly string[] | null;
+  readonly ignoreUnlockRestrictions: boolean;
   readonly resourceInput: ResourceSessionInput;
   readonly combatInput: CombatSessionInput;
   readonly fusionInput: FusionSessionInput;
@@ -167,12 +232,20 @@ export interface GrasslandCampaignRuntimeInputs {
   readonly abilities: readonly AbilityDefinition[];
 }
 
-export function createGrasslandCampaignInputs(
+export function createCampaignInputs(
+  levelId: string,
   profile: ProgressionProfile,
   options: { readonly unlockAll?: boolean; readonly seed?: number } = {},
 ): GrasslandCampaignRuntimeInputs {
+  const level = getCampaignLevelById(levelId);
   const preset = createDefaultPlaytestPreset();
-  const seed = options.seed ?? MVP_GAME_DATA.grasslandLevel.seed;
+  const seed = options.seed ?? level.seed;
+  const effectiveUnlockAll = Boolean(options.unlockAll || level.ignoreUnlockRestrictions);
+  const allowedBaseDefenderIds =
+    level.allowedBaseDefenderIds && level.allowedBaseDefenderIds.length > 0
+      ? [...level.allowedBaseDefenderIds]
+      : null;
+  const allowedSet = allowedBaseDefenderIds ? new Set(allowedBaseDefenderIds) : null;
 
   const baseDefenders = preset.defenders.map(d => ({
     ...d,
@@ -181,12 +254,10 @@ export function createGrasslandCampaignInputs(
 
   const rawResourceInput: ResourceSessionInput = {
     seed,
-    initialEnergy: preset.initialEmeralds ?? MVP_GAME_DATA.grasslandLevel.initialEmeralds,
-    enablePassiveEnergy:
-      preset.enablePassiveEnergy ?? MVP_GAME_DATA.grasslandLevel.enablePassiveEnergy,
-    villageChest: structuredClone(
-      preset.villageChest ?? MVP_GAME_DATA.grasslandLevel.villageChest,
-    ),
+    initialEnergy: level.initialEmeralds,
+    enablePassiveEnergy: level.enablePassiveEnergy,
+    villageChest: structuredClone(level.villageChest),
+    startingDefenders: structuredClone(level.startingDefenders ?? []),
     defenders: baseDefenders.map(d => ({
       id: d.id,
       classification: d.tier === 1 ? 'base' : 'fusion',
@@ -201,14 +272,14 @@ export function createGrasslandCampaignInputs(
       crystals: e.crystalReward,
       crystalDropChance: e.crystalDropChance,
     })),
-    waves: GRASSLAND_CAMPAIGN_WAVES.map((w, idx) => ({
+    waves: level.waves.map((w, idx) => ({
       id: w.id,
-      crystals: GRASSLAND_WAVE_CRYSTALS[idx] ?? 1,
+      crystals: level.waveCrystals[idx] ?? 1,
     })),
-    energyItems: structuredClone(MVP_GAME_DATA.grasslandLevel.energyItems),
+    energyItems: structuredClone(level.energyItems),
     enableRandomEnergyItems: false,
     enableRandomCrystalItems: false,
-    fusionGloveCooldownSeconds: CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
+    fusionGloveCooldownSeconds: level.fusionGloveCooldownSeconds,
   };
 
   const rawFusionInput: FusionSessionInput = {
@@ -225,9 +296,20 @@ export function createGrasslandCampaignInputs(
     })),
   };
 
-  const synced = options.unlockAll
+  const synced = effectiveUnlockAll
     ? { resourceInput: rawResourceInput, fusionInput: rawFusionInput }
     : applyProgressionUnlocks(profile, rawResourceInput, rawFusionInput);
+
+  const resourceInputWithRestrictions: ResourceSessionInput = allowedSet
+    ? {
+        ...synced.resourceInput,
+        defenders: synced.resourceInput.defenders.map(d =>
+          d.classification === 'base' && !allowedSet.has(d.id)
+            ? { ...d, unlocked: false }
+            : d,
+        ),
+      }
+    : synced.resourceInput;
 
   const combatInput: CombatSessionInput = {
     spawnX: 9,
@@ -258,10 +340,10 @@ export function createGrasslandCampaignInputs(
   };
 
   const waveInput: WaveSessionInput = {
-    levelId: 'grassland',
-    waveCount: GRASSLAND_CAMPAIGN_WAVES.length,
+    levelId: level.id,
+    waveCount: level.waves.length,
     seed,
-    waves: structuredClone([...GRASSLAND_CAMPAIGN_WAVES]),
+    waves: structuredClone([...level.waves]),
   };
 
   const abilityInput: AbilitySessionInput = {
@@ -274,7 +356,14 @@ export function createGrasslandCampaignInputs(
   }
 
   return {
-    resourceInput: synced.resourceInput,
+    levelId: level.id,
+    levelName: level.name,
+    totalWaves: level.waves.length,
+    fusionGloveCooldownSeconds: level.fusionGloveCooldownSeconds,
+    villageChest: structuredClone(level.villageChest),
+    allowedBaseDefenderIds,
+    ignoreUnlockRestrictions: Boolean(level.ignoreUnlockRestrictions),
+    resourceInput: resourceInputWithRestrictions,
     combatInput,
     fusionInput: synced.fusionInput,
     waveInput,
@@ -284,25 +373,17 @@ export function createGrasslandCampaignInputs(
   };
 }
 
+export function createGrasslandCampaignInputs(
+  profile: ProgressionProfile,
+  options: { readonly unlockAll?: boolean; readonly seed?: number } = {},
+): GrasslandCampaignRuntimeInputs {
+  return createCampaignInputs('grassland', profile, options);
+}
+
 /**
  * Create a mutable PlaytestPresetConfig matching exact main Grassland Campaign values
  * so Owner tuning in /playtest has 1-to-1 parity with /.
  */
 export function createCampaignPlaytestPreset(): PlaytestPresetConfig {
-  const base = createDefaultPlaytestPreset();
-  return {
-    ...base,
-    seed: MVP_GAME_DATA.grasslandLevel.seed,
-    initialEmeralds: MVP_GAME_DATA.grasslandLevel.initialEmeralds,
-    enablePassiveEnergy: MVP_GAME_DATA.grasslandLevel.enablePassiveEnergy,
-    fusionGloveCooldownSeconds: CAMPAIGN_GLOVE_COOLDOWN_SECONDS,
-    villageChest: structuredClone(MVP_GAME_DATA.grasslandLevel.villageChest),
-    defenders: base.defenders.map(d => ({
-      ...d,
-      summonEnergyCost: d.tier === 1 ? (CAMPAIGN_BASE_COSTS[d.id] ?? d.summonEnergyCost) : 0,
-      summonCooldownSeconds: d.tier === 1 ? (CAMPAIGN_BASE_COOLDOWNS[d.id] ?? 0) : 0,
-    })),
-    waves: structuredClone([...GRASSLAND_CAMPAIGN_WAVES]),
-    waveCrystals: [...GRASSLAND_WAVE_CRYSTALS],
-  };
+  return createPlaytestPresetFromLevel(getCampaignLevelById('grassland'));
 }

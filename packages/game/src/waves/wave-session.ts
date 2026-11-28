@@ -120,12 +120,20 @@ export function validateWaveSession(
   if (typeof config.levelId !== 'string' || !STABLE_ID_PATTERN.test(config.levelId)) {
     throw new TypeError('Invalid level ID');
   }
-  if (
-    config.waveCount !== REQUIRED_GRASSLAND_WAVE_COUNT ||
+  if (config.levelId === 'grassland') {
+    if (
+      config.waveCount !== REQUIRED_GRASSLAND_WAVE_COUNT ||
+      !Array.isArray(config.waves) ||
+      config.waves.length !== REQUIRED_GRASSLAND_WAVE_COUNT
+    ) {
+      throw new RangeError('Grassland level requires exactly 5 waves');
+    }
+  } else if (
     !Array.isArray(config.waves) ||
-    config.waves.length !== REQUIRED_GRASSLAND_WAVE_COUNT
+    config.waves.length < 1 ||
+    config.waveCount !== config.waves.length
   ) {
-    throw new RangeError('Grassland level requires exactly 5 waves');
+    throw new RangeError('Level requires at least 1 wave matching waveCount');
   }
 
   const seenWaveIds = new Set<string>();

@@ -28,6 +28,7 @@ import {
   SAVE_SCHEMA_VERSION,
   SnapshotValidationError,
   deserializeBattleCheckpoint,
+  peekCheckpointLevelId,
   serializeBattleCheckpoint,
   type BattleCheckpointEnvelope,
 } from '../src/persistence/snapshot-codec';
@@ -1679,6 +1680,49 @@ describe('T-11.6 Battle Persistence & Persistent Progression (AC-01 – AC-18)',
       expect(adapter.getItem('mfd.test')).toBeNull();
       expect(() => adapter.removeItem('mfd.test')).not.toThrow();
       expect(() => adapter.setItem('mfd.test', 'x')).toThrow('Browser localStorage is unavailable');
+    });
+
+    it('persists checkpoint levelId + ProgressionStore clearedLevelIds while falling back to grassland on legacy checkpoints (T-15)', () => {
+      const storage = new InMemoryStorageAdapter();
+      const store = new ProgressionStore({ storage });
+
+      // Legacy checkpoint without levelId defaults cleanly to 'grassland'
+      const legacyRt = new BattleRuntime(
+        { ticksPerSecond: 10, maxCatchUpTicks: 250 },
+        resourceFixture(),
+        combatFixture(),
+        fusionFixture(),
+        waveFixture(),
+        abilityFixture(),
+        { battleId: 'legacy_b1', storage },
+      );
+      const legacyJson = storage.getItem(ACTIVE_BATTLE_STORAGE_KEY)!;
+      expect(peekCheckpointLevelId(legacyJson)).toBe('grassland');
+
+      // Stage-specific checkpoint preserves levelId & records clearedLevelIds on victory only
+      const stageRt = new BattleRuntime(
+        { ticksPerSecond: 10, maxCatchUpTicks: 250 },
+        resourceFixture(),
+        combatFixture(),
+        fusionFixture(),
+        waveFixture(),
+        abilityFixture(),
+        { battleId: 'stage2_b1', levelId: 'stage_2', storage, progressionStore: store },
+      );
+      const stageJson = storage.getItem(ACTIVE_BATTLE_STORAGE_KEY)!;
+      expect(peekCheckpointLevelId(stageJson)).toBe('stage_2');
+      const decoded = deserializeBattleCheckpoint(stageJson);
+      expect(decoded.levelId).toBe('stage_2');
+
+      // Defeat records nothing; victory records 'stage_2' once across reload
+      store.recordBattleOutcome({ battleId: 'defeat_b', result: 'defeat', enemiesKilled: 3, levelId: 'stage_2' });
+      expect(store.getProfile().clearedLevelIds).toBeUndefined();
+
+      store.recordBattleOutcome({ battleId: 'win_b1', result: 'victory', enemiesKilled: 12, levelId: 'stage_2' });
+      expect(store.getProfile().clearedLevelIds).toEqual(['stage_2']);
+
+      const reloadedStore = new ProgressionStore({ storage });
+      expect(reloadedStore.getProfile().clearedLevelIds).toEqual(['stage_2']);
     });
   });
 });
