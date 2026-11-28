@@ -560,32 +560,6 @@ export function BattleHudOverlay({
         </div>
       )}
 
-      {/* Floating Feedback Toast Overlay (0px vertical layout height) */}
-      {snapshot.lastToast && (
-        <div
-          role="status"
-          className="mfd-toast-float"
-          style={{
-            border: `1px solid ${
-              snapshot.lastToast.kind === 'error'
-                ? '#f87171'
-                : snapshot.lastToast.kind === 'success'
-                  ? '#4ade80'
-                  : '#38bdf8'
-            }`,
-            background:
-              snapshot.lastToast.kind === 'error'
-                ? 'rgba(127, 29, 29, 0.92)'
-                : snapshot.lastToast.kind === 'success'
-                  ? 'rgba(20, 83, 45, 0.92)'
-                  : 'rgba(12, 74, 110, 0.92)',
-            color: '#F8FAFC',
-          }}
-        >
-          {snapshot.lastToast.message}
-        </div>
-      )}
-
       {/* Pause Modal */}
       {snapshot.status === 'paused' && (
         <div className="mfd-modal-backdrop" role="dialog" aria-modal="true" aria-label="Game Paused">

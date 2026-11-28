@@ -40,6 +40,7 @@ test('built homepage serves full MVP Menu, Collection (22 Defenders), Achievemen
   // Phaser 1280x720 Canvas + React HUD mount cleanly inside a single viewport (zero vertical scroll)
   await expect(page.locator('canvas')).toHaveCount(1);
   await expect(page.getByText('Loading Grassland Battlefield...')).toHaveCount(0);
+  await expect(page.locator('.mfd-toast-float')).toHaveCount(0);
   await expect(page.getByText('Failed to initialize Phaser battlefield.')).toHaveCount(0);
   await expect(page.getByText('WAVE 1/5')).toBeVisible();
   await expect(page.getByText('EMERALDS')).toBeVisible();
@@ -136,6 +137,7 @@ test('1366x768 laptop viewport fits with 0 scroll, verifies all Collection PNG s
   await page.getByRole('button', { name: /Play Grassland Campaign|Start New Battle/i }).click();
   await expect(page.locator('canvas')).toHaveCount(1);
   await expect(page.getByText('Loading Grassland Battlefield...')).toHaveCount(0);
+  await expect(page.locator('.mfd-toast-float')).toHaveCount(0);
 
   const metrics = await page.evaluate(() => {
     const canvas = document.querySelector('canvas');
@@ -169,8 +171,11 @@ test('1366x768 laptop viewport fits with 0 scroll, verifies all Collection PNG s
   const shovelBtn = page.getByRole('button', { name: /Shovel/i });
   await expect(shovelBtn).toBeVisible();
   await shovelBtn.click();
+  await expect(shovelBtn).toHaveCSS('border-color', 'rgb(248, 113, 113)');
   await page.mouse.click(targetX, targetY);
-  await expect(page.getByText('Removed Iron Golem with Shovel')).toBeVisible();
+  // Shovel resets back to select tool only when removeDefender() succeeds on the occupied cell
+  await expect(shovelBtn).toHaveCSS('border-color', 'rgb(100, 116, 139)');
+  await expect(page.locator('.mfd-toast-float')).toHaveCount(0);
 
   // 5. /playtest Campaign-parity sandbox check (1366x768 zero scroll + HUD controls + Balance Editor)
   await page.goto('/playtest');
@@ -344,6 +349,7 @@ test('mobile portrait shows rotate-to-landscape guard and rotating to landscape 
   await page.getByRole('button', { name: /Play Grassland Campaign|Start New Battle/i }).click();
   await expect(page.locator('canvas')).toHaveCount(1);
   await expect(page.getByText('Loading Grassland Battlefield...')).toHaveCount(0);
+  await expect(page.locator('.mfd-toast-float')).toHaveCount(0);
 
   const landscapeMetrics = await page.evaluate(() => {
     const canvas = document.querySelector('canvas');

@@ -100,20 +100,6 @@ body {
   z-index: 2;
 }
 
-.mfd-toast-float {
-  position: fixed;
-  top: 70px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 45;
-  pointer-events: none;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
-}
-
 .mfd-drag-ghost {
   position: fixed;
   z-index: 70;
