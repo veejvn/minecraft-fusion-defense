@@ -224,11 +224,16 @@ test('/playtest persists tuned balance preset in localStorage across reload and 
   await page.getByRole('button', { name: /Balance/i }).click();
   await expect(page.getByRole('heading', { name: /Live Game Balance Editor/i })).toBeVisible();
 
+  const defaultIronGolemHp = await page.getByLabel('Max HP').inputValue();
   await page.getByLabel('Max HP').fill('777');
   await page.getByLabel('Select Defender').selectOption('skeleton');
+  const defaultArrowCount = await page.getByLabel('Projectile Count').inputValue();
+  const defaultArrowPct = await page.getByLabel('Damage (% AD)').inputValue();
   await page.getByLabel('Projectile Count').fill('24');
   await page.getByLabel('Damage (% AD)').fill('150');
   await page.getByLabel('Select Defender').selectOption('snow_golem');
+  const defaultSnowSlowPct = await page.getByLabel('On-Hit Slow (%)').inputValue();
+  const defaultSnowSlowDur = await page.getByLabel('On-Hit Slow Duration (s)').inputValue();
   await page.getByLabel('On-Hit Slow (%)').fill('60');
   await page.getByLabel('On-Hit Slow Duration (s)').fill('4');
   await page.getByRole('button', { name: /Apply & Restart Playtest/i }).click();
@@ -251,13 +256,13 @@ test('/playtest persists tuned balance preset in localStorage across reload and 
   await expect(page.getByRole('alertdialog', { name: /Confirm Reset Campaign Defaults/i })).toBeVisible();
   await page.getByRole('button', { name: /Delete Saved & Reset/i }).click();
   await expect(page.getByText('Saved locally')).toHaveCount(0);
-  await expect(page.getByLabel('On-Hit Slow (%)')).toHaveValue('35');
-  await expect(page.getByLabel('On-Hit Slow Duration (s)')).toHaveValue('2.5');
+  await expect(page.getByLabel('On-Hit Slow (%)')).toHaveValue(defaultSnowSlowPct);
+  await expect(page.getByLabel('On-Hit Slow Duration (s)')).toHaveValue(defaultSnowSlowDur);
   await page.getByLabel('Select Defender').selectOption('skeleton');
-  await expect(page.getByLabel('Projectile Count')).toHaveValue('16');
-  await expect(page.getByLabel('Damage (% AD)')).toHaveValue('100');
+  await expect(page.getByLabel('Projectile Count')).toHaveValue(defaultArrowCount);
+  await expect(page.getByLabel('Damage (% AD)')).toHaveValue(defaultArrowPct);
   await page.getByLabel('Select Defender').selectOption('iron_golem');
-  await expect(page.getByLabel('Max HP')).toHaveValue('450');
+  await expect(page.getByLabel('Max HP')).toHaveValue(defaultIronGolemHp);
 
   await page.getByRole('button', { name: /Close \[Esc\]/i }).click();
 
@@ -311,6 +316,51 @@ test('/editor renders 5-Lane Wave Timeline, Starting Grid, Test Play modal, and 
   expect(getResp.status()).toBe(403);
   expect(postResp.status()).toBe(403);
   expect(delResp.status()).toBe(403);
+
+  expect(browserErrors).toEqual([]);
+  expect(consoleErrors).toEqual([]);
+});
+
+test('mobile portrait shows rotate-to-landscape guard and rotating to landscape fits 5x9 battlefield cleanly', async ({ page }) => {
+  const browserErrors = [];
+  const consoleErrors = [];
+  page.on('pageerror', error => browserErrors.push(error.message));
+  page.on('console', message => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+
+  // 1. Mobile Portrait (390x844) -> Rotate-to-Landscape prompt appears automatically
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  const rotateDialog = page.getByRole('dialog', { name: 'Rotate Device to Landscape' });
+  await expect(rotateDialog).toBeVisible();
+  await expect(rotateDialog.getByText('Xoay ngang màn hình để chơi')).toBeVisible();
+
+  // 2. Rotate to Mobile Landscape (844x390) -> prompt auto-dismisses and Grassland battle fits with 0 vertical scroll
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expect(rotateDialog).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Play Grassland Campaign' }).click();
+  await page.getByRole('button', { name: /Play Grassland Campaign|Start New Battle/i }).click();
+  await expect(page.locator('canvas')).toHaveCount(1);
+  await expect(page.getByText('Loading Grassland Battlefield...')).toHaveCount(0);
+
+  const landscapeMetrics = await page.evaluate(() => {
+    const canvas = document.querySelector('canvas');
+    const rect = canvas.getBoundingClientRect();
+    return {
+      scrollHeight: document.documentElement.scrollHeight,
+      innerHeight: window.innerHeight,
+      canvasBottom: rect.bottom,
+      canvasWidth: rect.width,
+      canvasHeight: rect.height,
+    };
+  });
+  expect(landscapeMetrics.scrollHeight).toBeLessThanOrEqual(landscapeMetrics.innerHeight);
+  expect(landscapeMetrics.canvasBottom).toBeLessThanOrEqual(landscapeMetrics.innerHeight);
+  expect(landscapeMetrics.canvasWidth).toBeGreaterThan(400);
+  expect(landscapeMetrics.canvasHeight).toBeGreaterThan(220);
+  await expect(page.getByRole('button', { name: 'Toggle Fullscreen Landscape' })).toBeVisible();
 
   expect(browserErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);

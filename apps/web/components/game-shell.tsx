@@ -17,6 +17,7 @@ import type {
 } from '@mfd/game';
 import { BattleHudOverlay } from './battle/battle-hud-overlay';
 import { CampaignHost } from './game/campaign-host';
+import { MobileLandscapeGuard } from './layout/mobile-landscape-guard';
 import { AchievementsScreen } from './screens/achievements-screen';
 import { DefenderCollectionScreen } from './screens/defender-collection-screen';
 import { HowToPlayModal } from './screens/how-to-play-modal';
@@ -153,6 +154,7 @@ export function GameShell() {
 
   return (
     <main className={screen === 'BATTLE' ? 'mfd-shell mfd-shell-battle' : 'mfd-shell'}>
+      <MobileLandscapeGuard />
       <div className="mfd-container">
         {!controller || !catalog ? (
           <div className="mfd-card" style={{ textAlign: 'center', padding: 40 }}>

@@ -1,0 +1,17 @@
+{
+  "name": "Minecraft Fusion Defense",
+  "short_name": "MFD",
+  "description": "2D Pixel-Art Fusion Tower Defense",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "icons": [
+    {
+      "src": "/assets/sprites/items/emerald.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    }
+  ]
+}

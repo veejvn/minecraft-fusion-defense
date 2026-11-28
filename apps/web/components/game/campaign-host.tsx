@@ -84,6 +84,18 @@ export function CampaignHost({
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
+    const refreshScale = () => {
+      try {
+        handleRef.current?.game.scale.refresh();
+      } catch {
+        // Ignore refresh attempts during unmount/destroy.
+      }
+    };
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(refreshScale) : null;
+    resizeObserver?.observe(host);
+    window.addEventListener('orientationchange', refreshScale);
+
     void import('@mfd/game').then(({ createCampaignGame }) => {
       if (cancelled) return;
 
@@ -125,6 +137,8 @@ export function CampaignHost({
     return () => {
       cancelled = true;
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('orientationchange', refreshScale);
+      resizeObserver?.disconnect();
       window.clearTimeout(retryTimer);
       handleRef.current = null;
       onHandleReadyRef.current?.(null);

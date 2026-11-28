@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { MobileLandscapeGuard } from '../layout/mobile-landscape-guard';
 import {
   PlaytestAbilityEditor,
   PlaytestBasicAttackEditor,
@@ -271,6 +272,18 @@ export function PlaytestHost() {
     let handle: PlaytestGameHandle | undefined;
     let unsubscribe: (() => void) | undefined;
 
+    const refreshScale = () => {
+      try {
+        handleRef.current?.game.scale.refresh();
+      } catch {
+        // Ignore refresh attempts during teardown.
+      }
+    };
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(refreshScale) : null;
+    resizeObserver?.observe(host);
+    window.addEventListener('orientationchange', refreshScale);
+
     const showError = (error: unknown) => {
       if (cancelled) return;
       console.error('Failed to initialize Playtest Phaser scene:', error);
@@ -346,6 +359,8 @@ export function PlaytestHost() {
 
     return () => {
       cancelled = true;
+      window.removeEventListener('orientationchange', refreshScale);
+      resizeObserver?.disconnect();
       window.clearTimeout(retryTimer);
       unsubscribe?.();
       handleRef.current = null;
@@ -1060,6 +1075,7 @@ export function PlaytestHost() {
 
   return (
     <main className="mfd-shell mfd-shell-battle" style={{ position: 'relative' }}>
+      <MobileLandscapeGuard />
       <div className="mfd-container">
         <section className="mfd-battle-section">
           {/* Row 1: Main Campaign-Identical Tactical HUD Bar */}

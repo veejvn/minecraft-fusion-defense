@@ -9,6 +9,7 @@ import type {
   CampaignTool,
   ExternalDragPayload,
 } from '@mfd/game';
+import { toggleLandscapeFullscreen } from '../layout/mobile-landscape-guard';
 
 interface HudDragGesture {
   readonly payload: ExternalDragPayload;
@@ -201,7 +202,7 @@ export function BattleHudOverlay({
     <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
       {/* Top Tactical HUD Bar */}
       <div
-        className="mfd-card"
+        className="mfd-card mfd-hud-bar"
         style={{
           padding: '6px 10px',
           display: 'flex',
@@ -475,6 +476,17 @@ export function BattleHudOverlay({
             title="How to Play"
           >
             ?
+          </button>
+
+          <button
+            type="button"
+            className="mfd-btn"
+            style={{ padding: '6px 10px', fontSize: 12 }}
+            onClick={() => void toggleLandscapeFullscreen()}
+            aria-label="Toggle Fullscreen Landscape"
+            title="Fullscreen & Xoay ngang (Mobile/Desktop)"
+          >
+            ⛶
           </button>
 
           <button
